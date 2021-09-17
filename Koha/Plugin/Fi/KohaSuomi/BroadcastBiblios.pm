@@ -9,6 +9,8 @@ use base qw(Koha::Plugins::Base);
 use C4::Context;
 use utf8;
 
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
+
 ## Here we set our plugin version
 our $VERSION = "1.0";
 
@@ -38,14 +40,36 @@ sub new {
     ## and returns our actual 
     my $self = $class->SUPER::new($args);
 
+    $self->{logTable}  = $self->get_qualified_table_name('log');
+
+    if ( $args->{page} && $args->{chunks}) {
+
+        $self->{chunks} = $args->{chunks};
+        $self->{biblionumber} = $args->{biblionumber};
+        $self->{limit} = $args->{limit};
+        $self->{page} = 1;
+        $self->{timestamp} = $args->{timestamp};
+        $self->{endpoint} = $args->{endpoint}; 
+        $self->{endpoint_type} = $args->{endpoint_type};
+        $self->{interface} = $args->{interface}; 
+        $self->{inactivity_timeout} = $args->{inactivity_timeout};
+        $self->{headers} = $args->{headers};
+        $self->{all} = $args->{all};
+        $self->{verbose} = $args->{verbose};
+        
+    }
+
     return $self;
 }
+
 ## This is the 'install' method. Any database tables or other setup that should
 ## be done when the plugin if first installed should be executed in this method.
 ## The installation method should always return true if the installation succeeded
 ## or false if it failed.
 sub install() {
     my ( $self, $args ) = @_;
+
+    $self->create_log_table();
 
     return 1;
 }
@@ -64,7 +88,53 @@ sub upgrade {
 sub uninstall() {
     my ( $self, $args ) = @_;
 
+    my $dbh = C4::Context->dbh;
+
+    my $log_table = $self->{logTable};
+    C4::Context->dbh->do("DROP TABLE $log_table");
+
     return 1;
+}
+
+sub run {
+    my ( $self ) = @_;
+
+    my $broadcast = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast->new({
+        endpoint => $self->{endpoint}, 
+        endpoint_type => $self->{endpoint_type},
+        interface => $self->{interface}, 
+        inactivity_timeout => $self->{inactivity_timeout},
+        headers => $self->{headers},
+        all => $self->{all},
+        verbose => $self->{verbose},
+        log_table => $self->{logTable}
+    });
+
+    my $params = {
+        chunks => $self->{chunks},
+        biblionumber => $self->{biblionumber},
+        limit => $self->{limit},
+        page => $self->{page},
+        timestamp => undef
+    };
+
+    $broadcast->broadcastBiblios($params);
+
+}
+
+sub create_log_table {
+    my ( $self, $args ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $log_table = $self->{logTable};
+    $dbh->do("
+        CREATE TABLE IF NOT EXISTS $log_table (
+        `id` int(12) NOT NULL AUTO_INCREMENT,
+        `biblionumber` int(11) NOT NULL,
+        `updated` timestamp NOT NULL,
+        PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+    ");
 }
 
 1;
