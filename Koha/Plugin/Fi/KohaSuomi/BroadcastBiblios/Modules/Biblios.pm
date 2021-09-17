@@ -62,7 +62,7 @@ sub fetch {
     my ($self) = @_;
     print "Starting broadcasting offset ". $self->getPage() ." as from ". $self->getTimestamp() . "!\n";
     my $terms;
-    $terms = {timestamp => { '>=' => $self->getTimestamp() }} if $self->getTimestamp();
+    $terms = {timestamp => { '>' => $self->getTimestamp() }} if $self->getTimestamp();
     $terms = {biblionumber => {'>=' => $self->getBiblionumber()}} if $self->getBiblionumber();
     my $fetch = {
         page => $self->getPage,

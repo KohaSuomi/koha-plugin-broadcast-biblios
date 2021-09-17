@@ -109,7 +109,7 @@ sub broadcastBiblios {
     $params->{timestamp} = $latest->{updated} || $self->getTimestamp() if !$self->getAll();
     while ($pageCount >= $params->{page}) {
         my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
-        my $biblios = $newbiblios->fetch($params->{page});
+        my $biblios = $newbiblios->fetch();
         my $count = 0;
         my $lastnumber;
         my @pusharray;
