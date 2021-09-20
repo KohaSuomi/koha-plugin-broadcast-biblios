@@ -10,16 +10,17 @@ use C4::Context;
 use utf8;
 
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 
 ## Here we set our plugin version
-our $VERSION = "1.0";
+our $VERSION = "1.1";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
     name            => 'Broadcast biblios',
     author          => 'Johanna Räisä',
     date_authored   => '2021-09-09',
-    date_updated    => '2021-09-09',
+    date_updated    => '2021-09-20',
     minimum_version => '17.05',
     maximum_version => '',
     version         => $VERSION,
@@ -57,6 +58,10 @@ sub new {
         $self->{all} = $args->{all};
         $self->{verbose} = $args->{verbose};
         
+    }
+
+    if ($args->{directory}) {
+        $self->{directory} = $args->{directory};
     }
 
     return $self;
@@ -122,18 +127,36 @@ sub run {
 
 }
 
+sub get_active {
+    my ( $self ) = @_;
+
+    my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new();
+
+    my $params = {
+        chunks => $self->{chunks},
+        biblionumber => $self->{biblionumber},
+        limit => $self->{limit},
+        page => $self->{page},
+        interface => $self->{interface},
+        directory => $self->{directory},
+    };
+
+    $activeRecords->getAllActiveRecords($params);
+
+}
+
 sub create_log_table {
     my ( $self, $args ) = @_;
 
     my $dbh = C4::Context->dbh;
     my $log_table = $self->{logTable};
     $dbh->do("
-        CREATE TABLE IF NOT EXISTS $log_table (
+        CREATE TABLE `$log_table` (
         `id` int(12) NOT NULL AUTO_INCREMENT,
         `biblionumber` int(11) NOT NULL,
-        `updated` timestamp NOT NULL,
+        `updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
         PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
     ");
 }
 

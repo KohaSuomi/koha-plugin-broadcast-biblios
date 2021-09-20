@@ -29,6 +29,7 @@ use Koha::DateUtils qw( dt_from_string );
 use MARC::Record;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 
 =head new
 
@@ -100,6 +101,11 @@ sub broadcastLog {
 
 sub getTimestamp {
     return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
+}
+
+sub activeRecords {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new();
 }
 
 sub broadcastBiblios {
@@ -233,7 +239,7 @@ sub _getActiveEndpointParameters {
 sub _getActiveIdentifierEndpointParameters {
     my ($self, $biblio) = @_;
 
-    my ($identifier, $identifier_field) = $self->_getActiveField($biblio);
+    my ($identifier, $identifier_field) = $self->activeRecords()->getActiveField($biblio);
     return unless $identifier && $identifier_field;
 
     my $restParams = {identifier => $identifier, identifier_field => $identifier_field, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface};
@@ -268,56 +274,6 @@ sub _verboseResponse {
     if ($self->verbose && defined $response && $response eq "Success") {
         print "$biblionumber biblio added succesfully\n";
     }
-}
-
-sub _getActiveField {
-    my ($self, $biblio) = @_;
-    my $record = MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8');
-    my $activefield;
-    my $fieldname;
-
-    if ($record->field('035')) {
-        my @f035 = $record->field( '035' );
-        foreach my $f035 (@f035) {
-            if($f035->subfield('a') =~ /FI-MELINDA/) {
-                $activefield = $f035->subfield('a');
-                $fieldname = '035a';
-            }
-        }
-    }
-
-    if ($record->field('020') && !$activefield) {
-        my @f020 = $record->field( '020' );
-        foreach my $f020 (@f020) {
-            if ($f020->subfield('a')) {
-                $activefield = $f020->subfield('a');
-                $activefield =~ s/-//gi;
-                $fieldname = '020a';
-            }
-        }
-
-    }
-
-    if ($record->field( '024') && !$activefield) {
-        my @f024 = $record->field( '024' );
-        foreach my $f024 (@f024) {
-            if ($f024->subfield('a') && $f024->indicator('1') eq '3') {
-                $activefield = $f024->subfield('a');
-                $fieldname = '024a';
-                last;
-            } elsif ($f024->subfield('a')) {
-                $activefield = $f024->subfield('a');
-                $fieldname = '024a';
-                last;
-            }
-        }
-    }
-    if ($record->field(003) && $record->field( '003')->data =~ /FI-BTJ/ && !$activefield) {
-        $activefield = $record->field( '003')->data.'|'.$record->field( '001')->data;
-        $fieldname = '003|001';
-    }
-
-    return ($activefield, $fieldname);
 }
 
 1;
