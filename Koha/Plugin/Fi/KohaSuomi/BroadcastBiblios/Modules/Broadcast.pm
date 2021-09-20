@@ -142,7 +142,7 @@ sub broadcastBiblios {
                 print "Chunk push failed with: $error";
             }
         }
-        print "last processed biblio $lastnumber\n";
+        print "last processed biblio $lastnumber\n" if $lastnumber;
         print "$count biblios processed!\n";
         if ($count eq $params->{chunks}) {
             $pageCount++;
