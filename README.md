@@ -1,7 +1,6 @@
-
 # Koha-Suomi plugin BroadcastBiblios
 
-This is the plugin description
+This plugin is for broadcasting biblios via REST.
 
 # Downloading
 
@@ -32,4 +31,3 @@ Once set up is complete you will need to alter your UseKohaPlugins system prefer
 # Configuring
 
 Here is the place for configurations
-
