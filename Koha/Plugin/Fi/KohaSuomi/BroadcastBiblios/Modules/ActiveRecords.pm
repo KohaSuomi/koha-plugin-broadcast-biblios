@@ -23,7 +23,9 @@ use Scalar::Util qw( blessed );
 use Try::Tiny;
 use POSIX 'strftime';
 use Koha::DateUtils qw( dt_from_string );
+use File::Basename;
 use MARC::Record;
+use MARC::File::XML;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 
 =head new
@@ -33,7 +35,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 =cut
 
 sub new {
-    my ($class, $params) = _validateNew(@_);
+    my ($class, $params) = @_;
     my $self = {};
     $self->{_params} = $params;
     bless($self, $class);
@@ -54,7 +56,7 @@ sub getAllActiveRecords {
         my $biblios = $newbiblios->fetch();
         my $count = 0;
         foreach my $biblio (@{$biblios}) {
-            my ($identifier, $identifier_field) = getActiveField($biblio);
+            my ($identifier, $identifier_field) = $self->getActiveField($biblio);
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
             if ($identifier && $identifier_field) {
