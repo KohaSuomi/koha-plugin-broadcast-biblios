@@ -27,6 +27,7 @@ use Mojo::UserAgent;
 use Mojo::JSON qw(decode_json encode_json);
 use Koha::DateUtils qw( dt_from_string );
 use MARC::Record;
+use Data::Dumper;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
@@ -259,7 +260,7 @@ sub _restRequestCall {
 
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->post($self->getEndpoint => $self->getHeaders => json => $params ? $params : \@pusharray);
-    die "Connection failed" unless $tx->res->body;
+    die "Connection failed with: ".$tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
     my $response = decode_json($tx->res->body);
     return ($response->{error}, undef) if $response->{error};
     return (undef, $response->{message});
