@@ -259,6 +259,7 @@ sub _restRequestCall {
 
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->post($self->getEndpoint => $self->getHeaders => json => $params ? $params : \@pusharray);
+    die "Connection failed" unless $tx->res->body;
     my $response = decode_json($tx->res->body);
     return ($response->{error}, undef) if $response->{error};
     return (undef, $response->{message});
