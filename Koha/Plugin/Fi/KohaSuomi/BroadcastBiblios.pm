@@ -13,7 +13,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 
 ## Here we set our plugin version
-our $VERSION = "1.1.2";
+our $VERSION = "1.2.0";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
@@ -57,6 +57,7 @@ sub new {
         $self->{headers} = $args->{headers};
         $self->{all} = $args->{all};
         $self->{verbose} = $args->{verbose};
+        $self->{start_time} = $args->{start_time};
         
     }
 
@@ -112,7 +113,8 @@ sub run {
         headers => $self->{headers},
         all => $self->{all},
         verbose => $self->{verbose},
-        log_table => $self->{logTable}
+        log_table => $self->{logTable},
+        start_time => $self->{start_time},
     });
 
     my $params = {

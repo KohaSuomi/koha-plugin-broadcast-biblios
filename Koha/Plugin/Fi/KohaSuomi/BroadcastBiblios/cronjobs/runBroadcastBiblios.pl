@@ -61,6 +61,7 @@ my $field_check;
 my $lastrecord = 0;
 my $identifier_fetch = 0;
 my $inactivity_timeout = 30;
+my $start_time;
 
 GetOptions(
     'h|help'                     => \$help,
@@ -80,6 +81,7 @@ GetOptions(
     'lastrecord'                 => \$lastrecord,
     'identifier'                 => \$identifier_fetch,
     'inactivity_timeout:i'       => \$inactivity_timeout,
+    'start_time:i'               => \$start_time,
 
 );
 
@@ -102,6 +104,7 @@ my $usage = <<USAGE;
     --lastrecord            Automatically check which is lastly activated record.
     --identifier            Push to active records with identifier.
     --inactivity_timeout    Can be used to increase response waiting time, default is 30.
+    --start_time            Define hour when to start broadcast.
 
 USAGE
 
@@ -162,6 +165,7 @@ my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     headers => $headers,
     all => $all,
     verbose => $verbose,
+    start_time => $start_time,
 });
 
 $plugin->run();

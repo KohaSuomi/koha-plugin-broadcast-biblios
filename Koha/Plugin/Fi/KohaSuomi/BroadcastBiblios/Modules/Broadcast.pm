@@ -95,6 +95,24 @@ sub getLogTable {
     return shift->{_params}->{log_table};
 }
 
+sub getStartTime {
+    return shift->{_params}->{start_time};
+}
+
+sub getUpdateTime {
+    my ($self, $updated) = @_; 
+
+    return $self->getTimestamp() unless $updated;
+    return $updated unless $self->getStartTime();
+
+    my $hour = (localtime(time))[2];
+    if ($self->getStartTime() >= $hour) {
+        return $self->getTimestamp();
+    } else {
+        return $updated;
+    }
+}
+
 sub broadcastLog {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog->new({table => $self->getLogTable});
@@ -113,7 +131,8 @@ sub broadcastBiblios {
     my ($self, $params) = @_;
     my $pageCount = 1;
     my $latest = $self->broadcastLog()->getBroadcastLogLatest();
-    $params->{timestamp} = $latest->{updated} || $self->getTimestamp() if !$self->getAll();
+    my $timestamp = $self->getUpdateTime($latest->{updated});
+    $params->{timestamp} = $timestamp if !$self->getAll();
     while ($pageCount >= $params->{page}) {
         my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
         my $biblios = $newbiblios->fetch();
@@ -260,7 +279,7 @@ sub _restRequestCall {
 
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->post($self->getEndpoint => $self->getHeaders => json => $params ? $params : \@pusharray);
-    die "Connection failed with: ".$tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
+    die "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
     my $response = decode_json($tx->res->body);
     return ($response->{error}, undef) if $response->{error};
     return (undef, $response->{message});
