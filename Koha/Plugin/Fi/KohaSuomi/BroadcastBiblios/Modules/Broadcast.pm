@@ -29,6 +29,7 @@ use Koha::DateUtils qw( dt_from_string );
 use MARC::Record;
 use Data::Dumper;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 
@@ -127,9 +128,14 @@ sub activeRecords {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new();
 }
 
+sub componentParts {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new();
+}
+
 sub blockByEncodingLevel {
     my ($self, $biblio) = @_;
-    
+
     my $blockedLevel = shift->{_params}->{blocked_encoding_level};
     if ($blockedLevel) {
         my @levels = split('|', $blockedLevel);
@@ -190,6 +196,8 @@ sub broadcastBiblios {
                 $self->_verboseResponse($error, $response, $biblio->{biblionumber});
             }
             $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
+            my @componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
+            print Data::Dumper::Dumper \@componentsArr;
             $count++;
             $lastnumber = $biblio->{biblionumber};
         }
