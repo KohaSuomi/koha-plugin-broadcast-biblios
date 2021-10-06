@@ -13,7 +13,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 
 ## Here we set our plugin version
-our $VERSION = "1.2.1";
+our $VERSION = "1.2.2";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
