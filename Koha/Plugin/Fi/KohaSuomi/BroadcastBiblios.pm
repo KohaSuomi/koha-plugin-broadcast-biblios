@@ -13,14 +13,14 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 
 ## Here we set our plugin version
-our $VERSION = "1.2.0";
+our $VERSION = "1.2.1";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
     name            => 'Broadcast biblios',
     author          => 'Johanna Räisä',
     date_authored   => '2021-09-09',
-    date_updated    => '2021-09-21',
+    date_updated    => '2021-10-06',
     minimum_version => '17.05',
     maximum_version => '',
     version         => $VERSION,
@@ -58,6 +58,7 @@ sub new {
         $self->{all} = $args->{all};
         $self->{verbose} = $args->{verbose};
         $self->{start_time} = $args->{start_time};
+        $self->{blocked_encoding_level} = $args->{blocked_encoding_level};
         
     }
 
@@ -115,6 +116,7 @@ sub run {
         verbose => $self->{verbose},
         log_table => $self->{logTable},
         start_time => $self->{start_time},
+        blocked_encoding_level => $self->{blocked_encoding_level},
     });
 
     my $params = {

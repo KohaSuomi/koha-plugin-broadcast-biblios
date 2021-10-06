@@ -62,6 +62,7 @@ my $lastrecord = 0;
 my $identifier_fetch = 0;
 my $inactivity_timeout = 30;
 my $start_time;
+my $encoding_level;
 
 GetOptions(
     'h|help'                     => \$help,
@@ -82,6 +83,7 @@ GetOptions(
     'identifier'                 => \$identifier_fetch,
     'inactivity_timeout:i'       => \$inactivity_timeout,
     'start_time:i'               => \$start_time,
+    'blocked_encoding_level:i'   => \$encoding_level,
 
 );
 
@@ -105,6 +107,7 @@ my $usage = <<USAGE;
     --identifier            Push to active records with identifier.
     --inactivity_timeout    Can be used to increase response waiting time, default is 30.
     --start_time            Define hour when to start broadcast.
+    --blocked_encoding_level Block encoding level from broadcast.
 
 USAGE
 
@@ -166,34 +169,7 @@ my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     all => $all,
     verbose => $verbose,
     start_time => $start_time,
+    blocked_encoding_level => $encoding_level,
 });
 
 $plugin->run();
-
-# my $broadcast = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast->new({
-#     endpoint => $endpoint, 
-#     endpoint_type => $endpoint_type,
-#     interface => $interface, 
-#     inactivity_timeout => $inactivity_timeout,
-#     headers => $headers,
-#     all => $all,
-#     verbose => $verbose,
-#     log_table => $config->{logTable}
-# });
-
-# if ($lastrecord && $all && $active) {
-#     my $lastrecord = $broadcast->getLastRecord();
-#     unless ($biblionumber) {
-#         $biblionumber = $lastrecord;
-#     }
-# }
-
-# my $params = {
-#     chunks => $chunks,
-#     biblionumber => $biblionumber,
-#     limit => $limit,
-#     page => 1
-#     timestamp => undef
-# };
-
-# $broadcast->broadcastBiblios($params);

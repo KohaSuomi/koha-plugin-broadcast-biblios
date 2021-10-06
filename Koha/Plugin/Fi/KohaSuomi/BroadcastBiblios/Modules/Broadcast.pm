@@ -127,6 +127,17 @@ sub activeRecords {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new();
 }
 
+sub blockByEncodingLevel {
+    my ($self, $biblio) = @_;
+    my $blockedLevel = shift->{_params}->{blocked_encoding_level};
+    my $encodingLevel = $self->activeRecords()->checkEncodingLevel($biblio);
+    if ($blockedLevel eq $encodingLevel) {
+        return 1;
+    }
+
+    return 0;
+}
+
 sub broadcastBiblios {
     my ($self, $params) = @_;
     my $pageCount = 1;
@@ -141,6 +152,7 @@ sub broadcastBiblios {
         my @pusharray;
         my ($error, $response);
         foreach my $biblio (@{$biblios}) {
+            next if $self->blockByEncodingLevel($biblio);
             my $requestparams = $self->getEndpointParameters($biblio);
             if ($self->getEndpointType eq 'identifier_activation') { 
                 if ($requestparams) {

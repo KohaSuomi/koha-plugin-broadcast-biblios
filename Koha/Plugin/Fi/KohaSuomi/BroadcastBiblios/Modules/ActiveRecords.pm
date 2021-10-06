@@ -128,4 +128,13 @@ sub getActiveField {
     return ($activefield, $fieldname);
 }
 
+sub checkEncodingLevel {
+    my ($self, $biblio) = @_;
+
+    my $record = MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8');
+    my $encoding_level = substr( $record->leader(), 17 , 1 );
+    
+    return $encoding_level;
+}
+
 1;
