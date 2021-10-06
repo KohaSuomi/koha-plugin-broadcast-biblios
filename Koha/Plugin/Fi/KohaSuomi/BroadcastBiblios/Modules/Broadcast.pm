@@ -129,14 +129,24 @@ sub activeRecords {
 
 sub blockByEncodingLevel {
     my ($self, $biblio) = @_;
+    
     my $blockedLevel = shift->{_params}->{blocked_encoding_level};
+    my @levels = split('|', $blockedLevel);
     my $encodingLevel = $self->activeRecords()->checkEncodingLevel($biblio);
+
+    foreach my $level (@levels) {
+        if ($level eq $encodingLevel) {
+            return 1;
+        }
+    }
+
     if ($blockedLevel eq $encodingLevel) {
         return 1;
     }
 
     return 0;
 }
+
 
 sub broadcastBiblios {
     my ($self, $params) = @_;

@@ -83,7 +83,7 @@ GetOptions(
     'identifier'                 => \$identifier_fetch,
     'inactivity_timeout:i'       => \$inactivity_timeout,
     'start_time:i'               => \$start_time,
-    'blocked_encoding_level:i'   => \$encoding_level,
+    'blocked_encoding_level:s'   => \$encoding_level,
 
 );
 
@@ -107,7 +107,7 @@ my $usage = <<USAGE;
     --identifier            Push to active records with identifier.
     --inactivity_timeout    Can be used to increase response waiting time, default is 30.
     --start_time            Define hour when to start broadcast.
-    --blocked_encoding_level Block encoding level from broadcast.
+    --blocked_encoding_level Block encoding level from broadcast. Add multiple values with pipe eg. "5|7|8"
 
 USAGE
 
