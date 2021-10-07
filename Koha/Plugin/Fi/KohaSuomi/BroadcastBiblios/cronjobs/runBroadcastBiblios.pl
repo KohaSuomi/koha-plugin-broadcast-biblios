@@ -63,6 +63,7 @@ my $identifier_fetch = 0;
 my $inactivity_timeout = 30;
 my $start_time;
 my $encoding_level;
+my $block_component_parts = 0;
 
 GetOptions(
     'h|help'                     => \$help,
@@ -84,30 +85,32 @@ GetOptions(
     'inactivity_timeout:i'       => \$inactivity_timeout,
     'start_time:i'               => \$start_time,
     'blocked_encoding_level:s'   => \$encoding_level,
+    'block_component_parts'      => \$block_component_parts,
 
 );
 
 my $usage = <<USAGE;
     Broadcast biblios to REST endpoint
 
-    -h, --help              This message.
-    -v, --verbose           Verbose.
-    -c, --chunks            Process biblios in chunks, default is 200.
-    -a, --active            Send active biblios.
-    --all                   Send all biblios, default sends biblios from today.
-    -b, --biblionumber      Start sending from defined biblionumber.
-    -l, --limit             Limiting the results of biblios.
-    -i, --interface         Interface name: with active add your system interface and with staged add remote.
-    -s, --staged            Export staged records to interface.
-    --batchdate             Import batch date, used with 'staged' parameter. Default is today.
-    -t, --type              Stage type, used with 'staged' parameter. Add or update, default is add.
-    -f, --field             Find target id from marcxml, used with 'staged' parameter and update type.
-    --check                 Check that field contains some spesific identifier.
-    --lastrecord            Automatically check which is lastly activated record.
-    --identifier            Push to active records with identifier.
-    --inactivity_timeout    Can be used to increase response waiting time, default is 30.
-    --start_time            Define hour when to start broadcast.
-    --blocked_encoding_level Block encoding level from broadcast. Add multiple values with pipe eg. "5|7|8"
+    -h, --help                  This message.
+    -v, --verbose               Verbose.
+    -c, --chunks                Process biblios in chunks, default is 200.
+    -a, --active                Send active biblios.
+    --all                       Send all biblios, default sends biblios from today.
+    -b, --biblionumber          Start sending from defined biblionumber.
+    -l, --limit                 Limiting the results of biblios.
+    -i, --interface             Interface name: with active add your system interface and with staged add remote.
+    -s, --staged                Export staged records to interface.
+    --batchdate                 Import batch date, used with 'staged' parameter. Default is today.
+    -t, --type                  Stage type, used with 'staged' parameter. Add or update, default is add.
+    -f, --field                 Find target id from marcxml, used with 'staged' parameter and update type.
+    --check                     Check that field contains some spesific identifier.
+    --lastrecord                Automatically check which is lastly activated record.
+    --identifier                Push to active records with identifier.
+    --inactivity_timeout        Can be used to increase response waiting time, default is 30.
+    --start_time                Define hour when to start broadcast.
+    --blocked_encoding_level    Block encoding level from broadcast. Add multiple values with pipe eg. "5|7|8"
+    --block_component_parts     Block component parts from broadcast.
 
 USAGE
 
@@ -170,6 +173,7 @@ my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     verbose => $verbose,
     start_time => $start_time,
     blocked_encoding_level => $encoding_level,
+    block_component_parts => $block_component_parts,
 });
 
 $plugin->run();

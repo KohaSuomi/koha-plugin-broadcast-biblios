@@ -149,6 +149,18 @@ sub blockByEncodingLevel {
     return 0;
 }
 
+sub blockComponentParts {
+    my ($self, $biblio) = @_;
+    
+    my $block = shift->{_params}->{block_component_parts};
+
+    if ($block) {
+        return $self->activeRecords()->checkComponentPart($biblio);
+    }
+
+    return 0;
+}
+
 
 sub broadcastBiblios {
     my ($self, $params) = @_;
@@ -164,6 +176,7 @@ sub broadcastBiblios {
         my @pusharray;
         my ($error, $response);
         foreach my $biblio (@{$biblios}) {
+            next if $self->blockComponentParts($biblio);
             next if $self->blockByEncodingLevel($biblio);
             my $requestparams = $self->getEndpointParameters($biblio);
             if ($self->getEndpointType eq 'identifier_activation') { 

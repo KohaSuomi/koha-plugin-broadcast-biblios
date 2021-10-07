@@ -137,4 +137,13 @@ sub checkEncodingLevel {
     return $encoding_level;
 }
 
+sub checkComponentPart {
+    my ($self, $biblio) = @_;
+
+    my $record = MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8');
+    return 1 if $record->subfield('773', "w");
+    return 0;
+}
+
+
 1;
