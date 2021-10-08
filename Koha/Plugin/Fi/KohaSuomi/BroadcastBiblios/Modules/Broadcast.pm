@@ -308,7 +308,8 @@ sub _getActiveIdentifierEndpointParameters {
 
 sub _getBroadcastEndpointParameters {
     my ($self, $biblio) = @_;
-    return {marcxml => $biblio->{metadata}, source_id => $biblio->{biblionumber}, updated => $biblio->{timestamp}};
+    my @fields = $self->activeRecords()->fetchActiveFields($biblio);
+    return {marcxml => $biblio->{metadata}, source_id => $biblio->{biblionumber}, updated => $biblio->{timestamp}, activefields => @fields};
 }
 
 sub _restRequestCall {
