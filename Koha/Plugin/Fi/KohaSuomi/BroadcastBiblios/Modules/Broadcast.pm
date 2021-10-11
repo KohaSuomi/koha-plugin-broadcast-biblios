@@ -32,6 +32,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 
 =head new
 
@@ -184,6 +185,8 @@ sub broadcastBiblios {
         foreach my $biblio (@{$biblios}) {
             next if $self->blockComponentParts($biblio);
             next if $self->blockByEncodingLevel($biblio);
+            my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
+            $biblio->{componentparts_count} = scalar @{$componentsArr} if @{$componentsArr};
             my $requestparams = $self->getEndpointParameters($biblio);
             if ($self->getEndpointType eq 'identifier_activation') { 
                 if ($requestparams) {
@@ -196,8 +199,13 @@ sub broadcastBiblios {
                 $self->_verboseResponse($error, $response, $biblio->{biblionumber});
             }
             $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
-            my @componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
-            print Data::Dumper::Dumper \@componentsArr;
+            if ($self->getEndpointType eq 'broadcast' && @{$componentsArr}) {
+                foreach my $componentpart (@{$componentsArr}) {
+                    ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml});
+                    $self->_verboseResponse($error, $response, $componentpart->{biblionumber});
+                    $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp})
+                }
+            }
             $count++;
             $lastnumber = $biblio->{biblionumber};
         }
@@ -325,6 +333,18 @@ sub _restRequestCall {
 
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->post($self->getEndpoint => $self->getHeaders => json => $params ? $params : \@pusharray);
+    die "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
+    my $response = decode_json($tx->res->body);
+    return ($response->{error}, undef) if $response->{error};
+    return (undef, $response->{message});
+
+}
+
+sub _pushComponentParts {
+    my ($self, $params) = @_;
+
+    my $ua = Mojo::UserAgent->new;
+    my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->post($self->getEndpoint.'/componentparts' => $self->getHeaders => json => $params);
     die "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
     my $response = decode_json($tx->res->body);
     return ($response->{error}, undef) if $response->{error};
