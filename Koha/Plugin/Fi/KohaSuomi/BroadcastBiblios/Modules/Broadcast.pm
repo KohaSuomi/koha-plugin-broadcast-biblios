@@ -173,6 +173,7 @@ sub broadcastBiblios {
             my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
             $biblio->{componentparts_count} = scalar @{$componentsArr} if @{$componentsArr};
             my $requestparams = $self->getEndpointParameters($biblio);
+            my $success;
             if ($self->getEndpointType eq 'identifier_activation') { 
                 if ($requestparams) {
                     push @pusharray, $requestparams;
@@ -181,16 +182,11 @@ sub broadcastBiblios {
                 }
             } else {
                 ($error, $response) = $self->_restRequestCall($requestparams, undef);
-                $self->_verboseResponse($error, $response, $biblio->{biblionumber});
+                $success = $self->_verboseResponse($error, $response, $biblio->{biblionumber});
             }
             $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
-            if ($self->getEndpointType eq 'broadcast' && @{$componentsArr}) {
-                foreach my $componentpart (@{$componentsArr}) {
-                    ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml});
-                    $self->_verboseResponse($error, $response, $componentpart->{biblionumber});
-                    $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp})
-                }
-            }
+            $self->_loopComponentParts($biblio, $componentsArr, $success);
+
             $count++;
             $lastnumber = $biblio->{biblionumber};
         }
@@ -309,7 +305,7 @@ sub _getActiveIdentifierEndpointParameters {
 
 sub _getBroadcastEndpointParameters {
     my ($self, $biblio) = @_;
-    return {marcxml => $biblio->{metadata}, source_id => $biblio->{biblionumber}, updated => $biblio->{timestamp}};
+    return {marcxml => $biblio->{metadata}, source_id => $biblio->{biblionumber}, updated => $biblio->{timestamp}, componentparts_count => $biblio->{componentparts_count}};
 }
 
 sub _restRequestCall {
@@ -336,15 +332,31 @@ sub _pushComponentParts {
 
 }
 
+sub _loopComponentParts {
+    my ($self, $biblio, $componentsArr, $success) = @_;
+
+    if ($self->getEndpointType eq 'broadcast' && @{$componentsArr} && $success) {
+        foreach my $componentpart (@{$componentsArr}) {
+            my ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml}});
+            $self->_verboseResponse($error, $response, $componentpart->{biblionumber});
+            $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp});
+        }
+    }
+}
+
 sub _verboseResponse {
     my ($self, $error, $response, $biblionumber) = @_;
 
     if ($error) {
         print "$biblionumber biblio failed with: $error!\n";
+        return 0;
     }
     if ($self->verbose && defined $response && $response eq "Success") {
         print "$biblionumber biblio added succesfully\n";
+        return 1;
     }
+
+    return 0;
 }
 
 1;
