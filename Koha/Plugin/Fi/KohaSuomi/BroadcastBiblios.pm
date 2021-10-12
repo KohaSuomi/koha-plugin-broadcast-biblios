@@ -13,14 +13,14 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 
 ## Here we set our plugin version
-our $VERSION = "1.2.4";
+our $VERSION = "1.2.5";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
     name            => 'Broadcast biblios',
     author          => 'Johanna Räisä',
     date_authored   => '2021-09-09',
-    date_updated    => '2021-10-08',
+    date_updated    => '2021-10-12',
     minimum_version => '17.05',
     maximum_version => '',
     version         => $VERSION,
