@@ -336,8 +336,10 @@ sub _loopComponentParts {
     my ($self, $biblio, $componentsArr, $success) = @_;
 
     if ($self->getEndpointType eq 'broadcast' && @{$componentsArr} && $success) {
+        my $order = 0;
         foreach my $componentpart (@{$componentsArr}) {
-            my ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml}});
+            $order++;
+            my ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml}, part_order => $order});
             $self->_verboseResponse($error, $response, $componentpart->{biblionumber});
             $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp});
         }
