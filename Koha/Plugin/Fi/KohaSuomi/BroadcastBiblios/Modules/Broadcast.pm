@@ -183,6 +183,9 @@ sub broadcastBiblios {
         my @pusharray;
         my ($error, $response);
         foreach my $biblio (@{$biblios}) {
+            if ($self->verbose > 1) {
+                print "Processing: $biblio->{biblionumber}\n";
+            }
             next if $self->blockComponentParts($biblio);
             next if $self->blockByEncodingLevel($biblio);
             my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
