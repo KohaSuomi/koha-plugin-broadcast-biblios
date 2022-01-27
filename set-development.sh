@@ -22,7 +22,7 @@ DELETE FROM plugin_data where plugin_class = 'Koha::Plugin::Fi::KohaSuomi::Broad
 DELETE FROM plugin_methods where plugin_class = 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios';
 INSERT INTO plugin_data (plugin_class,plugin_key,plugin_value) VALUES ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios','__INSTALLED__','1');
 INSERT INTO plugin_data (plugin_class,plugin_key,plugin_value) VALUES ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios','__INSTALLED_VERSION__','${VERSION}');
-INSERT INTO plugin_data (plugin_class,plugin_key,plugin_value) VALUES ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios','__ENABLED','1');
+INSERT INTO plugin_data (plugin_class,plugin_key,plugin_value) VALUES ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios','__ENABLED__','1');
 
 INSERT INTO plugin_methods (plugin_class, plugin_method) values 
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'abs_path'),
@@ -34,6 +34,7 @@ INSERT INTO plugin_methods (plugin_class, plugin_method) values
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'catdir'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'catfile'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'curdir'),
+     ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'configure'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'decode_json'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'disable'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'enable'),
@@ -51,6 +52,8 @@ INSERT INTO plugin_methods (plugin_class, plugin_method) values
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'get_template'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'go_home'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'import'),
+     ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'install'),
+     ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'intranet_catalog_biblio_enhancements_toolbar_button'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'is_enabled'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'max'),
      ('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios', 'mbf_dir'),
