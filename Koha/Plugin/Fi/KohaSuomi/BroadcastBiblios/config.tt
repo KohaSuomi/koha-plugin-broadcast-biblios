@@ -1,0 +1,38 @@
+[% USE KohaDates %]
+[% INCLUDE 'doc-head-open.inc' %]
+ <title>Koha-Suomi - Siirtotyökalu - Asetukset</title>
+[% INCLUDE 'doc-head-close.inc' %]
+</head>
+<body>
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'cat-search.inc' %]
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Etusivu</a> &rsaquo; <a href="/cgi-bin/koha/plugins/plugins-home.pl">Plugit</a> &rsaquo; Siirtoraportti &rsaquo; Asetukset</div>
+
+<div id="doc3">
+
+    <h3>Koha-Suomi siirtotyökalun asetukset</h3>
+
+    <!-- Notice our form here has no 'action', this is good, it means that our forms will always get passed back to 'plugins/run.pl'. You could hard code it instead if you prefer -->
+    <form method="get">
+        <!-- Always pass these two parameters so the plugin system knows what to execute! -->
+        <input type="hidden" name="class" value="[% CLASS %]"/>
+        <input type="hidden" name="method" value="[% METHOD %]"/>
+
+        <p>
+            Vientirajapinnat<br/>
+            <textarea type="textarea" name="exportapis" rows="6" cols="70">[% exportapis %]</textarea>
+        </p>
+
+        <p>
+            Tuontirajapinta<br/>
+            <textarea type="textarea" name="importapi" rows="6" cols="70">[% importapi %]</textarea>
+        </p>
+
+
+        <input type="hidden" name="save" value="1" />
+
+        <input type="submit" value="Tallenna" />
+    </form>
+
+[% INCLUDE 'intranet-bottom.inc' %]

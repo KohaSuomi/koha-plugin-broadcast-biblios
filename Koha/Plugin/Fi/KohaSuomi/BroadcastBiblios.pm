@@ -9,6 +9,9 @@ use base qw(Koha::Plugins::Base);
 use C4::Context;
 use utf8;
 
+use YAML::XS;
+use Encode;
+
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 
@@ -68,6 +71,71 @@ sub new {
     }
 
     return $self;
+}
+
+sub configure {
+    my ( $self, $args ) = @_;
+    my $cgi = $self->{'cgi'};
+
+    unless ( $cgi->param('save') ) {
+        my $template = $self->get_template({ file => 'config.tt' });
+
+        ## Grab the values we already have for our settings, if any exist
+        $template->param(
+            exportapis => $self->retrieve_data('exportapis'),
+            importapi => $self->retrieve_data('importapi')
+        );
+
+        print $cgi->header(-charset    => 'utf-8');
+        print $template->output();
+    }
+    else {
+        $self->store_data(
+            {
+                exportapis          => $cgi->param('exportapis'),
+                importapi           => $cgi->param('importapi')
+            }
+        );
+        $self->go_home();
+    }
+}
+
+## This method allows you to add new html elements to the catalogue toolbar.
+## You'll want to return a string of raw html here, most likely a button or other
+## toolbar element of some form. See bug 20968 for more details.
+sub intranet_catalog_biblio_enhancements_toolbar_button {
+    my ( $self ) = @_;
+
+    my $exportapis = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('exportapis')));
+    my $importapi = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('importapi')));
+
+    my $pluginpath = $self->get_plugin_http_path();
+    my $dropdown = '<div id="pushApp" class="btn-group">
+        <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> Vie/Tuo <span class="caret"></span></button>
+        <ul id="pushInterfaces" class="dropdown-menu">';
+    foreach my $api (@{$exportapis}) {
+        $dropdown .= '<li><a href="#" @click="openModal($event)"
+        data-host="'.$api->{host}.'" 
+        data-basepath="'.$api->{basePath}.'" 
+        data-searchpath="'.$api->{searchPath}.'"
+        data-reportpath="'.$api->{reportPath}.'"
+        data-token="'.$api->{apiToken}.'"
+        data-type="'.$api->{type}.'"
+        data-toggle="modal" data-target="#pushRecordOpModal">'.$api->{interface}.'</a></li>';
+    }
+    $dropdown .= '<li><a href="#" id="importInterface" class="import hidden"
+        data-host="'.$importapi->{host}.'" 
+        data-basepath="'.$importapi->{basePath}.'" 
+        data-searchpath="'.$importapi->{searchPath}.'"
+        data-reportpath="'.$importapi->{reportPath}.'"
+        data-token="'.$importapi->{apiToken}.'"
+        data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
+    $dropdown .= '</ul>';
+    $dropdown .= '<recordmodal :record="record" :biblionumber="biblionumber" :exportapi="exportapi" :importapi="importapi"></recordmodal>';
+    $dropdown .= '<script src="https://unpkg.com/vue@2.6.14/dist/vue.min.js"></script>';
+    $dropdown .= '<script src="https://unpkg.com/axios/dist/axios.min.js"></script>';
+    $dropdown .= '<script src="'.$pluginpath.'/js/push.js"></script></div>'; 
+    return $dropdown;
 }
 
 ## This is the 'install' method. Any database tables or other setup that should
