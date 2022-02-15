@@ -1,0 +1,51 @@
+{
+  "/biblios/{biblio_id}/componentparts": {
+    "get": {
+      "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#getcomponentparts",
+      "operationId": "GetComponentParts",
+      "tags": [
+        "biblios"
+      ],
+      "parameters": [
+        {
+          "name": "biblio_id",
+          "in": "path",
+          "description": "Internal biblio identifier",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "A biblio record with componentparts",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "biblio": {
+                "description": "Biblio record"
+              },
+              "componentparts": {
+                "description": "Component parts array"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Biblio not found",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
