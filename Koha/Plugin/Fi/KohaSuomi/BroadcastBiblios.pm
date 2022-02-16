@@ -109,33 +109,36 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
 
     my $exportapis = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('exportapis')));
     my $importapi = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('importapi')));
-
-    my $pluginpath = $self->get_plugin_http_path();
-    my $dropdown = '<div id="pushApp" class="btn-group">
-        <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> Vie/Tuo <span class="caret"></span></button>
-        <ul id="pushInterfaces" class="dropdown-menu">';
-    foreach my $api (@{$exportapis}) {
-        $dropdown .= '<li><a href="#" @click="openModal($event)"
-        data-host="'.$api->{host}.'" 
-        data-basepath="'.$api->{basePath}.'" 
-        data-searchpath="'.$api->{searchPath}.'"
-        data-reportpath="'.$api->{reportPath}.'"
-        data-token="'.Digest::SHA::hmac_sha256_hex($api->{apiToken}).'"
-        data-type="'.$api->{type}.'"
-        data-toggle="modal" data-target="#pushRecordOpModal">'.$api->{interface}.'</a></li>';
+    my $dropdown;
+    if ($exportapis && $importapi) {
+        my $pluginpath = $self->get_plugin_http_path();
+        $dropdown = '<div id="pushApp" class="btn-group">
+            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> Vie/Tuo <span class="caret"></span></button>
+            <ul id="pushInterfaces" class="dropdown-menu">';
+        foreach my $api (@{$exportapis}) {
+            $dropdown .= '<li><a href="#" @click="openModal($event)"
+            data-host="'.$api->{host}.'" 
+            data-basepath="'.$api->{basePath}.'" 
+            data-searchpath="'.$api->{searchPath}.'"
+            data-reportpath="'.$api->{reportPath}.'"
+            data-token="'.Digest::SHA::hmac_sha256_hex($api->{apiToken}).'"
+            data-type="'.$api->{type}.'"
+            data-toggle="modal" data-target="#pushRecordOpModal">'.$api->{interface}.'</a></li>';
+        }
+        $dropdown .= '<li><a href="#" id="importInterface" class="import hidden"
+            data-host="'.$importapi->{host}.'" 
+            data-basepath="'.$importapi->{basePath}.'" 
+            data-searchpath="'.$importapi->{searchPath}.'"
+            data-reportpath="'.$importapi->{reportPath}.'"
+            data-token="'.Digest::SHA::hmac_sha256_hex($importapi->{apiToken}).'"
+            data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
+        $dropdown .= '</ul>';
+        $dropdown .= '<recordmodal :remoterecord="remoterecord" :componentparts="componentparts" :errors="errors" :biblionumber="biblionumber" :exportapi="exportapi" :importapi="importapi"></recordmodal>';
+        $dropdown .= '<script src="https://unpkg.com/vue@2.6.14/dist/vue.min.js"></script>';
+        $dropdown .= '<script src="https://unpkg.com/axios/dist/axios.min.js"></script>';
+        $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment-with-locales.min.js"></script>';
+        $dropdown .= '<script src="'.$pluginpath.'/js/push.js"></script></div>';
     }
-    $dropdown .= '<li><a href="#" id="importInterface" class="import hidden"
-        data-host="'.$importapi->{host}.'" 
-        data-basepath="'.$importapi->{basePath}.'" 
-        data-searchpath="'.$importapi->{searchPath}.'"
-        data-reportpath="'.$importapi->{reportPath}.'"
-        data-token="'.Digest::SHA::hmac_sha256_hex($importapi->{apiToken}).'"
-        data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
-    $dropdown .= '</ul>';
-    $dropdown .= '<recordmodal :source="source" :target="target" :errors="errors" :biblionumber="biblionumber" :exportapi="exportapi" :importapi="importapi"></recordmodal>';
-    $dropdown .= '<script src="https://unpkg.com/vue@2.6.14/dist/vue.min.js"></script>';
-    $dropdown .= '<script src="https://unpkg.com/axios/dist/axios.min.js"></script>';
-    $dropdown .= '<script src="'.$pluginpath.'/js/push.js"></script></div>'; 
     return $dropdown;
 }
 
@@ -178,7 +181,7 @@ sub api_routes {
 
     my $spec_str = $self->mbf_read('openapi.json');
     my $spec     = decode_json($spec_str);
-    
+
     return $spec;
 }
 

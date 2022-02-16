@@ -1,15 +1,15 @@
 const recordModal = Vue.component('recordmodal', {
   template:
     '<div id="pushRecordOpModal" class="modal fade" role="dialog">\
-        <div class="modal-dialog" :class="{\'modal-lg\': target}">\
+        <div class="modal-dialog" :class="{\'modal-lg\': remoterecord.targetrecord}">\
             <div class="modal-content">\
                 <div class="modal-header">\
                     <ul class="nav nav-pills">\
                         <li class="nav-item">\
-                            <a id="exporter" class="nav-link" style="background-color:#007bff; color:#fff;" href="#">Siirto<i class="fa fa-refresh" style="margin-left:7px;"></i></a>\
+                            <a id="exporter" @click="getRecords()" class="nav-link" style="background-color:#007bff; color:#fff;" href="#">Siirto<i class="fa fa-refresh" style="margin-left:7px;"></i></a>\
                         </li>\
                         <li class="nav-item">\
-                            <a id="report" class="nav-link" href="#">Tapahtumat<i class="hidden fa fa-refresh" style="margin-left:7px;"></i></a>\
+                            <a id="report" class="nav-link" href="#" @click="getReports()">Tapahtumat<i class="hidden fa fa-refresh" style="margin-left:7px;"></i></a>\
                         </li>\
                     </ul>\
                 </div>\
@@ -22,14 +22,31 @@ const recordModal = Vue.component('recordmodal', {
                     <li v-for="error in errors">{{ error }}</li>\
                   </ul>\
                 </div>\
-                <div id="exportRecordWrapper" class="modal-body">\
+                <div v-if="showRecord" id="exportRecordWrapper" class="modal-body">\
                   <div id="exportRecord">\
-                    <div v-if="target" ><span class="col-sm-6"><h3>Paikallinen</h3><hr/></span><span class="col-sm-6"><h3> {{exportapi.interface}} </h3><hr/></span></div>\
-                    <div class="col-sm-6" v-html="source"></div>\
-                    <div v-if="target" class="col-sm-6" v-html="target"></div>\
+                    <div v-if="remoterecord.targetrecord" ><span class="col-sm-6"><h3>Paikallinen</h3><hr/></span><span class="col-sm-6"><h3> {{exportapi.interface}} </h3><hr/></span></div>\
+                    <div class="col-sm-6" v-html="parseRecord(remoterecord.sourcerecord)"></div>\
+                    <div v-if="remoterecord.targetrecord" class="col-sm-6" v-html="parseRecord(remoterecord.targetrecord)"></div>\
                   </div>\
                 </div>\
-                <div id="report-wrapper" class="modal-body hidden">\
+                <div v-else id="exportReportWrapper" class="modal-body">\
+                  <div class="table-responsive">\
+                    <table class="table table-striped table-sm">\
+                      <thead>\
+                        <tr>\
+                          <th>Tapahtuma</th>\
+                          <th>Aika</th>\
+                          <th>Tila</th>\
+                        </tr>\
+                      </thead>\
+                      <tbody><tr v-for="(report, index) in reports">\
+                        <td>{{report.target_id | exportType}}</td>\
+                        <td>{{report.timestamp | moment}}</td>\
+                        <td :inner-html.prop="report.status | translateStatus"></td>\
+                      </tr>\
+                      </tbody>\
+                    </table>\
+                  </div>\
                 </div>\
                 <div class="modal-footer">\
                     <button type="button" @click="exportRecord()" class="btn btn-success" style="float:none;">Vie</button>\
@@ -40,8 +57,8 @@ const recordModal = Vue.component('recordmodal', {
         </div>\
         </div>',
   props: [
-    'source',
-    'target',
+    'remoterecord',
+    'componentparts',
     'errors',
     'biblionumber',
     'exportapi',
@@ -50,11 +67,142 @@ const recordModal = Vue.component('recordmodal', {
   data() {
     return {
       loader: false,
+      showRecord: true,
+      username: '',
+      reports: [],
     };
   },
   methods: {
     exportRecord() {
-      alert('jee');
+      this.username = $('.loggedinusername').html().trim();
+      const body = {
+        username: this.username,
+        source_id: this.biblionumber,
+        marc: this.remoterecord.sourcerecord,
+        interface: this.exportapi.interface,
+        componentparts_count: this.componentparts.length,
+      };
+      console.log(body);
+      const headers = { Authorization: this.exportapi.token };
+      axios
+        .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
+          headers,
+        })
+        .then(() => {
+          this.exportComponentParts();
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    exportComponentParts() {
+      const body = {
+        interface: this.exportapi.interface,
+        check: this.remoterecord.targetrecord ? true : false,
+        username: this.username,
+        target_id: null,
+        parent_id: this.biblionumber,
+        force: 1,
+      };
+      const headers = { Authorization: this.exportapi.token };
+      this.componentparts.forEach((element) => {
+        (body.source_id = element.biblionumber), (body.marc = element.marcxml);
+        axios
+          .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
+            headers,
+          })
+          .then(() => {})
+          .catch((error) => {
+            console.log(error);
+          });
+      });
+    },
+    getRecords() {
+      this.showRecord = true;
+      this.$parent.searchRemoteRecord();
+    },
+    getReports() {
+      this.showRecord = false;
+      const headers = { Authorization: this.exportapi.token };
+      axios
+        .get(
+          this.exportapi.host +
+            '/' +
+            this.exportapi.reportPath +
+            '/' +
+            this.biblionumber,
+          {
+            headers,
+          }
+        )
+        .then((response) => {
+          this.reports = response.data;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    parseRecord(record) {
+      if (record) {
+        var html = '<div>';
+        html +=
+          '<li class="row" style="list-style:none;"> <div class="col-xs-3 mr-2">';
+        html +=
+          '<b>000</b></div><div class="col-xs-9">' + record.leader + '</li>';
+        record.fields.forEach(function (v, i, a) {
+          if ($.isNumeric(v.tag)) {
+            html +=
+              '<li class="row" style="list-style:none;"><div class="col-xs-3 mr-2">';
+          } else {
+            html += '<li class="row hidden"><div class="col-xs-3  mr-2">';
+          }
+          html += '<b>' + v.tag;
+          if (v.ind1) {
+            html += ' ' + v.ind1;
+          }
+          if (v.ind2) {
+            html += ' ' + v.ind2;
+          }
+          html += '</b></div><div class="col-xs-9">';
+          if (v.subfields) {
+            v.subfields.forEach(function (v, i, a) {
+              html += '<b>_' + v.code + '</b>' + v.value + '<br/>';
+            });
+          } else {
+            html += v.value;
+          }
+          html += '</div></li>';
+        });
+        html += '</div>';
+        return html;
+      }
+    },
+  },
+  filters: {
+    exportType: function (value) {
+      if (value == this.biblionumber) {
+        return 'tuonti (päivitys)';
+      } else {
+        if (value != '' && value != null) {
+          return 'vienti (päivitys)';
+        } else {
+          return 'vienti (uusi)';
+        }
+      }
+    },
+    translateStatus: function (value) {
+      if (value == 'pending' || value == 'waiting') {
+        return '<i style="color:orange;">Odottaa</i>';
+      }
+      if (value == 'success') {
+        return '<i style="color:green;">Onnistui</i>';
+      }
+      if (value == 'failed') {
+        return '<i style="color:red;">Epäonnistui</i>';
+      }
+    },
+    moment: function (date) {
+      return moment(date).locale('fi').format('D.M.Y H:mm:ss');
     },
   },
 });
@@ -73,6 +221,8 @@ new Vue({
       record: '',
       source: '',
       target: '',
+      remoterecord: {},
+      componentparts: [],
     };
   },
   created() {
@@ -110,14 +260,17 @@ new Vue({
             '/componentparts',
           {
             headers: {
-              Accept: 'application/marcxml+xml',
+              Accept: 'application/json',
             },
           }
         )
         .then((response) => {
-          this.record = response.data;
+          this.record = response.data.biblio.marcxml;
+          this.componentparts = response.data.componentparts;
         })
-        .catch((error) => {});
+        .catch((error) => {
+          this.errorMessage(error);
+        });
     },
     searchRemoteRecord() {
       this.errors = [];
@@ -131,51 +284,14 @@ new Vue({
           headers,
         })
         .then((response) => {
-          console.log(response);
-          this.source = this.parseRecord(response.data.sourcerecord);
-          if (response.data.targetrecord) {
-            this.target = this.parseRecord(response.data.targetrecord);
-          }
+          this.remoterecord = response.data;
         })
         .catch((error) => {
           this.errorMessage(error);
         });
     },
-    parseRecord(record) {
-      var html = '<div>';
-      html +=
-        '<li class="row" style="list-style:none;"> <div class="col-xs-3 mr-2">';
-      html +=
-        '<b>000</b></div><div class="col-xs-9">' + record.leader + '</li>';
-      record.fields.forEach(function (v, i, a) {
-        if ($.isNumeric(v.tag)) {
-          html +=
-            '<li class="row" style="list-style:none;"><div class="col-xs-3 mr-2">';
-        } else {
-          html += '<li class="row hidden"><div class="col-xs-3  mr-2">';
-        }
-        html += '<b>' + v.tag;
-        if (v.ind1) {
-          html += ' ' + v.ind1;
-        }
-        if (v.ind2) {
-          html += ' ' + v.ind2;
-        }
-        html += '</b></div><div class="col-xs-9">';
-        if (v.subfields) {
-          v.subfields.forEach(function (v, i, a) {
-            html += '<b>_' + v.code + '</b>' + v.value + '<br/>';
-          });
-        } else {
-          html += v.value;
-        }
-        html += '</div></li>';
-      });
-      html += '</div>';
-      return html;
-    },
     errorMessage(error) {
-      const errormessage = error.message;
+      let errormessage = error.message;
       if (error.response) {
         errormessage += ': ' + error.response.data.message;
       }
