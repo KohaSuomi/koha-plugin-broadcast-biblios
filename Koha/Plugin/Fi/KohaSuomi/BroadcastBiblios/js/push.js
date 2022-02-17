@@ -7,6 +7,7 @@ const store = new Vuex.Store({
     componentParts: [],
     biblionumber: 0,
     remoteRecord: {},
+    username: '',
   },
   mutations: {
     setLoader(state, value) {
@@ -14,6 +15,9 @@ const store = new Vuex.Store({
     },
     setErrors(state, value) {
       state.errors.push(value);
+    },
+    clearErrors(state) {
+      state.errors = [];
     },
     setExportApi(state, value) {
       state.exportApi = value;
@@ -29,6 +33,55 @@ const store = new Vuex.Store({
     },
     setRemoteRecord(state, value) {
       state.remoteRecord = value;
+    },
+    setUsername(state, value) {
+      state.username = value;
+    },
+  },
+  actions: {
+    errorMessage({ commit }, error) {
+      commit('setLoader', false);
+      let errormessage = error.message;
+      if (error.response.data.message) {
+        errormessage += ': ' + error.response.data.message;
+      }
+      commit('setErrors', errormessage);
+    },
+  },
+  getters: {
+    createBody: (state) => (type) => {
+      const body = {
+        username: state.username,
+      };
+      if (type == 'export') {
+        body.componentparts_count = state.componentParts.length;
+        body.interface = state.exportApi.interface;
+        body.marc = state.remoteRecord.sourcerecord;
+        body.source_id = state.biblionumber;
+      }
+      if (type == 'import') {
+        body.interface = state.importApi.interface;
+        body.componentparts = 1;
+        body.fetch_interface = state.exportApi.interface;
+        body.target_id = state.biblionumber;
+        body.source_id = state.remoteRecord.source_id
+          ? state.remoteRecord.source_id
+          : state.remoteRecord.target_id;
+        body.marc = state.remoteRecord.targetrecord;
+      }
+      if (type == 'componentparts') {
+        body.check = state.remoteRecord.targetrecord ? true : false;
+        body.force = 1;
+        body.parent_id = state.biblionumber;
+        body.target_id = null;
+        body.interface = state.exportApi.interface;
+      }
+      return body;
+    },
+    headers: (state) => (type) => {
+      const auth =
+        type == 'export' ? state.exportApi.token : state.importApi.token;
+      return { Authorization: auth };
     },
   },
 });
@@ -84,8 +137,8 @@ const recordModal = Vue.component('recordmodal', {
                   </div>\
                 </div>\
                 <div class="modal-footer">\
-                    <button type="button" @click="exportRecord()" class="btn btn-success" style="float:none;">Vie</button>\
-                    <button type="button" class="btn btn-primary" style="float:none;">Tuo</button>\
+                    <button v-if="exportapi.type == \'export\'" type="button" @click="sendRecord(\'export\')" class="btn btn-success" style="float:none;">Vie</button>\
+                    <button v-if="remoterecord.targetrecord" type="button" @click="sendRecord(\'import\')" class="btn btn-primary" style="float:none;">Tuo</button>\
                     <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
                 </div>\
             </div>\
@@ -126,49 +179,57 @@ const recordModal = Vue.component('recordmodal', {
     },
   },
   methods: {
-    exportRecord() {
+    sendRecord(type) {
       this.$store.commit('setLoader', true);
-      this.username = $('.loggedinusername').html().trim();
-      const body = {
-        username: this.username,
-        source_id: this.biblionumber,
-        marc: this.remoterecord.sourcerecord,
-        interface: this.exportapi.interface,
-        componentparts_count: this.componentparts.length,
-      };
-      const headers = { Authorization: this.exportapi.token };
+      this.$store.commit('setUsername', $('.loggedinusername').html().trim());
       axios
-        .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
-          headers,
-        })
+        .post(
+          this.exportapi.host + '/' + this.exportapi.basePath,
+          this.$store.getters.createBody(type),
+          {
+            headers: this.$store.getters.headers(type),
+          }
+        )
         .then(() => {
-          this.exportComponentParts();
+          if (type == 'export') {
+            this.sendComponentParts();
+          } else {
+            this.deleteComponentParts();
+          }
         })
         .catch((error) => {
-          console.log(error);
+          this.$store.dispatch('errorMessage', error);
         });
     },
-    async exportComponentParts() {
-      const body = {
-        interface: this.exportapi.interface,
-        check: this.remoterecord.targetrecord ? true : false,
-        username: this.username,
-        target_id: null,
-        parent_id: this.biblionumber,
-        force: 1,
-      };
-      const headers = { Authorization: this.exportapi.token };
+    async sendComponentParts() {
+      const body = this.$store.getters.createBody('componentparts');
       const promises = [];
       this.componentparts.forEach((element) => {
         (body.source_id = element.biblionumber), (body.marc = element.marcxml);
         promises.push(
           axios
             .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
-              headers,
+              headers: this.$store.getters.headers('export'),
             })
             .then(() => {})
             .catch((error) => {
-              console.log(error);
+              this.$store.dispatch('errorMessage', error);
+            })
+        );
+      });
+      await Promise.all(promises).then(() => {
+        this.$store.commit('setLoader', false);
+      });
+    },
+    async deleteComponentParts() {
+      const promises = [];
+      this.componentparts.forEach((element) => {
+        promises.push(
+          axios
+            .delete('/api/v1/biblios/' + element.biblionumber)
+            .then(() => {})
+            .catch((error) => {
+              this.$store.dispatch('errorMessage', error);
             })
         );
       });
@@ -182,6 +243,7 @@ const recordModal = Vue.component('recordmodal', {
     },
     getReports() {
       this.$store.commit('setLoader', true);
+      this.$store.commit('clearErrors');
       this.showRecord = false;
       const headers = { Authorization: this.exportapi.token };
       axios
@@ -200,7 +262,7 @@ const recordModal = Vue.component('recordmodal', {
           this.$store.commit('setLoader', false);
         })
         .catch((error) => {
-          console.log(error);
+          this.$store.dispatch('errorMessage', error);
         });
     },
     parseRecord(record) {
@@ -336,12 +398,12 @@ new Vue({
           store.commit('setComponentParts', response.data.componentparts);
         })
         .catch((error) => {
-          this.errorMessage(error);
+          store.dispatch('errorMessage', error);
         });
     },
     searchRemoteRecord() {
       store.commit('setLoader', true);
-      this.errors = [];
+      store.commit('clearErrors');
       const body = {
         marcxml: this.record,
         interface: this.exportapi.interface,
@@ -356,15 +418,8 @@ new Vue({
           store.commit('setLoader', false);
         })
         .catch((error) => {
-          this.errorMessage(error);
+          store.dispatch('errorMessage', error);
         });
-    },
-    errorMessage(error) {
-      let errormessage = error.message;
-      if (error.response) {
-        errormessage += ': ' + error.response.data.message;
-      }
-      store.commit('setErrors', errormessage);
     },
   },
 });
