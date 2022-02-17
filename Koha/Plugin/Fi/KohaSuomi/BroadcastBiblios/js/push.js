@@ -1,3 +1,38 @@
+const store = new Vuex.Store({
+  state: {
+    loader: true,
+    errors: [],
+    exportApi: {},
+    importApi: {},
+    componentParts: [],
+    biblionumber: 0,
+    remoteRecord: {},
+  },
+  mutations: {
+    setLoader(state, value) {
+      state.loader = value;
+    },
+    setErrors(state, value) {
+      state.errors.push(value);
+    },
+    setExportApi(state, value) {
+      state.exportApi = value;
+    },
+    setImportApi(state, value) {
+      state.importApi = value;
+    },
+    setComponentParts(state, value) {
+      state.componentParts = value;
+    },
+    setBiblionumber(state, value) {
+      state.biblionumber = value;
+    },
+    setRemoteRecord(state, value) {
+      state.remoteRecord = value;
+    },
+  },
+});
+
 const recordModal = Vue.component('recordmodal', {
   template:
     '<div id="pushRecordOpModal" class="modal fade" role="dialog">\
@@ -6,10 +41,10 @@ const recordModal = Vue.component('recordmodal', {
                 <div class="modal-header">\
                     <ul class="nav nav-pills">\
                         <li class="nav-item">\
-                            <a id="exporter" @click="getRecords()" class="nav-link" style="background-color:#007bff; color:#fff;" href="#">Siirto<i class="fa fa-refresh" style="margin-left:7px;"></i></a>\
+                            <a id="exporter" @click="getRecords()" class="nav-link" :style="showRecord ? activeLinkStyle : null" href="#">Siirto<i :class="{hidden : !showRecord}" class="fa fa-refresh" style="margin-left:7px;"></i></a>\
                         </li>\
                         <li class="nav-item">\
-                            <a id="report" class="nav-link" href="#" @click="getReports()">Tapahtumat<i class="hidden fa fa-refresh" style="margin-left:7px;"></i></a>\
+                            <a id="report" class="nav-link" href="#" @click="getReports()" :style="showRecord ? null : activeLinkStyle">Tapahtumat<i :class="{hidden : showRecord}" class="fa fa-refresh" style="margin-left:7px;"></i></a>\
                         </li>\
                     </ul>\
                 </div>\
@@ -56,24 +91,43 @@ const recordModal = Vue.component('recordmodal', {
             </div>\
         </div>\
         </div>',
-  props: [
-    'remoterecord',
-    'componentparts',
-    'errors',
-    'biblionumber',
-    'exportapi',
-    'importapi',
-  ],
   data() {
     return {
-      loader: false,
       showRecord: true,
       username: '',
       reports: [],
+      activeLinkStyle: {
+        'background-color': '#007bff',
+        color: '#fff',
+      },
     };
+  },
+  computed: {
+    loader() {
+      return this.$store.state.loader;
+    },
+    errors() {
+      return this.$store.state.errors;
+    },
+    exportapi() {
+      return this.$store.state.exportApi;
+    },
+    importapi() {
+      return this.$store.state.importApi;
+    },
+    componentparts() {
+      return this.$store.state.componentParts;
+    },
+    biblionumber() {
+      return this.$store.state.biblionumber;
+    },
+    remoterecord() {
+      return this.$store.state.remoteRecord;
+    },
   },
   methods: {
     exportRecord() {
+      this.$store.commit('setLoader', true);
       this.username = $('.loggedinusername').html().trim();
       const body = {
         username: this.username,
@@ -82,7 +136,6 @@ const recordModal = Vue.component('recordmodal', {
         interface: this.exportapi.interface,
         componentparts_count: this.componentparts.length,
       };
-      console.log(body);
       const headers = { Authorization: this.exportapi.token };
       axios
         .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
@@ -95,7 +148,7 @@ const recordModal = Vue.component('recordmodal', {
           console.log(error);
         });
     },
-    exportComponentParts() {
+    async exportComponentParts() {
       const body = {
         interface: this.exportapi.interface,
         check: this.remoterecord.targetrecord ? true : false,
@@ -105,16 +158,22 @@ const recordModal = Vue.component('recordmodal', {
         force: 1,
       };
       const headers = { Authorization: this.exportapi.token };
+      const promises = [];
       this.componentparts.forEach((element) => {
         (body.source_id = element.biblionumber), (body.marc = element.marcxml);
-        axios
-          .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
-            headers,
-          })
-          .then(() => {})
-          .catch((error) => {
-            console.log(error);
-          });
+        promises.push(
+          axios
+            .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
+              headers,
+            })
+            .then(() => {})
+            .catch((error) => {
+              console.log(error);
+            })
+        );
+      });
+      await Promise.all(promises).then(() => {
+        this.$store.commit('setLoader', false);
       });
     },
     getRecords() {
@@ -122,6 +181,7 @@ const recordModal = Vue.component('recordmodal', {
       this.$parent.searchRemoteRecord();
     },
     getReports() {
+      this.$store.commit('setLoader', true);
       this.showRecord = false;
       const headers = { Authorization: this.exportapi.token };
       axios
@@ -137,6 +197,7 @@ const recordModal = Vue.component('recordmodal', {
         )
         .then((response) => {
           this.reports = response.data;
+          this.$store.commit('setLoader', false);
         })
         .catch((error) => {
           console.log(error);
@@ -209,47 +270,53 @@ const recordModal = Vue.component('recordmodal', {
 
 new Vue({
   el: '#pushApp',
+  store: store,
   components: {
     recordModal,
   },
   data() {
     return {
-      errors: [],
-      exportapi: {},
-      importapi: {},
-      biblionumber: 0,
       record: '',
-      source: '',
-      target: '',
-      remoterecord: {},
-      componentparts: [],
     };
   },
   created() {
     const interface = document.getElementById('importInterface');
-    this.importapi.interface = interface.textContent;
-    this.importapi.host = interface.getAttribute('data-host');
-    this.importapi.basePath = interface.getAttribute('data-basepath');
-    this.importapi.searchPath = interface.getAttribute('data-searchpath');
-    this.importapi.reportPath = interface.getAttribute('data-reportpath');
-    this.importapi.token = interface.getAttribute('data-token');
-    this.importapi.type = interface.getAttribute('data-type');
-
+    const importapi = {
+      interface: interface.textContent,
+      host: interface.getAttribute('data-host'),
+      basePath: interface.getAttribute('data-basepath'),
+      searchPath: interface.getAttribute('data-searchpath'),
+      reportPath: interface.getAttribute('data-reportpath'),
+      token: interface.getAttribute('data-token'),
+      type: interface.getAttribute('data-type'),
+    };
+    store.commit('setImportApi', importapi);
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
-    this.biblionumber = urlParams.get('biblionumber');
+    store.commit('setBiblionumber', urlParams.get('biblionumber'));
     this.getRecord();
+  },
+  computed: {
+    exportapi() {
+      return store.state.exportApi;
+    },
+    biblionumber() {
+      return store.state.biblionumber;
+    },
   },
   methods: {
     openModal(e) {
       e.preventDefault();
-      this.exportapi.interface = e.target.textContent;
-      this.exportapi.host = e.target.getAttribute('data-host');
-      this.exportapi.basePath = e.target.getAttribute('data-basepath');
-      this.exportapi.searchPath = e.target.getAttribute('data-searchpath');
-      this.exportapi.reportPath = e.target.getAttribute('data-reportpath');
-      this.exportapi.token = e.target.getAttribute('data-token');
-      this.exportapi.type = e.target.getAttribute('data-type');
+      const exportapi = {
+        interface: e.target.textContent,
+        host: e.target.getAttribute('data-host'),
+        basePath: e.target.getAttribute('data-basepath'),
+        searchPath: e.target.getAttribute('data-searchpath'),
+        reportPath: e.target.getAttribute('data-reportpath'),
+        token: e.target.getAttribute('data-token'),
+        type: e.target.getAttribute('data-type'),
+      };
+      store.commit('setExportApi', exportapi);
       this.searchRemoteRecord();
     },
     getRecord() {
@@ -266,13 +333,14 @@ new Vue({
         )
         .then((response) => {
           this.record = response.data.biblio.marcxml;
-          this.componentparts = response.data.componentparts;
+          store.commit('setComponentParts', response.data.componentparts);
         })
         .catch((error) => {
           this.errorMessage(error);
         });
     },
     searchRemoteRecord() {
+      store.commit('setLoader', true);
       this.errors = [];
       const body = {
         marcxml: this.record,
@@ -284,7 +352,8 @@ new Vue({
           headers,
         })
         .then((response) => {
-          this.remoterecord = response.data;
+          store.commit('setRemoteRecord', response.data);
+          store.commit('setLoader', false);
         })
         .catch((error) => {
           this.errorMessage(error);
@@ -295,7 +364,7 @@ new Vue({
       if (error.response) {
         errormessage += ': ' + error.response.data.message;
       }
-      this.errors.push(errormessage);
+      store.commit('setErrors', errormessage);
     },
   },
 });
