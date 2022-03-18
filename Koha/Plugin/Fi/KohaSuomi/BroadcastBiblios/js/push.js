@@ -222,7 +222,7 @@ const recordModal = Vue.component('recordmodal', {
       }
       await Promise.all(promises).then(() => {
         this.$store.commit('setLoader', false);
-        this.showRecord = false;
+        this.getReports();
       });
     },
     async deleteComponentParts() {
@@ -241,7 +241,7 @@ const recordModal = Vue.component('recordmodal', {
       }
       await Promise.all(promises).then(() => {
         this.$store.commit('setLoader', false);
-        this.showRecord = false;
+        this.getReports();
       });
     },
     getRecords() {
