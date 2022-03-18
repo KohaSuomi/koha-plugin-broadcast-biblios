@@ -45,7 +45,7 @@ sub new {
     ## and returns our actual 
     my $self = $class->SUPER::new($args);
 
-    $self->{logTable}  = $self->get_qualified_table_name('log');
+    $self->{logTable} = $self->get_qualified_table_name('log');
 
     if ( $args->{page} && $args->{chunks}) {
 
@@ -151,8 +151,6 @@ sub install() {
     my ( $self, $args ) = @_;
 
     $self->create_log_table();
-
-    return 1;
 }
 
 ## This is the 'upgrade' method. It will be triggered when a newer version of a
@@ -169,10 +167,10 @@ sub upgrade {
 sub uninstall() {
     my ( $self, $args ) = @_;
 
-    my $dbh = C4::Context->dbh;
+    # my $dbh = C4::Context->dbh;
 
-    my $log_table = $self->{logTable};
-    C4::Context->dbh->do("DROP TABLE $log_table");
+    # my $log_table = $self->{logTable};
+    # C4::Context->dbh->do("DROP TABLE $log_table");
 
     return 1;
 }
@@ -241,17 +239,16 @@ sub get_active {
 }
 
 sub create_log_table {
-    my ( $self, $args ) = @_;
+    my ( $self ) = @_;
 
     my $dbh = C4::Context->dbh;
-    my $log_table = $self->{logTable};
-    $dbh->do("
-        CREATE TABLE `$log_table` (
-        `id` int(12) NOT NULL AUTO_INCREMENT,
+    my $log_table = $self->get_qualified_table_name('log');
+    $dbh->do("CREATE TABLE IF NOT EXISTS `$log_table` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
         `biblionumber` int(11) NOT NULL,
         `updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
         PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }
 
