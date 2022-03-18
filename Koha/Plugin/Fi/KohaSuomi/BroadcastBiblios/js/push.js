@@ -204,7 +204,7 @@ const recordModal = Vue.component('recordmodal', {
     async sendComponentParts() {
       const body = this.$store.getters.createBody('componentparts');
       const promises = [];
-      if (this.componentparts.length) {
+      if (this.componentparts) {
         this.componentparts.forEach((element) => {
           (body.source_id = element.biblionumber),
             (body.marc = element.marcxml);
@@ -226,7 +226,7 @@ const recordModal = Vue.component('recordmodal', {
     },
     async deleteComponentParts() {
       const promises = [];
-      if (this.componentparts.length) {
+      if (this.componentparts) {
         this.componentparts.forEach((element) => {
           promises.push(
             axios
