@@ -204,42 +204,43 @@ const recordModal = Vue.component('recordmodal', {
     async sendComponentParts() {
       const body = this.$store.getters.createBody('componentparts');
       const promises = [];
-      this.componentparts.forEach((element) => {
-        (body.source_id = element.biblionumber), (body.marc = element.marcxml);
-        promises.push(
-          axios
-            .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
-              headers: this.$store.getters.headers('export'),
-            })
-            .then(() => {})
-            .catch((error) => {
-              this.$store.dispatch('errorMessage', error);
-            })
-        );
-      });
+      if (this.componentparts.length) {
+        this.componentparts.forEach((element) => {
+          (body.source_id = element.biblionumber),
+            (body.marc = element.marcxml);
+          promises.push(
+            axios
+              .post(this.exportapi.host + '/' + this.exportapi.basePath, body, {
+                headers: this.$store.getters.headers('export'),
+              })
+              .then(() => {})
+              .catch((error) => {
+                this.$store.dispatch('errorMessage', error);
+              })
+          );
+        });
+      }
       await Promise.all(promises).then(() => {
         this.$store.commit('setLoader', false);
       });
     },
     async deleteComponentParts() {
       const promises = [];
-      this.componentparts.forEach((element) => {
-        promises.push(
-          axios
-            .delete('/api/v1/biblios/' + element.biblionumber)
-            .then(() => {})
-            .catch((error) => {
-              this.$store.dispatch('errorMessage', error);
-            })
-        );
-      });
-      if (promises.length) {
-        await Promise.all(promises).then(() => {
-          this.$store.commit('setLoader', false);
+      if (this.componentparts.length) {
+        this.componentparts.forEach((element) => {
+          promises.push(
+            axios
+              .delete('/api/v1/biblios/' + element.biblionumber)
+              .then(() => {})
+              .catch((error) => {
+                this.$store.dispatch('errorMessage', error);
+              })
+          );
         });
-      } else {
-        this.$store.commit('setLoader', false);
       }
+      await Promise.all(promises).then(() => {
+        this.$store.commit('setLoader', false);
+      });
     },
     getRecords() {
       this.showRecord = true;
