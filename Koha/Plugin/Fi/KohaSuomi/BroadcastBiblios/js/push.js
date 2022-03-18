@@ -233,9 +233,13 @@ const recordModal = Vue.component('recordmodal', {
             })
         );
       });
-      await Promise.all(promises).then(() => {
+      if (promises.length) {
+        await Promise.all(promises).then(() => {
+          this.$store.commit('setLoader', false);
+        });
+      } else {
         this.$store.commit('setLoader', false);
-      });
+      }
     },
     getRecords() {
       this.showRecord = true;
