@@ -19,10 +19,78 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Biblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 
 =head1 API
 
 =cut
+
+sub add {
+    my $c = shift->openapi->valid_input or return;
+
+    my $biblio_id;
+    my $biblioitemnumber;
+
+    my $body = $c->req->body;
+    unless ($body) {
+        return $c->render(status => 400, openapi => {error => "Missing MARCXML body"});
+    }
+
+    my $record = eval {MARC::Record::new_from_xml( $body, "utf8", '')};
+    if ($@) {
+        return $c->render(status => 400, openapi => {error => $@});
+    } else {
+        my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+        my $hostrecord = $biblios->getHostRecord($record);
+        if ($hostrecord && $hostrecord->subfield('942','c')) {
+            my $field = MARC::Field->new('942','','','c' => $hostrecord->subfield('942','c'));
+            $record->append_fields($field);
+        }
+        ( $biblio_id, $biblioitemnumber ) = &AddBiblio($record, '');
+    }
+    if ($biblio_id) {
+        return $c->render(status => 201, openapi => {biblio_id => 0+$biblio_id});
+    } else {
+        return $c->render(status => 400, openapi => {error => "unable to create record"});
+    }
+}
+
+sub update {
+    my $c = shift->openapi->valid_input or return;
+
+    my $biblio_id = $c->validation->param('biblio_id');
+
+    my $biblio = Koha::Biblios->find($biblio_id);
+    unless ($biblio) {
+        return $c->render(status => 404, openapi => {error => "Biblio not found"});
+    }
+
+    my $success;
+    my $body = $c->req->body;
+    my $record = eval {MARC::Record::new_from_xml( $body, "utf8", '')};
+    if ($@) {
+        return $c->render(status => 400, openapi => {error => $@});
+    } else {
+        my $frameworkcode = GetFrameworkCode( $biblio_id );
+        if (C4::Context->preference("BiblioAddsAuthorities")){
+            BiblioAutoLink($record, $frameworkcode);
+        }
+        my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+        my $hostrecord = $biblios->getHostRecord($record);
+        
+        if ($hostrecord && $hostrecord->subfield('942','c')) {
+            my $field = MARC::Field->new('942','','','c' => $hostrecord->subfield('942','c'));
+            $record->append_fields($field);
+        }
+        $success = &ModBiblio($record, $biblio_id, $frameworkcode);
+    }
+    if ($success) {
+        my $biblio = Koha::Biblios->find($biblio_id);
+        return $c->render(status => 200, openapi => {biblio => $biblio});
+    } else {
+        return $c->render(status => 400, openapi => {error => "unable to update record"});
+    }
+}
 
 sub getcomponentparts {
     my $c = shift->openapi->valid_input or return;
