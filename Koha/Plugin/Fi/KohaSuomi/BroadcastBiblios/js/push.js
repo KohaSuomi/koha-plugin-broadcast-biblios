@@ -138,8 +138,8 @@ const recordModal = Vue.component('recordmodal', {
                   </div>\
                 </div>\
                 <div class="modal-footer">\
-                    <button v-if="exportapi.type == \'export\'" type="button" @click="sendRecord(\'export\')" class="btn btn-success" style="float:none;">Vie</button>\
-                    <button v-if="remoterecord.targetrecord" type="button" @click="sendRecord(\'import\')" class="btn btn-primary" style="float:none;">Tuo</button>\
+                    <button v-if="exportapi.type == \'export\' && showRecord" type="button" @click="sendRecord(\'export\')" class="btn btn-success" style="float:none;">Vie</button>\
+                    <button v-if="remoterecord.targetrecord && showRecord" type="button" @click="sendRecord(\'import\')" class="btn btn-primary" style="float:none;">Tuo</button>\
                     <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
                 </div>\
             </div>\
