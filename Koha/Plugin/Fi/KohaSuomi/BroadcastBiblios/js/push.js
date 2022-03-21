@@ -55,14 +55,14 @@ const store = new Vuex.Store({
       };
       if (type == 'export') {
         body.componentparts_count = state.componentParts.length;
-        body.componentparts = state.componentParts.length ? 1 : 0;
+        body.componentparts = state.componentParts ? 1 : 0;
         body.interface = state.exportApi.interface;
         body.marc = state.remoteRecord.sourcerecord;
         body.source_id = state.biblionumber;
       }
       if (type == 'import') {
         body.interface = state.importApi.interface;
-        body.componentparts = state.componentParts.length ? 1 : 0;
+        body.componentparts = state.componentParts ? 1 : 0;
         body.fetch_interface = state.exportApi.interface;
         body.target_id = state.biblionumber;
         body.source_id = state.remoteRecord.source_id
