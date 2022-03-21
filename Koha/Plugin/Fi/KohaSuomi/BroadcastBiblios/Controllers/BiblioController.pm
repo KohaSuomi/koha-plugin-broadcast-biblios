@@ -83,7 +83,11 @@ sub update {
             my $field = MARC::Field->new('942','','','c' => $hostrecord->subfield('942','c'));
             $record->append_fields($field);
         }
-        $success = &ModBiblio($record, $biblio_id, $frameworkcode);
+        $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
+                    overlay_context => {
+                        source       => 'z39.50'
+                    }
+                });
     }
     if ($success) {
         my $biblio = Koha::Biblios->find($biblio_id);
