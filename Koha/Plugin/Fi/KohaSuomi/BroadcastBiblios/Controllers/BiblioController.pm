@@ -85,7 +85,7 @@ sub update {
         }
         $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
                     overlay_context => {
-                        source       => 'z39.50'
+                        source       => 'z3950'
                     }
                 });
     }
