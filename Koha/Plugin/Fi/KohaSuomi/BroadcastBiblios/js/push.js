@@ -55,6 +55,7 @@ const store = new Vuex.Store({
       };
       if (type == 'export') {
         body.componentparts_count = state.componentParts.length;
+        body.componentparts = state.componentParts.length ? 1 : 0;
         body.interface = state.exportApi.interface;
         body.marc = state.remoteRecord.sourcerecord;
         body.source_id = state.biblionumber;
