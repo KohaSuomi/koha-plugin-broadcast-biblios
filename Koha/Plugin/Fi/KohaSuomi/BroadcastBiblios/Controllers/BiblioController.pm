@@ -20,6 +20,7 @@ use Modern::Perl;
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode );
 
 =head1 API
 
