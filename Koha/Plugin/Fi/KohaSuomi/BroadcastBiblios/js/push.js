@@ -61,7 +61,7 @@ const store = new Vuex.Store({
       }
       if (type == 'import') {
         body.interface = state.importApi.interface;
-        body.componentparts = 1;
+        body.componentparts = state.componentParts.length ? 1 : 0;
         body.fetch_interface = state.exportApi.interface;
         body.target_id = state.biblionumber;
         body.source_id = state.remoteRecord.source_id
