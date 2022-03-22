@@ -90,32 +90,23 @@ sub getHostRecord {
     return undef unless $cn && $cni;
 
     my $query = "Control-number,ext:\"$cn\" AND cni,ext:\"$cni\"";
-    require Koha::SearchEngine::QueryBuilder;
     require Koha::SearchEngine::Search;
 
-    my $builder  = Koha::SearchEngine::QueryBuilder->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
     my $searcher = Koha::SearchEngine::Search->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
-    my @operands = $query;
-    my @sortBy = 'id_asc';
-    my (undef, $builtQuery, $simpleQuery) = $builder->build_query_compat(undef, \@operands, undef, undef, \@sortBy);
-    my $results;
     my $error;
-    my $resultSetSize = 0;
-    my @servers = 'biblioserver';
 
-    ($error, $results) = $searcher->search_compat($builtQuery, $simpleQuery, \@sortBy, \@servers, 1000, 0, undef, undef, undef, 'ccl');
+    my ( $error, $results, $total_hits ) = $searcher->simple_search_compat( $query, 0, 10 );
     if ($error) {
         die "getHostRecord():> Searching ($query):> Returned an error:\n$error";
     }
 
     my $marcflavour = C4::Context->preference('marcflavour');
-    $resultSetSize = $results->{biblioserver}->{hits};
 
-    if ($resultSetSize == 1) {
-        my $record = @{$results->{biblioserver}->{RECORDS}}[0];
-        return ref($record) ne 'MARC::Record' ? MARC::Record::new_from_xml($record, 'UTF-8') : $record;
+    if ($total_hits == 1) {
+        my $record = $results->[0];
+        return ref($record) ne 'MARC::Record' ? MARC::Record::new_from_xml($record, 'UTF-8', $marcflavour) : $record;
     }
-    elsif ($resultSetSize > 1) {
+    elsif ($total_hits > 1) {
         die "getHostRecord():> Searching ($query):> Returned more than one record?";
     }
     return undef;
