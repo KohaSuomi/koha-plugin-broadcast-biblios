@@ -92,7 +92,6 @@ sub getHostRecord {
     my $query = "Control-number,ext:\"$cn\" AND cni,ext:\"$cni\"";
     require Koha::SearchEngine::QueryBuilder;
     require Koha::SearchEngine::Search;
-    require Koha::Exception::Search;
 
     my $builder  = Koha::SearchEngine::QueryBuilder->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
     my $searcher = Koha::SearchEngine::Search->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
