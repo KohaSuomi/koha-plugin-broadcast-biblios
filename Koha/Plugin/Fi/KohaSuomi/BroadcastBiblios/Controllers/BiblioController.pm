@@ -21,6 +21,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Koha::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode BiblioAutoLink);
+use C4::Context;
 
 =head1 API
 
@@ -37,7 +38,7 @@ sub add {
         return $c->render(status => 400, openapi => {error => "Missing MARCXML body"});
     }
 
-    my $record = eval {MARC::Record::new_from_xml( $body, "utf8", '')};
+    my $record = eval {MARC::Record::new_from_xml( $body, "UTF-8", C4::Context->preference('marcflavour'))};
     if ($@) {
         return $c->render(status => 400, openapi => {error => $@});
     } else {
