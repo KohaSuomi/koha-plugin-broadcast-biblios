@@ -168,6 +168,18 @@ sub blockComponentParts {
     return 0;
 }
 
+sub getRecord {
+    my ($self, $biblio) = @_;
+    
+    my $record = eval {MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8')};
+    if ($@) {
+        print $biblio->{biblionumber}." record is broken\n";
+        return 0;
+    }
+
+    return $record;
+}
+
 
 sub broadcastBiblios {
     my ($self, $params) = @_;
@@ -186,8 +198,10 @@ sub broadcastBiblios {
             if ($self->verbose > 1) {
                 print "Processing: $biblio->{biblionumber}\n";
             }
-            next if $self->blockComponentParts($biblio);
-            next if $self->blockByEncodingLevel($biblio);
+            my $record = $self->getRecord($biblio);
+            next unless $record;
+            next if $self->blockComponentParts($record);
+            next if $self->blockByEncodingLevel($record);
             my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
             $biblio->{componentparts_count} = scalar @{$componentsArr} if @{$componentsArr};
             my $requestparams = $self->getEndpointParameters($biblio);

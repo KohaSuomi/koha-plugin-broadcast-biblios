@@ -176,18 +176,14 @@ sub fetchActiveFields {
 }
 
 sub checkEncodingLevel {
-    my ($self, $biblio) = @_;
+    my ($self, $record) = @_;
 
-    my $record = MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8');
     my $encoding_level = substr( $record->leader(), 17 , 1 );
-    
     return $encoding_level;
 }
 
 sub checkComponentPart {
-    my ($self, $biblio) = @_;
-
-    my $record = MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8');
+    my ($self, $record) = @_;
     return 1 if $record->subfield('773', "w");
     return 0;
 }
