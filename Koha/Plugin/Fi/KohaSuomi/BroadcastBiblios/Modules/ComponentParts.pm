@@ -22,6 +22,7 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Try::Tiny;
 use Koha::Biblios;
+use C4::Context;
 
 =head new
 
@@ -42,7 +43,7 @@ sub fetch {
     my ($self, $biblionumber) = @_;
 
     my $biblio = Koha::Biblios->find($biblionumber);
-    return $biblio->componentparts;
+    return $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
 }
 
 1;
