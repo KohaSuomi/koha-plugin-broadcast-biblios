@@ -22,6 +22,7 @@ use Koha::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode BiblioAutoLink);
 use C4::Context;
+use Encode;
 
 =head1 API
 
@@ -35,7 +36,7 @@ sub get {
     unless ($biblio) {
         return $c->render(status => 404, openapi => {error => "Biblio not found"});
     }
-    
+
     my $marcxml = $biblio->metadata->metadata;
     $biblio = $biblio->unblessed;
     $biblio->{serial} = $biblio->{serial} ? $biblio->{serial} : 0; # Don't know why null serial gives error even it is defined on Swagger
@@ -133,7 +134,7 @@ sub getcomponentparts {
     my $components;
     foreach my $componentpart (@{$componentparts}) {
         my $biblionumber = $componentpart->subfield('999', 'c')+0;
-        push @$components, {biblionumber => $biblionumber, marcxml => $componentpart->as_xml_record()};
+        push @$components, {biblionumber => $biblionumber, marcxml => Encode::decode('utf8', $componentpart->as_xml_record())};
     }
     
     return $c->render(status => 200, openapi => { biblio => $bibliowrapper, componentparts => $components });
