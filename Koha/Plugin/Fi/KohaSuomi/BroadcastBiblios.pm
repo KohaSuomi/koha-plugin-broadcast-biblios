@@ -123,7 +123,7 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
             data-reportpath="'.$api->{reportPath}.'"
             data-token="'.Digest::SHA::hmac_sha256_hex($api->{apiToken}).'"
             data-type="'.$api->{type}.'"
-            data-toggle="modal" data-target="#pushRecordOpModal">'.$api->{interface}.'</a></li>';
+            data-toggle="modal" data-target="#pushRecordOpModal">'.$api->{interfaceName}.'</a></li>';
         }
         $dropdown .= '<li><a href="#" id="importInterface" class="import hidden"
             data-host="'.$importapi->{host}.'" 
