@@ -378,7 +378,7 @@ new Vue({
     openModal(e) {
       e.preventDefault();
       const exportapi = {
-        interface: e.target.textContent,
+        interface: e.target.getAttribute('data-interface'),
         host: e.target.getAttribute('data-host'),
         basePath: e.target.getAttribute('data-basepath'),
         searchPath: e.target.getAttribute('data-searchpath'),
