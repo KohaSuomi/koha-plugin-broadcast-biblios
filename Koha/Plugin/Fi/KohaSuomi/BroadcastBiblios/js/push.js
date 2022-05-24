@@ -113,7 +113,7 @@ const recordModal = Vue.component('recordmodal', {
                 </div>\
                 <div v-if="showRecord" id="exportRecordWrapper" class="modal-body">\
                   <div id="exportRecord">\
-                    <div v-if="remoterecord.targetrecord" ><span class="col-sm-6"><h3>Paikallinen</h3><hr/></span><span class="col-sm-6"><h3> {{exportapi.interface}} </h3><hr/></span></div>\
+                    <div v-if="remoterecord.targetrecord" ><span class="col-sm-6"><h3>Paikallinen</h3><hr/></span><span class="col-sm-6"><h3> {{exportapi.interfaceName}} </h3><hr/></span></div>\
                     <div class="col-sm-6" v-html="parseRecord(remoterecord.sourcerecord)"></div>\
                     <div v-if="remoterecord.targetrecord" class="col-sm-6" v-html="parseRecord(remoterecord.targetrecord)"></div>\
                   </div>\
@@ -378,6 +378,7 @@ new Vue({
     openModal(e) {
       e.preventDefault();
       const exportapi = {
+        interfaceName: e.target.textContent,
         interface: e.target.getAttribute('data-interface'),
         host: e.target.getAttribute('data-host'),
         basePath: e.target.getAttribute('data-basepath'),
