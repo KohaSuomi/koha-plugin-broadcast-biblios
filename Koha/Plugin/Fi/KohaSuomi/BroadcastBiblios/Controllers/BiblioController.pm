@@ -27,6 +27,22 @@ use C4::Context;
 
 =cut
 
+sub get {
+    my $c = shift->openapi->valid_input or return;
+
+    my $biblio = Koha::Biblios->find($c->validation->param('biblio_id'));
+
+    unless ($biblio) {
+        return $c->render(status => 404, openapi => {error => "Biblio not found"});
+    }
+    
+    my $marcxml = $biblio->metadata->metadata;
+    $biblio = $biblio->unblessed;
+    $biblio->{serial} = $biblio->{serial} ? $biblio->{serial} : 0; # Don't know why null serial gives error even it is defined on Swagger
+    $biblio->{marcxml} = $marcxml;
+    return $c->render(status => 200, openapi => $biblio);
+}
+
 sub add {
     my $c = shift->openapi->valid_input or return;
 

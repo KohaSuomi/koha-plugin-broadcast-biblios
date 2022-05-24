@@ -1,5 +1,42 @@
 {
   "/biblios/{biblio_id}": {
+    "get": {
+      "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#get",
+      "operationId": "getTatiBiblio",
+      "tags": ["biblios"],
+      "parameters": [
+        {
+          "name": "biblio_id",
+          "in": "path",
+          "description": "Internal biblio identifier",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "A biblio record with componentparts",
+          "schema": {
+            "type": "object"
+          }
+        },
+        "404": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Biblio not found",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
     "put": {
       "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#update",
       "operationId": "updateBiblio",
