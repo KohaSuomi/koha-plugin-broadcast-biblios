@@ -45,7 +45,7 @@ sub fetch {
 
     my $biblio = Koha::Biblios->find($biblionumber);
     my $componentparts = $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
-    my $components;
+    my $components = ();
     foreach my $componentpart (@{$componentparts}) {
         my $biblionumber = $componentpart->subfield('999', 'c')+0;
         push @$components, {biblionumber => $biblionumber, marcxml => $componentpart->as_xml_record()};
