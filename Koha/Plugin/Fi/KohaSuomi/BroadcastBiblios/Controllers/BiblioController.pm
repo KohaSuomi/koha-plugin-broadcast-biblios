@@ -129,7 +129,7 @@ sub getcomponentparts {
 
     };
 
-    my $componentparts = $biblio->get_marc_components();
+    my $componentparts = $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
     my $components;
     foreach my $componentpart (@{$componentparts}) {
         my $biblionumber = $componentpart->subfield('999', 'c')+0;
