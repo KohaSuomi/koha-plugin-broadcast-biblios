@@ -368,7 +368,7 @@ sub _pushComponentParts {
 sub _loopComponentParts {
     my ($self, $biblio, $componentsArr, $success) = @_;
 
-    if ($self->getEndpointType eq 'broadcast' && @{$componentsArr} && $success) {
+    if ($self->getEndpointType eq 'broadcast' && ($componentsArr && @{$componentsArr}) && $success) {
         my $order = 0;
         foreach my $componentpart (@{$componentsArr}) {
             $order++;
