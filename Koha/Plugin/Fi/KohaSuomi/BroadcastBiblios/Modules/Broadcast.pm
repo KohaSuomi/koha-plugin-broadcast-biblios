@@ -203,7 +203,7 @@ sub broadcastBiblios {
             next if $self->blockComponentParts($record);
             next if $self->blockByEncodingLevel($record);
             my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
-            $biblio->{componentparts_count} = scalar @{$componentsArr} if @{$componentsArr};
+            $biblio->{componentparts_count} = scalar @{$componentsArr} if $componentsArr && @{$componentsArr};
             my $requestparams = $self->getEndpointParameters($biblio);
             my $success;
             if ($self->getEndpointType eq 'identifier_activation') { 
