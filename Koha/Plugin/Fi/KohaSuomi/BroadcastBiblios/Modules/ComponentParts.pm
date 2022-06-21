@@ -23,6 +23,7 @@ use Scalar::Util qw( blessed );
 use Try::Tiny;
 use Koha::Biblios;
 use C4::Context;
+use MARC::Record;
 
 =head new
 
@@ -43,7 +44,13 @@ sub fetch {
     my ($self, $biblionumber) = @_;
 
     my $biblio = Koha::Biblios->find($biblionumber);
-    return $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
+    my $componentparts = $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
+    my $components;
+    foreach my $componentpart (@{$componentparts}) {
+        my $biblionumber = $componentpart->subfield('999', 'c')+0;
+        push @$components, {biblionumber => $biblionumber, marcxml => $componentpart->as_xml_record()};
+    }
+    return $components;
 }
 
 1;
