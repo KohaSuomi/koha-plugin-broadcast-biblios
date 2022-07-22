@@ -135,10 +135,10 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
             data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
         $dropdown .= '</ul>';
         $dropdown .= '<recordmodal></recordmodal>';
-        $dropdown .= '<script src="https://unpkg.com/vue@2.6.14/dist/vue.min.js"></script>';
-        $dropdown .= '<script src="https://unpkg.com/vuex@3.6.2/dist/vuex.min.js"></script>';
-        $dropdown .= '<script src="https://unpkg.com/axios/dist/axios.min.js"></script>';
-        $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment-with-locales.min.js"></script>';
+        $dropdown .= '<script src="'.$pluginpath.'/includes/vue.min.js"></script>';
+        $dropdown .= '<script src="'.$pluginpath.'/includes/vuex.min.js"></script>';
+        $dropdown .= '<script src="'.$pluginpath.'/includes/axios.min.js"></script>';
+        $dropdown .= '<script src="'.$pluginpath.'/includes/moment-with-locales.min.js"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/js/push.js"></script></div>';
     }
     return $dropdown;
