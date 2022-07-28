@@ -132,7 +132,7 @@ const recordModal = Vue.component('recordmodal', {
                       <tbody><tr v-for="(report, index) in reports">\
                         <td>{{report.target_id | exportType}}</td>\
                         <td>{{report.timestamp | moment}}</td>\
-                        <td :inner-html.prop="report.status | translateStatus">({{report.errorstatus}})</td>\
+                        <td><span :inner-html.prop="report.status | translateStatus"></span><span v-if="report.errorstatus" style="color:red;"> ({{report.errorstatus}})</span></td>\
                       </tr>\
                       </tbody>\
                     </table>\
