@@ -93,7 +93,6 @@ sub getHostRecord {
     require Koha::SearchEngine::Search;
 
     my $searcher = Koha::SearchEngine::Search->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
-    my $error;
 
     my ( $error, $results, $total_hits ) = $searcher->simple_search_compat( $query, 0, 10 );
     if ($error) {
