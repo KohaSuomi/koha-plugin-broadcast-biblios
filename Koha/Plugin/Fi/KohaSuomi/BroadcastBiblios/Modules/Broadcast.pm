@@ -199,6 +199,7 @@ sub broadcastBiblios {
                 print "Processing: $biblio->{biblionumber}\n";
             }
             my $record = $self->getRecord($biblio);
+            $count++;
             next unless $record;
             next if $self->blockComponentParts($record);
             next if $self->blockByEncodingLevel($record);
@@ -219,7 +220,6 @@ sub broadcastBiblios {
             $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
             $self->_loopComponentParts($biblio, $componentsArr, $success);
 
-            $count++;
             $lastnumber = $biblio->{biblionumber};
         }
         if ($self->getEndpointType eq 'identifier_activation' && @pusharray) {
