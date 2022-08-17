@@ -40,15 +40,18 @@ my $verbose = 0;
 my $limit = 0;
 my $interface;
 my $directory;
+my $database;
 
 GetOptions(
     'h|help'                     => \$help,
     'v|verbose'                  => \$verbose,
+    'all'                        => \$all,
     'c|chunks:i'                 => \$chunks,
     'b|biblionumber:i'           => \$biblionumber,
     'l|limit:i'                  => \$limit,
     'i|interface:s'              => \$interface,
-    'd|directory:s'              => \$directory
+    'd|directory:s'              => \$directory,
+    'db|database:s'              => \$database
 
 );
 
@@ -57,8 +60,8 @@ my $usage = <<USAGE;
 
     -h, --help              This message.
     -v, --verbose           Verbose.
+    --all                   Process all biblios.
     -c, --chunks            Process biblios in chunks, default is 200.
-    --all                   Send all biblios, default sends biblios from today.
     -b, --biblionumber      Start sending from defined biblionumber.
     -l, --limit             Limiting the results of biblios.
     -i, --interface         Interface name: with active add your system interface and with staged add remote.
@@ -81,7 +84,15 @@ if (!$directory) {
     exit 0;
 }
 
+my $configPath = $ENV{"KOHA_CONF"};
+my($file, $path, $ext) = fileparse($configPath);
+my $config = plugin Config => {file => $path.'broadcast-config.conf'};
+
+my $apikey = Digest::SHA::hmac_sha256_hex($config->{apiKey});
+my $headers = {"Authorization" => $apikey};
+
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
+    all => $all,
     chunks => $chunks,
     biblionumber => $biblionumber,
     limit => $limit,
@@ -89,6 +100,9 @@ my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     verbose => $verbose,
     directory => $directory,
     interface => $interface,
+    endpoint => $config->{activeEndpoint},
+    headers => $headers,
+    database => $database
 });
 
 $plugin->get_active();

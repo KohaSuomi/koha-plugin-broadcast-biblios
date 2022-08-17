@@ -233,9 +233,15 @@ sub get_active {
         page => $self->{page},
         interface => $self->{interface},
         directory => $self->{directory},
+        endpoint => $self->{endpoint},
+        headers => $self->{headers},
+        database => $self->{database}
     };
-
-    $activeRecords->getAllActiveRecords($params);
+    if ($self->{all}) {
+        $activeRecords->getAllActiveRecords($params);
+    } else {
+        $activeRecords->getActiveRecordsByBiblionumber($params);
+    }
 
 }
 

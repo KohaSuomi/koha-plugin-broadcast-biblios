@@ -27,6 +27,7 @@ use File::Basename;
 use MARC::Record;
 use MARC::File::XML;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use Mojo::UserAgent;
 
 =head new
 
@@ -43,11 +44,11 @@ sub new {
 
 }
 
-sub getAllActiveRecords {
+sub getActiveRecordsByBiblionumber {
     my ($self, $params) = @_;
     my $pageCount = 1;
-    my $sqlFile = $params->{directory}."/activeRecordsPatch.sql";
     my $interface = $params->{interface};
+    my $sqlFile = $params->{directory}."/activeRecordsPatch".$interface.".sql";
     open(my $efh, '>', $sqlFile);
     print $efh "";
     close $efh;
@@ -60,7 +61,42 @@ sub getAllActiveRecords {
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
             if ($identifier && $identifier_field) {
-                my $sqlstring = "INSERT INTO activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
+                my $sqlstring = "INSERT INTO ".$self->{database}."activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
+                open(my$fh, '>>', $sqlFile);
+                print $fh $sqlstring."\n";
+                close $fh;
+            }
+            
+            $count++;
+        }
+        print "$count biblios processed!\n";
+        if ($count eq $params->{chunks}) {
+            $pageCount++;
+            $params->{page} = $pageCount;
+        } else {
+            $pageCount = 0;
+        }
+    }
+}
+
+sub getAllActiveRecords {
+    my ($self, $params) = @_;
+    my $pageCount = 1;
+    my $interface = $params->{interface};
+    my $sqlFile = $params->{directory}."/activeRecordsPatch".$interface.".sql";
+    open(my $efh, '>', $sqlFile);
+    print $efh "";
+    close $efh;
+    while ($pageCount >= $params->{page}) {
+        my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
+        my $biblios = $newbiblios->fetch();
+        my $count = 0;
+        foreach my $biblio (@{$biblios}) {
+            my ($identifier, $identifier_field) = $self->getActiveField($biblio);
+            my $target_id = $biblio->{biblionumber};
+            my $updated = $biblio->{timestamp};
+            if (!$self->activated($interface, $target_id) && $identifier && $identifier_field) {
+                my $sqlstring = "INSERT INTO ".$self->{database}."activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
                 open(my$fh, '>>', $sqlFile);
                 print $fh $sqlstring."\n";
                 close $fh;
@@ -186,6 +222,17 @@ sub checkComponentPart {
     my ($self, $record) = @_;
     return 1 if $record->subfield('773', "w");
     return 0;
+}
+
+sub activated {
+    my ($self, $interface, $target_id) = @_;
+
+    my $ua = Mojo::UserAgent->new;
+    my $tx = $ua->get($self->{activeEndpoint}."/".$interface."/".$target_id => $self->{headers});
+    die "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
+    my $response = decode_json($tx->res->body);
+    return 0 if $response->{error};
+    return 1;
 }
 
 
