@@ -60,7 +60,7 @@ sub getActiveRecordsByBiblionumber {
             my ($identifier, $identifier_field) = $self->getActiveField($biblio);
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
-            if ($identifier && $identifier_field) {
+            if (!$self->activated($interface, $target_id) && $identifier && $identifier_field) {
                 my $sqlstring = "INSERT INTO ".$self->{database}."activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
                 open(my$fh, '>>', $sqlFile);
                 print $fh $sqlstring."\n";
@@ -95,7 +95,7 @@ sub getAllActiveRecords {
             my ($identifier, $identifier_field) = $self->getActiveField($biblio);
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
-            if (!$self->activated($interface, $target_id) && $identifier && $identifier_field) {
+            if ($identifier && $identifier_field) {
                 my $sqlstring = "INSERT INTO ".$self->{database}."activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
                 open(my$fh, '>>', $sqlFile);
                 print $fh $sqlstring."\n";

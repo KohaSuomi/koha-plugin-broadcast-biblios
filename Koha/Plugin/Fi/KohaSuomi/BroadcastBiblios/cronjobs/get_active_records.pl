@@ -33,6 +33,7 @@ use File::Basename;
 use Fcntl qw( :DEFAULT :flock :seek );
 use Koha::Plugins;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
+use Mojolicious::Lite;
 
 
 my $help = 0;
