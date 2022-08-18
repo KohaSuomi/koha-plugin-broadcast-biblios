@@ -228,7 +228,7 @@ sub activated {
     my ($self, $interface, $target_id) = @_;
 
     my $ua = Mojo::UserAgent->new;
-    my $tx = $ua->get($self->{activeEndpoint}."/".$interface."/".$target_id => $self->{headers});
+    my $tx = $ua->get($self->{endpoint}."/".$interface."/".$target_id => $self->{headers});
     die "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
     my $response = decode_json($tx->res->body);
     return 0 if $response->{error};
