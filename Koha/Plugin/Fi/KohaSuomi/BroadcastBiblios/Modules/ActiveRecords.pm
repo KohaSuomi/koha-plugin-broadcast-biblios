@@ -28,6 +28,7 @@ use MARC::Record;
 use MARC::File::XML;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Mojo::UserAgent;
+use JSON;
 
 =head new
 
