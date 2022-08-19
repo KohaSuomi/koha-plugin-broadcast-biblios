@@ -62,7 +62,7 @@ sub getActiveRecordsByBiblionumber {
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
             if (!$self->activated($params->{endpoint}, $params->{headers}, $interface, $target_id) && $identifier && $identifier_field) {
-                my $sqlstring = "INSERT INTO ".$params->{database}."activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
+                my $sqlstring = "INSERT INTO ".$params->{database}.".activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
                 open(my$fh, '>>', $sqlFile);
                 print $fh $sqlstring."\n";
                 close $fh;
@@ -97,7 +97,7 @@ sub getAllActiveRecords {
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
             if ($identifier && $identifier_field) {
-                my $sqlstring = "INSERT INTO ".$params->{database}."activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
+                my $sqlstring = "INSERT INTO ".$params->{database}.".activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
                 open(my$fh, '>>', $sqlFile);
                 print $fh $sqlstring."\n";
                 close $fh;
