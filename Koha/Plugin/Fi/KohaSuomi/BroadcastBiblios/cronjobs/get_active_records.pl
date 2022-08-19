@@ -70,6 +70,7 @@ my $usage = <<USAGE;
     -l, --limit             Limiting the results of biblios.
     -i, --interface         Interface name: with active add your system interface and with staged add remote.
     -d, --directory         Directory where the output file is added.
+    -db --database          Database name
 
 USAGE
 

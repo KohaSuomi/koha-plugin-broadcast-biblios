@@ -60,7 +60,7 @@ sub getActiveRecordsByBiblionumber {
             my ($identifier, $identifier_field) = $self->getActiveField($biblio);
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
-            if (!$self->activated($interface, $target_id) && $identifier && $identifier_field) {
+            if (!$self->activated($params->{endpoint}, $params->{headers}, $interface, $target_id) && $identifier && $identifier_field) {
                 my $sqlstring = "INSERT INTO ".$self->{database}."activerecords (interface_name, identifier_field, identifier, target_id, updated) VALUES ('$interface', '$identifier_field', '$identifier', '$target_id', '$updated');";   
                 open(my$fh, '>>', $sqlFile);
                 print $fh $sqlstring."\n";
@@ -225,10 +225,10 @@ sub checkComponentPart {
 }
 
 sub activated {
-    my ($self, $interface, $target_id) = @_;
-
+    my ($self, $endpoint, $headers, $interface, $target_id) = @_;
+    
     my $ua = Mojo::UserAgent->new;
-    my $tx = $ua->get($self->{endpoint}."/".$interface."/".$target_id => $self->{headers});
+    my $tx = $ua->get($endpoint."/".$interface."/".$target_id => $headers);
     die "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
     my $response = decode_json($tx->res->body);
     return 0 if $response->{error};
