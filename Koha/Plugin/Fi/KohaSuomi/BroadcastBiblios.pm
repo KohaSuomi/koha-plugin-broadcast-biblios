@@ -71,6 +71,10 @@ sub new {
         $self->{directory} = $args->{directory};
     }
 
+    if ($args->{database}) {
+        $self->{database} = $args->{database};
+    }
+
     return $self;
 }
 
