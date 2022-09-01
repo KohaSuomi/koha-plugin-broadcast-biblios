@@ -74,7 +74,7 @@ const store = new Vuex.Store({
         body.marc = state.remoteRecord.targetrecord;
       }
       if (type == 'componentparts') {
-        body.check = state.remoteRecord.targetrecord ? true : false;
+        body.check = state.remoteRecord.targetrecord ? 1 : 0;
         body.force = 1;
         body.parent_id = state.biblionumber;
         body.target_id = null;
