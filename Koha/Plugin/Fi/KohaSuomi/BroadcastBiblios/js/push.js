@@ -257,6 +257,8 @@ const recordModal = Vue.component('recordmodal', {
       this.$store.commit('clearErrors');
       this.showRecord = false;
       const headers = { Authorization: this.exportapi.token };
+      let searchParams = new URLSearchParams();
+      searchParams.append('target_id', this.biblionumber);
       axios
         .get(
           this.exportapi.host +
@@ -266,7 +268,7 @@ const recordModal = Vue.component('recordmodal', {
             this.exportapi.interface,
           {
             headers,
-            params: {target_id: this.biblionumber}
+            params: searchParams
           }
         )
         .then((response) => {
