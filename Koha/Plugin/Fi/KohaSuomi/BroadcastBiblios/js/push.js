@@ -270,7 +270,7 @@ const recordModal = Vue.component('recordmodal', {
         )
         .then((response) => {
           response.data.forEach((element) => {
-            if (element.interface_name == this.exportApi.interface || element.interface_name == this.importApi.interface) {
+            if (element.interface_name == this.exportapi.interface || element.interface_name == this.importapi.interface) {
               this.reports.push(element);
             }
           });
