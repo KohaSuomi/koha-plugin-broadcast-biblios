@@ -263,9 +263,10 @@ const recordModal = Vue.component('recordmodal', {
             '/' +
             this.exportapi.reportPath +
             '/' +
-            this.biblionumber,
+            this.exportapi.interface,
           {
             headers,
+            params: {target_id: this.biblionumber}
           }
         )
         .then((response) => {
