@@ -257,22 +257,23 @@ const recordModal = Vue.component('recordmodal', {
       this.$store.commit('clearErrors');
       this.showRecord = false;
       const headers = { Authorization: this.exportapi.token };
-      let searchParams = new URLSearchParams();
-      searchParams.append('target_id', this.biblionumber);
       axios
         .get(
           this.exportapi.host +
             '/' +
             this.exportapi.reportPath +
             '/' +
-            this.exportapi.interface,
+            this.biblionumber,
           {
             headers,
-            params: searchParams
           }
         )
         .then((response) => {
-          this.reports = response.data;
+          response.data.forEach((element) => {
+            if (element.interface_name == this.exportApi.interface || element.interface_name == this.importApi.interface) {
+              this.reports.push(element);
+            }
+          });
           this.$store.commit('setLoader', false);
         })
         .catch((error) => {
