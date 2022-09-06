@@ -253,6 +253,7 @@ const recordModal = Vue.component('recordmodal', {
       this.$parent.searchRemoteRecord();
     },
     getReports() {
+      this.reports = [];
       this.$store.commit('setLoader', true);
       this.$store.commit('clearErrors');
       this.showRecord = false;
