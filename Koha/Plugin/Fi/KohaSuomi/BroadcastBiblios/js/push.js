@@ -482,7 +482,7 @@ new Vue({
           '/api/v1/contrib/kohasuomi/biblios/' + this.biblionumber + '/activate', body
         )
         .then(() => {
-          this.loader = false;
+          this.checkActivation();
         })
         .catch((error) => {
           this.loader = false;
