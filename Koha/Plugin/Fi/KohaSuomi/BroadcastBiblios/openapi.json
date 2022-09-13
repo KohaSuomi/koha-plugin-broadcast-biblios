@@ -155,5 +155,63 @@
         }
       }
     }
+  },
+  "/biblios/{biblio_id}/activate": {
+    "post": {
+      "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#activate",
+      "operationId": "activateBiblio",
+      "tags": [
+        "biblios"
+      ],
+      "parameters": [
+        {
+          "name": "biblio_id",
+          "in": "path",
+          "description": "Internal biblio identifier",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "Activated a new biblio",
+          "schema": {
+            "type": "object"
+          }
+        },
+        "400": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Bad request",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Not found",
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "editcatalogue": "edit_catalogue"
+        }
+      }
+    }
   }
 }

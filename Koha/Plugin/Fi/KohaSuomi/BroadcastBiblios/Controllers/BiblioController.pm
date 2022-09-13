@@ -138,4 +138,35 @@ sub getcomponentparts {
     
     return $c->render(status => 200, openapi => { biblio => $bibliowrapper, componentparts => $components });
 }
+
+sub activate {
+    my $c = shift->openapi->valid_input or return;
+
+    my $biblio = Koha::Biblios->find($c->validation->param('biblio_id'));
+    my $body = $c->req->json;
+    unless ($biblio) {
+        return $c->render(status => 404, openapi => {error => "Biblio not found"});
+    }
+
+    my $marcxml = $biblio->metadata->metadata;
+    $biblio = $biblio->unblessed;
+    $biblio->{metadata} = $marcxml;
+
+    my $record = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast->new({
+        endpoint => $body->{endpoint}, 
+        endpoint_type => $body->{endpoint_type},
+        interface => $body->{interface}, 
+        inactivity_timeout => $body->{inactivity_timeout} || 50,
+        headers => {"Authorization" => $body->{apiKey}}
+    });
+
+    my $response = $record->activateSingleBiblio($biblio);
+
+    if ($response->{status}) {
+        return $c->render(status => $response->{status}, openapi => { error => $response->{message} });
+    } else {
+        return $c->render(status => 200, openapi => { message => "Success" });
+    }
+}
+
 1;

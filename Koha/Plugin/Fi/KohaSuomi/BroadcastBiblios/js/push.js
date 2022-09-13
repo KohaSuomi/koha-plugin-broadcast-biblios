@@ -156,7 +156,7 @@ const recordModal = Vue.component('recordmodal', {
       activeLinkStyle: {
         'background-color': '#007bff',
         color: '#fff',
-      },
+      }
     };
   },
   computed: {
@@ -355,6 +355,9 @@ new Vue({
   data() {
     return {
       record: '',
+      active: false,
+      loader: true,
+      activated: null
     };
   },
   created() {
@@ -367,16 +370,23 @@ new Vue({
       reportPath: interface.getAttribute('data-reportpath'),
       token: interface.getAttribute('data-token'),
       type: interface.getAttribute('data-type'),
+      activation: interface.getAttribute('data-activation'),
     };
     store.commit('setImportApi', importapi);
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     store.commit('setBiblionumber', urlParams.get('biblionumber'));
     this.getRecord();
+    if (this.importapi.activation == 'enabled') {
+      this.checkActivation();
+    }
   },
   computed: {
     exportapi() {
       return store.state.exportApi;
+    },
+    importapi() {
+      return store.state.importApi;
     },
     biblionumber() {
       return store.state.biblionumber;
@@ -436,6 +446,48 @@ new Vue({
         })
         .catch((error) => {
           store.dispatch('errorMessage', error);
+        });
+    },
+    checkActivation() {
+      const headers = { Authorization: this.importapi.token };
+      axios
+        .get(
+          this.importapi.host + '/service/api/biblio/active/' + this.importapi.interface + '/' + this.biblionumber,
+          {
+            headers,
+          }
+        )
+        .then((response) => {
+          this.loader = false;
+          this.activated = "Aktivoitu valutukseen "+moment(response.data.created).locale('fi').format('D.M.Y H:mm:ss');
+        })
+        .catch((error) => {
+          if (error.response.status == '404') {
+            this.loader = false;
+            this.active = true;
+          }
+        });
+    },
+    activateRecord() {
+      this.loader = true;
+      this.active = false;
+      const body = {
+        endpoint: this.importapi.host + '/service/api/biblio/active/identifier',
+        endpoint_type: 'identifier_activation',
+        interface: this.importapi.interface,
+        apiKey: this.importapi.token,
+      };
+      axios
+        .post(
+          '/api/v1/contrib/kohasuomi/biblios/' + this.biblionumber + '/activate', body
+        )
+        .then(() => {
+          this.loader = false;
+        })
+        .catch((error) => {
+          this.loader = false;
+          this.active = true;
+          alert(error.response.data.error);
         });
     },
   },

@@ -239,6 +239,33 @@ sub broadcastBiblios {
     }
 }
 
+sub activateSingleBiblio {
+    my ($self, $biblio) = @_;
+
+    my $record = $self->getRecord($biblio);
+    return {status => 400, message => "Record is broken!"} unless $record;
+
+    my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
+    $biblio->{componentparts_count} = scalar @{$componentsArr} if $componentsArr && @{$componentsArr};
+
+    my $requestparams = $self->getEndpointParameters($biblio);
+    return {status => 404, message => "No valid identifier!"} unless $requestparams;
+    my @pusharray;
+    push @pusharray, $requestparams;
+    my ($error, $response) = $self->_restRequestCall(undef, @pusharray);
+    return {status => 400, message => $error} if $error;
+
+    my $order = 0;
+    foreach my $componentpart (@{$componentsArr}) {
+        $order++;
+        ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml}, part_order => $order});
+        return {status => 400, message => $error} if $error;
+    }
+
+    return {message => "Success"};
+
+}
+
 # sub broadcastStaged {
 #     my ($self) = @_;
 #     my @biblios = import_records();
@@ -346,7 +373,7 @@ sub _restRequestCall {
 
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->post($self->getEndpoint => $self->getHeaders => json => $params ? $params : \@pusharray);
-    die "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
+    warn "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
     my $response = decode_json($tx->res->body);
     return ($response->{error}, undef) if $response->{error};
     return (undef, $response->{message});
@@ -358,7 +385,7 @@ sub _pushComponentParts {
 
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->post($self->getEndpoint.'/componentparts' => $self->getHeaders => json => $params);
-    die "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
+    warn "Connection failed with: ".$tx->res->error->{message} || $tx->res->message unless $tx->res->code eq '200' || $tx->res->code eq '201';
     my $response = decode_json($tx->res->body);
     return ($response->{error}, undef) if $response->{error};
     return (undef, $response->{message});

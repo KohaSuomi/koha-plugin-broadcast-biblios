@@ -116,7 +116,8 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
     my $dropdown;
     if ($exportapis && $importapi) {
         my $pluginpath = $self->get_plugin_http_path();
-        $dropdown = '<div id="pushApp" class="btn-group">
+        $dropdown = '<div id="pushApp">
+            <div class="btn-group" style="margin-left: 5px;">
             <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> Vie/Tuo <span class="caret"></span></button>
             <ul id="pushInterfaces" class="dropdown-menu">';
         foreach my $api (@{$exportapis}) {
@@ -135,9 +136,13 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
             data-basepath="'.$importapi->{basePath}.'" 
             data-searchpath="'.$importapi->{searchPath}.'"
             data-reportpath="'.$importapi->{reportPath}.'"
+            data-activation="'.$importapi->{activation}.'"
             data-token="'.Digest::SHA::hmac_sha256_hex($importapi->{apiToken}).'"
             data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
-        $dropdown .= '</ul>';
+        $dropdown .= '</ul></div>';
+        if ($importapi->{activation} eq "enabled") {
+            $dropdown .= '<div><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;">{{activated}}</span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
+        }
         $dropdown .= '<recordmodal></recordmodal>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/vue.min.js"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/vuex.min.js"></script>';
