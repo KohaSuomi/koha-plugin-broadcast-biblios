@@ -255,13 +255,6 @@ sub activateSingleBiblio {
     my ($error, $response) = $self->_restRequestCall(undef, @pusharray);
     return {status => 400, message => $error} if $error;
 
-    my $order = 0;
-    foreach my $componentpart (@{$componentsArr}) {
-        $order++;
-        ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml}, part_order => $order});
-        return {status => 400, message => $error} if $error;
-    }
-
     return {message => "Success"};
 
 }
