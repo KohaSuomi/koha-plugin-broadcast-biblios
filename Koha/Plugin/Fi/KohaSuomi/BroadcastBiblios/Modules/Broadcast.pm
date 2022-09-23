@@ -337,6 +337,8 @@ sub _getActiveEndpointParameters {
     my ($self, $biblio) = @_;
 
     my $restParams = {marcxml => $biblio->{metadata}, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface};
+    my $blocked = $self->activeRecords()->checkBlock($biblio);    
+    $restParams->{blocked} = $blocked if length $blocked;
     $restParams->{updated} = $biblio->{timestamp} if $self->getAll;
     
     return $restParams;
@@ -349,8 +351,9 @@ sub _getActiveIdentifierEndpointParameters {
     return unless $identifier && $identifier_field;
 
     my $restParams = {identifier => $identifier, identifier_field => $identifier_field, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface};
+    my $blocked = $self->activeRecords()->checkBlock($biblio);
+    $restParams->{blocked} = $blocked if length $blocked;
     $restParams->{updated} = $biblio->{timestamp} if $self->getAll;
-
 
     return $restParams;
 }

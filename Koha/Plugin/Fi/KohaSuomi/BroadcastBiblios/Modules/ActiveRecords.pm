@@ -212,6 +212,12 @@ sub fetchActiveFields {
     return \@activefields;
 }
 
+sub checkBlock {
+    my ($self, $biblio) = @_;
+    my $record = MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8');
+    return $record->subfield('942', "b");
+}
+
 sub checkEncodingLevel {
     my ($self, $record) = @_;
 
