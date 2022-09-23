@@ -30,4 +30,34 @@ Once set up is complete you will need to alter your UseKohaPlugins system prefer
 
 # Configuring
 
-Here is the place for configurations
+Define export and import interfaces to plugin configuration as YAML.
+
+Example of export interfaces. Type can be export or import, if set import then you can only import records from the remote sources.
+
+    ---
+    -   host: https://foobaa.fi
+        basePath: /service/api/biblio/export
+        searchPath: /service/api/biblio/search
+        reportPath: /service/api/biblio
+        interface: MyExport
+        interfaceName: Api of mine
+        apiToken: foobaa
+        type: export
+    -   host: https://foobaa.fi
+        basePath: /service/api/biblio/export
+        searchPath: /service/api/biblio/search
+        reportPath: /service/api/biblio
+        interface: OnlyImports
+        interfaceName: Import this
+        apiToken: foobaa
+        type: import
+
+Example of import interface. Import interface is defined so the service nows where to import. Activation parameter can be enabled for record activation on detail screen.
+
+    host: https://foobaa.fi
+    basePath: /service/api/biblio/export
+    searchPath: /service/api/biblio/search
+    reportPath: /service/api/biblio
+    interface: OUTI
+    apiToken: foobaa
+    activation: enabled
