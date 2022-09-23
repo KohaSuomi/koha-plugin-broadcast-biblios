@@ -52,7 +52,7 @@ Example of export interfaces. Type can be export or import, if set import then y
         apiToken: foobaa
         type: import
 
-Example of import interface. Import interface is defined so the service nows where to import. Activation parameter can be enabled for record activation on detail screen.
+Example of import interface. Import interface is defined so the background service nows where to import. Activation parameter can be enabled for record activation on detail screen.
 
     host: https://foobaa.fi
     basePath: /service/api/biblio/export
