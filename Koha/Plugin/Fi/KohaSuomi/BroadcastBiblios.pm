@@ -7,6 +7,7 @@ use Modern::Perl;
 use base qw(Koha::Plugins::Base);
 ## We will also need to include any Koha libraries we want to access
 use C4::Context;
+use C4::Auth qw( haspermission );
 use utf8;
 
 use YAML::XS;
@@ -114,7 +115,7 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
     my $exportapis = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('exportapis')));
     my $importapi = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('importapi')));
     my $dropdown;
-    if ($exportapis && $importapi) {
+    if ($exportapis && $importapi && haspermission(C4::Context->userenv->{'id'}, {'editcatalogue' => 'edit_catalogue'})) {
         my $pluginpath = $self->get_plugin_http_path();
         $dropdown = '<div id="pushApp">
             <div class="btn-group" style="margin-left: 5px;">
@@ -141,7 +142,7 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
             data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
         $dropdown .= '</ul></div>';
         if ($importapi->{activation} eq "enabled") {
-            $dropdown .= '<div><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;">{{activated}}</span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
+            $dropdown .= '<div><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
         }
         $dropdown .= '<recordmodal></recordmodal>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/vue.min.js"></script>';
