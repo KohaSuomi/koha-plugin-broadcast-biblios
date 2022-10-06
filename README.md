@@ -30,7 +30,7 @@ Once set up is complete you will need to alter your UseKohaPlugins system prefer
 
 # Configuring
 
-For automatic broadcast define broadcast-config.conf. The definitions depend on do you want activate or broadcast biblios. The type is defined on run_broadcast_biblios.pl script. Master (Täti) broadcasts to local, so broadcast endpoint is only needed there and vice versa.
+For automatic broadcast define broadcast-config.conf to KOHA_CONF path. The definitions depend on do you want activate or broadcast biblios. The type is defined on run_broadcast_biblios.pl script. Master (Täti) broadcasts to local, so broadcast endpoint is only needed there and vice versa.
 
     {
         broadcastEndpoint => 'http://127.0.0.1/api/biblio/broadcast',
