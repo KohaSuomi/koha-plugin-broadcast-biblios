@@ -30,7 +30,16 @@ Once set up is complete you will need to alter your UseKohaPlugins system prefer
 
 # Configuring
 
-Define export and import interfaces to plugin configuration as YAML.
+For automatic broadcast define broadcast-config.conf. The definitions depend on do you want activate or broadcast biblios. The type is defined on run_broadcast_biblios.pl script. Master (Täti) broadcasts to local, so broadcast endpoint is only needed there and vice versa.
+
+    {
+        broadcastEndpoint => 'http://127.0.0.1/api/biblio/broadcast',
+        activeEndpoint => 'http://127.0.0.1/api/biblio/active',
+        apiKey => 'foobaa111',
+    }
+
+
+For UI export and import define interfaces to plugin configuration as YAML. When these are defined the export/import dropdown will appear to record detail page.
 
 Example of export interfaces. Type can be export or import, if set import then you can only import records from the remote sources.
 
