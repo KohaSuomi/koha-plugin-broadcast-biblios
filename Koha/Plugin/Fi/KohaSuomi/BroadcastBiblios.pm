@@ -142,7 +142,7 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
             data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
         $dropdown .= '</ul></div>';
         if ($importapi->{activation} eq "enabled") {
-            $dropdown .= '<div><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
+            $dropdown .= '<div class="btn-group"><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
         }
         $dropdown .= '<recordmodal></recordmodal>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/vue.min.js"></script>';
