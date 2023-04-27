@@ -96,10 +96,12 @@ sub configure {
         print $template->output();
     }
     else {
+        my $exportapis = $cgi->param('exportapis');
+        my $importapi = $cgi->param('importapi');
         $self->store_data(
             {
-                exportapis          => $cgi->param('exportapis'),
-                importapi           => $cgi->param('importapi')
+                exportapis          => $exportapis,
+                importapi           => $importapi
             }
         );
         $self->go_home();
