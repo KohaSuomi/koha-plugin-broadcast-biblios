@@ -210,5 +210,6 @@ sub activate {
         $logger->error($error);
         return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
     }
+}
 
 1;
