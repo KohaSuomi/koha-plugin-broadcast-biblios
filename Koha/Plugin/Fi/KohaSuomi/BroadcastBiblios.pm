@@ -16,6 +16,7 @@ use Mojo::JSON qw(decode_json);
 
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 
 ## Here we set our plugin version
 our $VERSION = "2.0.0";
@@ -74,6 +75,10 @@ sub new {
 
     if ($args->{database}) {
         $self->{database} = $args->{database};
+    }
+
+    if ($args->{date}) {
+        $self->{date} = $args->{date};
     }
 
     return $self;
@@ -254,6 +259,19 @@ sub get_active {
     } else {
         $activeRecords->getActiveRecordsByBiblionumber($params);
     }
+
+}
+
+sub build_oai {
+    my ( $self ) = @_;
+
+    my $params = {
+        verbose => $self->{verbose},
+        date => $self->{date}
+    };
+
+    my $oai = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI->new($params);
+    $oai->buildOAI();
 
 }
 

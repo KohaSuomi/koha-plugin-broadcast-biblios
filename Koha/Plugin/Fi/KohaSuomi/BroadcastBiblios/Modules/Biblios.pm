@@ -22,6 +22,8 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Try::Tiny;
 use Koha::Biblio::Metadatas;
+use Koha::Database;
+use Koha::DateUtils qw(dt_from_string);
 
 =head new
 
@@ -111,45 +113,25 @@ sub getHostRecord {
     return undef;
 }
 
-# sub importedRecords {
-#     print "Fetch imported records from $batchdate\n";
-#     my $marcflavour = C4::Context->preference('marcflavour');
-#     my $start = dt_from_string($batchdate.' 00:00:00');
-#     my $end = dt_from_string($batchdate.' 23:59:00');
-#     my $schema = Koha::Database->new->schema;
-#     my $type = $stage_type eq "update" ? 'match_applied' : 'no_match';
-#     my $dtf = Koha::Database->new->schema->storage->datetime_parser;
-#     my @biblios = $schema->resultset('ImportRecord')->search({status => 'imported', overlay_status => $type, upload_timestamp => {-between => [
-#                 $dtf->format_datetime( $start ),
-#                 $dtf->format_datetime( $end ),
-#             ]}});
-    
-#     my @data;
-#     my @components;
-#     foreach my $rs (@biblios) {
-#         my $cols = { $rs->get_columns };
-#         $cols->{biblionumber} = $schema->resultset('ImportBiblio')->search({import_record_id => $cols->{import_record_id}})->get_column("matched_biblionumber")->next;
-#         if ($cols->{biblionumber}) {
-#             $cols->{marcxml} = Koha::Biblio::Metadatas->find({biblionumber => $cols->{biblionumber}})->metadata;
-#             my $componentparts = Koha::Biblios->find( {biblionumber => $cols->{biblionumber}} )->componentparts;
-#             if ($componentparts) {
-#                 foreach my $componentpart (@{$componentparts}) {
-#                     push @components, {biblionumber => $componentpart->{biblionumber}, parent_id => $cols->{biblionumber}};
-#                 }
-#             }
-#             push @data, {marcxml => $cols->{marcxml}, biblionumber => $cols->{biblionumber}};
-#         }
-#     }
-#     foreach my $componentpart (@components) {
-#         my $index;
-#         foreach my $d (@data) {
-#             if ($componentpart->{biblionumber} eq $d->{biblionumber}) {
-#                 $data[$index]->{parent_id} = $componentpart->{parent_id};
-#             }
-#             $index++;
-#         }
-#     }
-#     return @data;
-# }
+sub importedRecords {
+    my ($self, $batchdate) = @_;
+    print "Fetch imported records from $batchdate\n";
+    my $marcflavour = C4::Context->preference('marcflavour');
+    my $start = dt_from_string($batchdate.' 00:00:00');
+    my $end = dt_from_string($batchdate.' 23:59:00');
+    my $schema = Koha::Database->new->schema;
+    my @biblios = $schema->resultset('ImportRecord')->search({status => 'imported', upload_timestamp => {-between => [
+                Koha::Database->new->schema->storage->datetime_parser->format_datetime( $start ),
+                Koha::Database->new->schema->storage->datetime_parser->format_datetime( $end ),
+            ]}
+            },{
+                join => 'import_biblio',
+                '+select' => ['import_biblio.matched_biblionumber'],
+                '+as' => ['biblionumber'],
+                group_by => 'import_biblio.matched_biblionumber'
+            })->get_column('biblionumber')->all;
+
+    return @biblios;
+}
 
 1;
