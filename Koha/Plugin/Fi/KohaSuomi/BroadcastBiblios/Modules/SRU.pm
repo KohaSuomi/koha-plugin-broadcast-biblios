@@ -90,6 +90,11 @@ sub getQuery {
     return $self->{_params}->{query};
 }
 
+sub xmlPath {
+    my ($self) = @_;
+    return $self->{_params}->{xmlPath} || "/zs:searchRetrieveResponse/zs:records/zs:record/zs:recordData/*";
+}
+
 sub getLogger {
     my ($self) = @_;
     return Koha::Logger->get({class => 'broadcastbiblios'});
@@ -131,17 +136,16 @@ sub search {
 
 sub getRecords {
     my ($self, $res) = @_;
-    #warn Data::Dumper::Dumper $res;
+
     my $xml = XML::LibXML->load_xml(string => $res);
-    my @records = $xml->findnodes('/zs:searchRetrieveResponse/zs:records/zs:record/zs:recordData/record');
-    for my $record (@records) {
-        warn Data::Dumper::Dumper $record->toString();
-        my $recordData = $record->find('/record');
-        #warn Data::Dumper::Dumper $recordData;
-        my $marc = MARC::Record->new_from_xml($recordData);
-        #warn Data::Dumper::Dumper $marc;
-        return $marc;
+    my @sruRecords = $xml->findnodes($self->xmlPath());
+    my @records;
+
+    for my $record (@sruRecords) {
+        push @records, $record->toString();
     }
+
+    return \@records;
 }
 
 1;
