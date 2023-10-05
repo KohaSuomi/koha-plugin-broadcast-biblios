@@ -21,7 +21,7 @@ use Modern::Perl;
 use Carp;
 use Scalar::Util qw( blessed );
 use Try::Tiny;
-use MARC::Record;
+use Mojo::JSON qw(to_json);
 
 sub new {
     my ($class, $params) = @_;
@@ -42,7 +42,7 @@ sub getMarcXML {
     return $marcxml;
 }
 
-sub toJSON {
+sub toHash {
     my ($self) = @_;
     my $marcxml = $self->xmlToHash($self->getMarcXML());
     my $json;
@@ -51,21 +51,26 @@ sub toJSON {
     return $json;
 }
 
+sub toJSON {
+    my ($self) = @_;
+    return to_json($self->toHash());
+}
+
 sub formatFields {
     my ($self, $controlfields, $datafields) = @_;
     my @fields;
     if ($controlfields) {
         foreach my $controlfield (@$controlfields) {
-            push @fields, {tag => $controlfield->{"tag"}, content => $controlfield->{"content"}};
+            push @fields, {tag => $controlfield->{"tag"}, value => $controlfield->{"value"}};
         }
     }
     if ($datafields) {
         foreach my $datafield (@$datafields) {
             my @subfields;
             foreach my $subfield (@{$datafield->{"subfield"}}) {
-                push @subfields, {code => $subfield->{"code"}, content => $subfield->{"content"}};
+                push @subfields, {code => $subfield->{"code"}, value => $subfield->{"value"}};
             }
-            push @fields, {tag => $datafield->{"tag"}, ind1 => $datafield->{"ind1"}, ind2 => $datafield->{"ind2"}, subfield => \@subfields};
+            push @fields, {tag => $datafield->{"tag"}, ind1 => $datafield->{"ind1"}, ind2 => $datafield->{"ind2"}, subfields => \@subfields};
         }
     }
     return \@fields;
@@ -91,7 +96,7 @@ sub xmlToHash {
             
             my @cf;
             foreach my $controlfield (@controlfields) {
-                push @cf, {tag => $controlfield->getAttribute("tag"), content => $controlfield->textContent}
+                push @cf, {tag => $controlfield->getAttribute("tag"), value => $controlfield->textContent}
             }
             $hash->{controlfield} = \@cf;
             
@@ -100,13 +105,14 @@ sub xmlToHash {
                 my @subfields = $datafield->getElementsByTagName("subfield");
                 my @sf;
                 foreach my $subfield (@subfields){
-                    push @sf, {code => $subfield->getAttribute("code"), content => $subfield->textContent};
+                    push @sf, {code => $subfield->getAttribute("code"), value => $subfield->textContent};
                 }
                 push @df, {tag => $datafield->getAttribute("tag"), ind1 => $datafield->getAttribute("ind1"), ind2 => $datafield->getAttribute("ind2"), subfield => \@sf}
             }
             $hash->{datafield} = \@df;
         }
     }
+
     return $hash;
 }
 
