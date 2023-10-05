@@ -27,6 +27,7 @@ use DateTime;
 use Mojo::UserAgent;
 use Koha::Logger;
 use XML::LibXML;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON;
 
 =head new
 
@@ -105,6 +106,12 @@ sub ua {
     return Mojo::UserAgent->new;
 }
 
+sub MarcXMLToHash {
+    my ($self, $marcxml) = @_;
+    my $marcjson = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new({marcxml => $marcxml});
+    return $marcjson->toHash();
+}
+
 sub buildTX {
     my ($self, $method, $path) = @_;
     my $tx = $self->ua->build_tx($method => $path);
@@ -142,7 +149,7 @@ sub getRecords {
     my @records;
 
     for my $record (@sruRecords) {
-        push @records, $record->toString();
+        push @records, $self->MarcXMLToHash($record->toString());
     }
 
     return \@records;
