@@ -42,18 +42,13 @@ sub getMarcXML {
     return $marcxml;
 }
 
-sub toHash {
+sub toJSON {
     my ($self) = @_;
     my $marcxml = $self->xmlToHash($self->getMarcXML());
     my $json;
     $json->{leader} = $marcxml->{"leader"} if $marcxml->{"leader"};
     $json->{fields} = $self->formatFields($marcxml->{"controlfield"}, $marcxml->{"datafield"}) if $marcxml->{"controlfield"} || $marcxml->{"datafield"};
     return $json;
-}
-
-sub toJSON {
-    my ($self) = @_;
-    return to_json($self->toHash());
 }
 
 sub formatFields {

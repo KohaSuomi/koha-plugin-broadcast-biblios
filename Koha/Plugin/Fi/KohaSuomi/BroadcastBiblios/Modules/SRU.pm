@@ -106,10 +106,10 @@ sub ua {
     return Mojo::UserAgent->new;
 }
 
-sub MarcXMLToHash {
+sub MarcXMLToJSON {
     my ($self, $marcxml) = @_;
     my $marcjson = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new({marcxml => $marcxml});
-    return $marcjson->toHash();
+    return $marcjson->toJSON();
 }
 
 sub buildTX {
@@ -149,7 +149,7 @@ sub getRecords {
     my @records;
 
     for my $record (@sruRecords) {
-        push @records, $self->MarcXMLToHash($record->toString());
+        push @records, $self->MarcXMLToJSON($record->toString());
     }
 
     return \@records;
