@@ -213,5 +213,82 @@
         }
       }
     }
+  },
+  "/biblios/active": {
+    "get": {
+      "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::ActiveRecordController#get",
+      "operationId": "findActivatedRecord",
+      "tags": [
+        "biblios"
+      ],
+      "parameters": [
+        {
+          "name": "identifier",
+          "in": "formData",
+          "description": "Record's identifier",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "identifier_field",
+          "in": "formData",
+          "description": "Record's identifier field",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "Activated record",
+          "schema": {
+            "type": "object"
+          }
+        },
+        "400": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Bad request",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Not found",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Internal server error",
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "editcatalogue": "edit_catalogue"
+        }
+      }
+    }
   }
 }
