@@ -27,6 +27,7 @@ use File::Basename;
 use MARC::Record;
 use MARC::File::XML;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
 use Mojo::UserAgent;
 use JSON;
 
@@ -42,6 +43,58 @@ sub new {
     $self->{_params} = $params;
     bless($self, $class);
     return $self;
+
+}
+
+sub getTimestamp {
+    return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
+}
+
+sub getParams {
+    my ($self) = @_;
+    my $params = $self->{_params};
+    unless ($params->{all}) {
+        $params->{timestamp} = $self->getTimestamp();
+    }
+    return shift->{_params};
+}
+
+sub db {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database->new;
+}
+
+sub getActiveRecordByIdentifier {
+    my ($self, $identifier, $identifier_field) = @_;
+    my $result = $self->db->getActiveRecordByIdentifier($identifier, $identifier_field);
+    return $result;
+}
+
+sub setActiveRecords {
+    my ($self) = @_;
+    my $params = $self->getParams();
+    my $pageCount = 1;
+    while ($pageCount >= $params->{page}) {
+        my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
+        my $biblios = $newbiblios->fetch();
+        my $count = 0;
+        foreach my $biblio (@{$biblios}) {
+            $count++;
+            next if $self->db->getActiveRecordByBiblionumber($biblio->{biblionumber});
+            next if $self->checkComponentPart(MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8'));
+            my ($identifier, $identifier_field) = $self->getActiveField($biblio);
+            next unless $identifier && $identifier_field;
+            my $update_on = $params->{all} ? $biblio->{timestamp} : undef;
+            $self->db->insertActiveRecord($biblio->{biblionumber}, $identifier, $identifier_field, $update_on);
+        }
+        print "$count biblios processed!\n";
+        if ($count eq $params->{chunks}) {
+            $pageCount++;
+            $params->{page} = $pageCount;
+        } else {
+            $pageCount = 0;
+        }
+    }
 
 }
 

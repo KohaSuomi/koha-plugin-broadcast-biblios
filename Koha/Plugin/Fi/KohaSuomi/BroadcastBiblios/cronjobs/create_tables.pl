@@ -33,3 +33,4 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
 
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new();
 $plugin->create_log_table();
+$plugin->create_active_records_table();

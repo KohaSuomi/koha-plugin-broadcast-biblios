@@ -48,6 +48,7 @@ sub new {
     my $self = $class->SUPER::new($args);
 
     $self->{logTable} = $self->get_qualified_table_name('log');
+    $self->{activeTable} = $self->get_qualified_table_name('activerecords');
 
     if ( $args->{page} && $args->{chunks}) {
 
@@ -169,6 +170,7 @@ sub install() {
     my ( $self, $args ) = @_;
 
     $self->create_log_table();
+    $self->create_active_records_table();
 }
 
 ## This is the 'upgrade' method. It will be triggered when a newer version of a
@@ -262,6 +264,23 @@ sub get_active {
 
 }
 
+sub set_active {
+    my ( $self ) = @_;
+
+    my $params = {
+        chunks => $self->{chunks},
+        biblionumber => $self->{biblionumber},
+        limit => $self->{limit},
+        page => $self->{page},
+        all => $self->{all},
+        table => $self->{activeTable},
+    };
+
+    my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new($params);
+    $activeRecords->setActiveRecords();
+
+}
+
 sub build_oai {
     my ( $self ) = @_;
 
@@ -285,6 +304,27 @@ sub create_log_table {
         `biblionumber` int(11) NOT NULL,
         `updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
         PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+}
+
+sub create_active_records_table {
+    my ( $self ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $activerecords_table = $self->get_qualified_table_name('activerecords');
+    $dbh->do("CREATE TABLE IF NOT EXISTS `$activerecords_table` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `biblionumber` int(11) NOT NULL,
+        `remote_biblionumber` int(11) DEFAULT NULL,
+        `identifier_field` varchar(255) NOT NULL,
+        `identifier` varchar(255) NOT NULL,
+        `block` tinyint(1) NOT NULL DEFAULT 0,
+        `updated_on` datetime DEFAULT NULL,
+        `created_on` datetime NOT NULL DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`),
+        FOREIGN KEY (`biblionumber`) REFERENCES `biblio_metadata` (`biblionumber`) ON DELETE CASCADE,
+        UNIQUE INDEX(biblionumber, identifier_field, identifier)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }
