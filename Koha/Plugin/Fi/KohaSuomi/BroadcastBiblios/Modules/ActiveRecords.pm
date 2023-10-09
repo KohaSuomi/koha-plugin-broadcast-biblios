@@ -201,10 +201,12 @@ sub getActiveField {
         foreach my $f024 (@f024) {
             if ($f024->subfield('a') && $f024->indicator('1') eq '3') {
                 $activefield = $f024->subfield('a');
+                $activefield =~ s/-//gi;
                 $fieldname = '024a';
                 last;
             } elsif ($f024->subfield('a')) {
                 $activefield = $f024->subfield('a');
+                $activefield =~ s/-//gi;
                 $fieldname = '024a';
                 last;
             }
