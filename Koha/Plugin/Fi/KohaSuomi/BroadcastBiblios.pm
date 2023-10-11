@@ -171,6 +171,8 @@ sub install() {
 
     $self->create_log_table();
     $self->create_active_records_table();
+    $self->create_queue_table();
+    $self->create_users_table();
 }
 
 ## This is the 'upgrade' method. It will be triggered when a newer version of a
@@ -324,7 +326,55 @@ sub create_active_records_table {
         `created_on` datetime NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (`id`),
         FOREIGN KEY (`biblionumber`) REFERENCES `biblio_metadata` (`biblionumber`) ON DELETE CASCADE,
-        UNIQUE INDEX(biblionumber, identifier_field, identifier)
+        UNIQUE INDEX(biblionumber, identifier_field, identifier),
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+}
+
+sub create_queue_table {
+    my ( $self ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $table = $self->get_qualified_table_name('queue');
+    $dbh->do("CREATE TABLE IF NOT EXISTS `$table` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `user_id` int(11) NOT NULL,
+        `broadcast_interface` varchar(30) NOT NULL,
+        `biblio_id` int(11) NOT NULL,
+        `status` ENUM('pending','processing','completed','failed') DEFAULT 'pending',
+        `statusmessage` varchar(255) DEFAULT NULL,
+        `broadcast_biblio_id` int(11) NOT NULL,
+        `hostrecord` tinyint(1) NOT NULL DEFAULT 0,
+        `componentparts` longtext DEFAULT NULL,
+        `marc` longtext NOT NULL,
+        `diff` longtext NOT NULL,
+        `transfered_on` datetime DEFAULT NULL,
+        `created_on` datetime NOT NULL DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`),
+        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+}
+
+sub create_users_table {
+    my ( $self ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $table = $self->get_qualified_table_name('users');
+    $dbh->do("CREATE TABLE IF NOT EXISTS `$table` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `auth_type` ENUM('basic', 'oauth') DEFAULT 'basic'
+        `broadcast_interface` varchar(30) NOT NULL,
+        `username` varchar(50) DEFAULT NULL,
+        `password` varchar(50) DEFAULT NULL,
+        `client_id` varchar(50) DEFAULT NULL,
+        `client_secret` varchar(50) DEFAULT NULL,
+        `access_token` varchar(100) DEFAULT NULL,
+        `token_expires` datetime DEFAULT NULL,
+        `linked_borrowernumber` int(11) DEFAULT NULL,
+        `created_on` datetime NOT NULL DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`),
+        KEY `linked_borrowernumber` (`linked_borrowernumber`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }
