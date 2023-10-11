@@ -290,5 +290,101 @@
         }
       }
     }
+  },
+  "/broadcast/queue": {
+    "post": {
+      "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#queue",
+      "operationId": "addToBroadcastQueue",
+      "tags": [
+        "biblios"
+      ],
+      "parameters": [
+        {
+          "name": "broadcast_interface",
+          "in": "body",
+          "description": "Broadcast interface name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "broadcast_biblio_id",
+          "in": "body",
+          "description": "Broadcast interface's biblio id",
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "name": "marc",
+          "in": "body",
+          "description": "Marc record",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "biblio_id",
+          "in": "body",
+          "description": "Source interface's biblio id",
+          "type": "integer"
+        },
+        {
+          "name": "borrowernumber",
+          "in": "body",
+          "description": "Linked borrowernumber",
+          "type": "integer"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "Added record to broadcast queue",
+          "schema": {
+            "type": "object"
+          }
+        },
+        "400": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Bad request",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Not found",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Internal server error",
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "editcatalogue": "edit_catalogue"
+        }
+      }
+    }
   }
 }
