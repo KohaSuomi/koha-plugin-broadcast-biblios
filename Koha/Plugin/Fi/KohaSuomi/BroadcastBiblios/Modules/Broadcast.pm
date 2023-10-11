@@ -170,14 +170,9 @@ sub blockComponentParts {
 
 sub getRecord {
     my ($self, $biblio) = @_;
-    
-    my $record = eval {MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8')};
-    if ($@) {
-        print $biblio->{biblionumber}." record is broken\n";
-        return 0;
-    }
 
-    return $record;
+    my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+    return $biblios->getRecord($biblio);
 }
 
 
@@ -258,42 +253,6 @@ sub activateSingleBiblio {
     return {message => "Success"};
 
 }
-
-# sub broadcastStaged {
-#     my ($self) = @_;
-#     my @biblios = import_records();
-#     my $count = 0;
-#     foreach my $biblio (@biblios) {
-#         my $parameters;
-#         if ($stage_type eq "update") {
-#             my $record = MARC::Record::new_from_xml($biblio->{marcxml}, 'UTF-8');
-#             if($record->field($target_field)) {
-#                 my $target_id = $record->field($target_field)->subfield($target_subfield);
-#                 if ($target_id =~ /$field_check/) {
-#                     print "Target id ($target_id) found from $biblio->{biblionumber}!\n";
-#                     $target_id =~ s/\D//g;
-#                     $parameters = {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, target_id => $target_id, interface => $self->getInterface, check => Mojo::JSON->true};
-#                 }
-#             }
-#         } else {
-#             $parameters = $biblio->{parent_id} ? {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, interface => $self->getInterface, parent_id => $biblio->{parent_id}, force => 1} : {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, interface => $self->getInterface};
-#         }
-#         if ($parameters) {
-#             my $tx = $ua->inactivity_timeout($inactivity_timeout)->post($endpoint => $headers => json => $parameters);
-#             my $response = decode_json($tx->res->body);
-#             my $error = $response->{error} || $tx->res->error->{message} if $response->{error} || $tx->res->error;
-#             if ($error) {
-#                 print "$biblio->{biblionumber} biblio failed with: $error!\n";
-#             }
-#             if ($verbose && defined $response->{message} && $response->{message} eq "Success") {
-#                 print "$biblio->{biblionumber} biblio added succesfully\n";
-#             }
-#             $count++;
-#         }
-#     }
-
-#     print "$count biblios processed!\n";
-# }
 
 sub getLastRecord {
     my ($self) = @_;
