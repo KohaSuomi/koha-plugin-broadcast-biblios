@@ -55,10 +55,29 @@ sub activerecords {
     return $self->plugin->get_qualified_table_name('activerecords');
 }
 
+sub queue {
+    my ($self) = @_;
+    return $self->plugin->get_qualified_table_name('queue');
+}
+
+sub users {
+    my ($self) = @_;
+    return $self->plugin->get_qualified_table_name('users');
+}
+
 sub dbh {
     my ($self) = @_;
     return C4::Context->dbh;
 }
+
+=head ActiveRecords
+
+    Active recods database functions
+    
+        my $activeRecord = $db->getActiveRecordByBiblionumber($biblionumber);
+        my $activeRecord = $db->getActiveRecordByIdentifier($identifier, $identifier_field);
+        $db->insertActiveRecord($biblionumber, $identifier, $identifier_field, $updated_on);
+=cut
 
 sub getActiveRecordByBiblionumber {
     my ($self, $biblionumber) = @_;
@@ -86,6 +105,106 @@ sub insertActiveRecord {
     my $sth = $dbh->prepare("INSERT INTO " . $self->activerecords . " (biblionumber, identifier, identifier_field, updated_on) VALUES (?, ?, ?, ?)");
     $sth->execute($biblionumber, $identifier, $identifier_field, $updated_on);
     $sth->finish();
+}
+
+=head Queue
+
+    Queue database functions
+
+=cut
+
+sub getPendingQueue {
+    my ($self) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE status = 'pending'");
+    $sth->execute();
+    my @results = $sth->fetchall_arrayref({});
+    $sth->finish();
+    return @results;
+}
+
+sub insertQueue {
+    my ($self, $params) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("INSERT INTO " . $self->queue . " (biblionumber, identifier, identifier_field, updated_on) VALUES (?, ?, ?, ?)");
+    $sth->execute($biblionumber, $identifier, $identifier_field, $updated_on);
+    $sth->finish();
+}
+
+=head Logs
+
+    Log database functions
+    
+=cut
+
+=head Users
+
+    User database functions
+        
+        my $user = $db->getUserByUserId($user_id);
+        my $user = $db->getBroadcastInterfaceUser($interface, $linked_borrowernumber);
+        $db->insertUser($params);
+        $db->updateUser($user_id, $params);
+        $db->updateAccessToken($user_id, $access_token, $token_expiry);
+        my $access_token = $db->getAccessToken($user_id);
+
+=cut
+
+sub insertUser {
+    my ($self, $params) = @_;
+    my $dbh = $self->dbh;
+    my $query = "INSERT INTO " . $self->users . " (auth_type, broadcast_interface, username, password, client_id, client_secret, linked_borrowernumber) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber});
+    $sth->finish();
+}
+
+sub updateUser {
+    my ($self, $user_id, $params) = @_;
+    my $dbh = $self->dbh;
+    my $query = "UPDATE " . $self->users . " SET auth_type = ?, broadcast_interface = ?, username = ?, password = ?, client_id = ?, client_secret = ?, linked_borrowernumber = ? WHERE id = ?";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber}, $user_id);
+    $sth->finish();
+}
+
+sub updateAccessToken {
+    my ($self, $user_id, $access_token, $token_expiry) = @_;
+    my $dbh = $self->dbh;
+    my $query = "UPDATE " . $self->users . " SET access_token = ?, token_expires = ? WHERE id = ?";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($access_token, $token_expires, $user_id);
+    $sth->finish();
+}
+
+sub getAccessToken {
+    my ($self, $user_id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT access_token FROM " . $self->users . " WHERE id = ?");
+    $sth->execute($user_id);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
+sub getUserByUserId {
+    my ($self, $user_id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->users . " WHERE id = ?");
+    $sth->execute($user_id);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
+sub getBroadcastInterfaceUser {
+    my ($self, $interface, $linked_borrowernumber) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->users . " WHERE broadcast_interface = ? AND linked_borrowernumber = ?");
+    $sth->execute($interface, $linked_borrowernumber);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
 }
 
 1;
