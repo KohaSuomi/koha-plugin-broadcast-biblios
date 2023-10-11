@@ -24,6 +24,7 @@ use Try::Tiny;
 use Koha::Biblio::Metadatas;
 use Koha::Database;
 use Koha::DateUtils qw(dt_from_string);
+use MARC::Record;
 
 =head new
 
@@ -77,42 +78,6 @@ sub fetch {
     return $biblios;
 }
 
-sub getHostRecord {
-    my ($self, $r) = @_;
-
-    my $f773w = $r->subfield('773', 'w');
-    my $f003;
-    if ($f773w =~ /\((.*)\)/ ) { 
-        $f003 = $1; 
-        $f773w =~ s/\D//g;
-    }
-    my $cn = $f773w;
-    my $cni = $r->field('003')->data();
-
-    return undef unless $cn && $cni;
-
-    my $query = "Control-number,ext:\"$cn\" AND cni,ext:\"$cni\"";
-    require Koha::SearchEngine::Search;
-
-    my $searcher = Koha::SearchEngine::Search->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
-
-    my ( $error, $results, $total_hits ) = $searcher->simple_search_compat( $query, 0, 10 );
-    if ($error) {
-        die "getHostRecord():> Searching ($query):> Returned an error:\n$error";
-    }
-
-    my $marcflavour = C4::Context->preference('marcflavour');
-
-    if ($total_hits == 1) {
-        my $record = $results->[0];
-        return ref($record) ne 'MARC::Record' ? MARC::Record::new_from_xml($record, 'UTF-8', $marcflavour) : $record;
-    }
-    elsif ($total_hits > 1) {
-        die "getHostRecord():> Searching ($query):> Returned more than one record?";
-    }
-    return undef;
-}
-
 sub importedRecords {
     my ($self, $batchdate) = @_;
     print "Fetch imported records from $batchdate\n";
@@ -132,6 +97,18 @@ sub importedRecords {
             })->get_column('biblionumber')->all;
 
     return @biblios;
+}
+
+sub getRecord {
+    my ($self, $biblio) = @_;
+    
+    my $record = eval {MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8')};
+    if ($@) {
+        print $biblio->{biblionumber}." record is broken\n";
+        return 0;
+    }
+
+    return $record;
 }
 
 1;
