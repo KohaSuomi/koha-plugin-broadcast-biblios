@@ -19,7 +19,7 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Biblios;
-use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode BiblioAutoLink);
 use C4::Context;
 use Try::Tiny;
@@ -72,8 +72,8 @@ sub add {
         if ($@) {
             return $c->render(status => 400, openapi => {error => $@});
         } else {
-            my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
-            my $hostrecord = $biblios->getHostRecord($record);
+            my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+            my $hostrecord = $search->getHostRecord($record);
             if ($hostrecord && $hostrecord->subfield('942','c')) {
                 my $field = MARC::Field->new('942','','','c' => $hostrecord->subfield('942','c'));
                 $record->append_fields($field);
@@ -114,8 +114,8 @@ sub update {
             if (C4::Context->preference("BiblioAddsAuthorities")){
                 BiblioAutoLink($record, $frameworkcode);
             }
-            my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
-            my $hostrecord = $biblios->getHostRecord($record);
+            my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+            my $hostrecord = $search->getHostRecord($record);
             
             if ($hostrecord && $hostrecord->subfield('942','c')) {
                 my $field = MARC::Field->new('942','','','c' => $hostrecord->subfield('942','c'));
