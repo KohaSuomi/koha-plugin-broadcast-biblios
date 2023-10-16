@@ -18,7 +18,7 @@ package Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastCon
 use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
-use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
 use Try::Tiny;
 use Koha::Logger;
 
@@ -29,20 +29,14 @@ use Koha::Logger;
 sub queue {
     my $c = shift->openapi->valid_input or return;
 
-    my $logger = Koha::Logger->get({ interface => 'broadcast' });
+    my $logger = Koha::Logger->get({ interface => 'api' });
 
     try {
+        my $body = $c->req->body;
+        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new($body);
+        $queue->setToQueue();
 
-        my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new();
-        my $identifier = $c->validation->param('identifier');
-        my $identifier_field = $c->validation->param('identifier_field');
-        my $activeRecord = $activeRecords->getActiveRecordByIdentifier($identifier, $identifier_field);
-
-        unless ($activeRecord) {
-            return $c->render(status => 404, openapi => {error => "Activation not found"});
-        }
-
-        return $c->render(status => 200, openapi => $activeRecord);
+        return $c->render(status => 200, openapi => {message => "Success"});
     } catch {
         my $error = $_;
         $logger->error($error);
