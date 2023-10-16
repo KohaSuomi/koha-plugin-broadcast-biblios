@@ -28,8 +28,12 @@ use MARC::Record;
 use MARC::File::XML;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
 use Mojo::UserAgent;
 use JSON;
+use Koha::Logger;
 
 =head new
 
@@ -50,6 +54,10 @@ sub getTimestamp {
     return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
 }
 
+sub getConfig {
+    shift->{_params}->{config};
+}
+
 sub getParams {
     my ($self) = @_;
     my $params = $self->{_params};
@@ -59,9 +67,43 @@ sub getParams {
     return shift->{_params};
 }
 
+sub getLogger {
+    my ($self) = @_;
+    return Koha::Logger->get( {interface => "broadcast"});
+}
+
 sub db {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database->new;
+}
+
+sub getUsers {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new;
+}
+
+sub getIdentifiers {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers->new;
+}
+
+sub processNewActiveRecords {
+    my ($self) = @_;
+    my $activerecords = $self->db->getNewActiveRecords();
+    foreach my $activerecord (@$activerecords) {
+        my @identifiers = $self->getIdentifiers->fetchIdentifiers($activerecord->{metadata});
+        my $ua = Mojo::UserAgent->new;
+        my $tx = $ua->post($self->getConfig->{rest}->{baseUrl}."/broadcast/biblios", {'Content-Type' => 'application/json'}, json => {identifiers => @identifiers, biblio_id => $activerecord->{remote_biblionumber}});
+        if ($tx->res->code eq '200' || $tx->res->code eq '201') {
+            $self->db->updateActiveRecordRemoteBiblionumber($activerecord->{id}, $tx->res->json->{biblio}->{biblionumber});
+            my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $self->getConfig->{interface_name}, user_id => $self->getConfig->{user_id}, type => 'import'});
+            $queue->setToQueue($activerecord, $tx->res->json);
+            $self->db->activeRecordUpdated($activerecord->{id});
+        } else {
+            my $error = $tx->res->json;
+            $self->getLogger->error("Error while processing new active record. ".$tx->res->code." Error code: ".$error->{error}."\n");
+        }
+    }
 }
 
 sub getActiveRecordByIdentifier {
