@@ -25,6 +25,7 @@ use Koha::Biblio::Metadatas;
 use Koha::Database;
 use Koha::DateUtils qw(dt_from_string);
 use MARC::Record;
+use Koha::Logger;
 
 =head new
 
@@ -59,6 +60,10 @@ sub getBiblionumber {
 
 sub getTimestamp {
     return shift->{_params}->{timestamp};
+}
+
+sub getLogger {
+    return Koha::Logger->get({instance => 'broadcast'});
 }
 
 sub fetch {
@@ -102,9 +107,9 @@ sub importedRecords {
 sub getRecord {
     my ($self, $biblio) = @_;
     
-    my $record = eval {MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8')};
+    my $record = eval {MARC::Record::new_from_xml($biblio, 'UTF-8')};
     if ($@) {
-        print $biblio->{biblionumber}." record is broken\n";
+        $self->getLogger->error("Error while parsing MARCXML: $@\n");
         return 0;
     }
 
