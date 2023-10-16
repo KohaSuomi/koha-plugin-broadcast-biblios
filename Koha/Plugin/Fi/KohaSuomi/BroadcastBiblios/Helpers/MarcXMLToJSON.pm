@@ -31,20 +31,9 @@ sub new {
     return $self;
 }
 
-sub getMarcXML {
-    my ($self) = @_;
-    my $marcxml;
-    if ($self->{_params}->{marcxml}) {
-        $marcxml = $self->{_params}->{marcxml};
-    } else {
-        die "Missing marcxml parameter";
-    }
-    return $marcxml;
-}
-
 sub toJSON {
-    my ($self) = @_;
-    my $marcxml = $self->xmlToHash($self->getMarcXML());
+    my ($self, $marc) = @_;
+    my $marcxml = $self->xmlToHash($marc);
     my $json;
     $json->{leader} = $marcxml->{"leader"} if $marcxml->{"leader"};
     $json->{fields} = $self->formatFields($marcxml->{"controlfield"}, $marcxml->{"datafield"}) if $marcxml->{"controlfield"} || $marcxml->{"datafield"};
