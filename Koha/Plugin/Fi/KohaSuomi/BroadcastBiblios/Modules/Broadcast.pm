@@ -172,7 +172,7 @@ sub getRecord {
     my ($self, $biblio) = @_;
 
     my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
-    return $biblios->getRecord($biblio);
+    return $biblios->getRecord($biblio->{metadata});
 }
 
 
