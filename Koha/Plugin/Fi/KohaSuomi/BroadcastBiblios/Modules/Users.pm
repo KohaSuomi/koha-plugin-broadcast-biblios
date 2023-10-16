@@ -25,6 +25,7 @@ use JSON;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
 use C4::Context;
+use Crypt::JWT;
 
 =head new
 
@@ -44,6 +45,26 @@ sub new {
 sub db {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database->new;
+}
+
+sub addUser {
+
+}
+
+sub getAuthentication {
+    my ($self, $user_id) = @_;
+    my $user = $self->db->getUserByUserId($user_id);
+    if ($user->{auth_type} eq "basic") {
+
+    }
+}
+
+sub basicAuth {
+
+}
+
+sub OAUTH2 {
+    
 }
 
 1;
