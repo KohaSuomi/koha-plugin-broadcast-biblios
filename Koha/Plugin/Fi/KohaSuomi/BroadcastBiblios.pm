@@ -15,6 +15,7 @@ use Encode;
 use Mojo::JSON qw(decode_json);
 
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 
@@ -48,7 +49,6 @@ sub new {
     my $self = $class->SUPER::new($args);
 
     $self->{logTable} = $self->get_qualified_table_name('log');
-    $self->{activeTable} = $self->get_qualified_table_name('activerecords');
 
     if ( $args->{page} && $args->{chunks}) {
 
@@ -80,6 +80,14 @@ sub new {
 
     if ($args->{date}) {
         $self->{date} = $args->{date};
+    }
+
+    if ($args->{config}) {
+        $self->{config} = $args->{config};
+    }
+
+    if ($args->{type}) {
+        $self->{type} = $args->{type};
     }
 
     return $self;
@@ -274,8 +282,7 @@ sub set_active {
         biblionumber => $self->{biblionumber},
         limit => $self->{limit},
         page => $self->{page},
-        all => $self->{all},
-        table => $self->{activeTable},
+        all => $self->{all}
     };
 
     my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new($params);
@@ -294,6 +301,32 @@ sub build_oai {
     my $oai = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI->new($params);
     $oai->buildOAI();
 
+}
+
+sub update_active {
+    my ( $self ) = @_;
+
+    my $params = {
+        verbose => $self->{verbose},
+        page => $self->{page},
+        limit => $self->{limit},
+        chunks => $self->{chunks},
+        config => $self->{config}
+    };
+
+    my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new($params);
+    $activeRecords->processNewActiveRecords();
+}
+
+sub process_queue {
+    my ( $self ) = @_;
+    my $params = {
+        verbose => $self->{verbose},
+        type => $self->{type},
+    };
+
+    my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new($params);
+    $queue->processQueue();
 }
 
 sub create_log_table {
@@ -326,7 +359,7 @@ sub create_active_records_table {
         `created_on` datetime NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (`id`),
         FOREIGN KEY (`biblionumber`) REFERENCES `biblio_metadata` (`biblionumber`) ON DELETE CASCADE,
-        UNIQUE INDEX(biblionumber, identifier_field, identifier),
+        UNIQUE INDEX(biblionumber, identifier_field, identifier)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }
@@ -339,6 +372,7 @@ sub create_queue_table {
     $dbh->do("CREATE TABLE IF NOT EXISTS `$table` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
         `user_id` int(11) NOT NULL,
+        `type` ENUM('export','import') DEFAULT 'import',
         `broadcast_interface` varchar(30) NOT NULL,
         `biblio_id` int(11) NOT NULL,
         `status` ENUM('pending','processing','completed','failed') DEFAULT 'pending',
@@ -347,11 +381,11 @@ sub create_queue_table {
         `hostrecord` tinyint(1) NOT NULL DEFAULT 0,
         `componentparts` longtext DEFAULT NULL,
         `marc` longtext NOT NULL,
-        `diff` longtext NOT NULL,
+        `diff` longtext DEFAULT NULL,
         `transfered_on` datetime DEFAULT NULL,
         `created_on` datetime NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (`id`),
-        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+        KEY `user_id` (`user_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }
@@ -363,7 +397,7 @@ sub create_users_table {
     my $table = $self->get_qualified_table_name('users');
     $dbh->do("CREATE TABLE IF NOT EXISTS `$table` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
-        `auth_type` ENUM('basic', 'oauth') DEFAULT 'basic'
+        `auth_type` ENUM('basic', 'oauth') DEFAULT 'basic',
         `broadcast_interface` varchar(30) NOT NULL,
         `username` varchar(50) DEFAULT NULL,
         `password` varchar(50) DEFAULT NULL,
