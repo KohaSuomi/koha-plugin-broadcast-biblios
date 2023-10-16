@@ -107,6 +107,33 @@ sub insertActiveRecord {
     $sth->finish();
 }
 
+sub updateActiveRecordRemoteBiblionumber {
+    my ($self, $id, $remote_biblionumber) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("UPDATE " . $self->activerecords . " SET remote_biblionumber = ? WHERE id = ?");
+    $sth->execute($remote_biblionumber, $id);
+    $sth->finish();
+}
+
+sub activeRecordUpdated {
+    my ($self, $id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("UPDATE " . $self->activerecords . " SET updated_on = NOW() WHERE id = ?");
+    $sth->execute($id);
+    $sth->finish();
+}
+
+sub getNewActiveRecords {
+    my ($self) = @_;
+    my $dbh = $self->dbh;
+    my $query = "SELECT ar.*, bm.metadata FROM " . $self->activerecords . " AS ar JOIN biblio_metadata AS bm ON ar.biblionumber = bm.biblionumber WHERE updated_on is null";
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my $results = $sth->fetchall_arrayref({});
+    $sth->finish();
+    return $results;
+}
+
 =head Queue
 
     Queue database functions
@@ -114,20 +141,29 @@ sub insertActiveRecord {
 =cut
 
 sub getPendingQueue {
-    my ($self) = @_;
+    my ($self, $type) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE status = 'pending'");
-    $sth->execute();
-    my @results = $sth->fetchall_arrayref({});
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE status = 'pending' and type = ? ORDER BY id ASC");
+    $sth->execute($type);
+    my $results = $sth->fetchall_arrayref({});
     $sth->finish();
-    return @results;
+    return $results;
 }
 
-sub insertQueue {
+sub insertToQueue {
     my ($self, $params) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("INSERT INTO " . $self->queue . " (biblionumber, identifier, identifier_field, updated_on) VALUES (?, ?, ?, ?)");
-    $sth->execute($biblionumber, $identifier, $identifier_field, $updated_on);
+    my $query = "INSERT INTO " . $self->queue . " (user_id, type, broadcast_interface, biblio_id, broadcast_biblio_id, hostrecord, componentparts, marc, diff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($params->{user_id}, $params->{type}, $params->{broadcast_interface}, $params->{biblio_id}, $params->{broadcast_biblio_id}, $params->{hostrecord}, $params->{componentparts}, $params->{marc}, $params->{diff});
+    $sth->finish();
+}
+
+sub updateQueueStatus {
+    my ($self, $id, $status, $statusmessage) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("UPDATE " . $self->queue . " SET status = ?, statusmessage = ?, transfered_on = NOW() WHERE id = ?");
+    $sth->execute($status, $statusmessage, $id);
     $sth->finish();
 }
 
@@ -169,7 +205,7 @@ sub updateUser {
 }
 
 sub updateAccessToken {
-    my ($self, $user_id, $access_token, $token_expiry) = @_;
+    my ($self, $user_id, $access_token, $token_expires) = @_;
     my $dbh = $self->dbh;
     my $query = "UPDATE " . $self->users . " SET access_token = ?, token_expires = ? WHERE id = ?";
     my $sth = $dbh->prepare($query);

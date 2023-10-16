@@ -26,6 +26,13 @@ use C4::Context;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::CompareRecords;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use JSON;
+use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode);
+use Koha::Logger;
 
 =head new
 
@@ -46,20 +53,12 @@ sub getBroadcastInterface {
     shift->{_params}->{broadcast_interface};
 }
 
-sub getBroadcastBiblioId {
-    shift->{_params}->{broadcast_biblio_id};
+sub getUserId {
+    shift->{_params}->{user_id};
 }
 
-sub getBiblioId {
-    shift->{_params}->{biblio_id};
-}
-
-sub getMarcRecord {
-    shift->{_params}->{marc};
-}
-
-sub getLinkedBorrowernumber {
-    shift->{_params}->{linked_borrowernumber};
+sub getType {
+    shift->{_params}->{type};
 }
 
 sub db {
@@ -67,40 +66,174 @@ sub db {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database->new;
 }
 
-sub search {
-    my ($self) = @_;
-    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new;
-}
-
 sub user {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::User->new;
 }
 
-sub identifiers {
+sub compareRecords {
     my ($self) = @_;
-    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers->new;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::CompareRecords->new;
+}
+
+sub getMarcXMLToJSON {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new;
+}
+
+sub getComponentParts {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new;
+}
+
+sub getRecord {
+    my ($self, $marcxml) = @_;
+    my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+    return $biblios->getRecord($marcxml);
+}
+
+sub getLogger {
+    my ($self) = @_;
+    return Koha::Logger->get( {interface => "broadcast"});
+}
+
+sub getDiff {
+    my ($self, $localmarcxml, $broadcastmarcxml) = @_;
+    return $self->compareRecords->getDiff($self->getMarcXMLToJSON->toJSON($localmarcxml), $self->getMarcXMLToJSON->toJSON($broadcastmarcxml));
 }
 
 sub setToQueue {
-    my ($self) = @_;
-
-    my @identifiers = $self->identifiers->fetchIdentifiers($self->getMarcRecord);
-    my $record = $self->findRecord($self->getIdentifiers);
-    my $user = $self->user->getBroadcastInterfaceUser($self->getBroadcastInterface, undef);
-
-
+    my ($self, $localrecord, $broadcastrecord) = @_;
+    my $encodingLevel = $self->compareEncodingLevels($localrecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
+    if ($encodingLevel ne "greater") {
+        $self->db->insertToQueue($self->processParams($localrecord, $broadcastrecord));
+    }
 }
 
-sub findRecord {
-    my ($self, @identifiers) = @_;
+sub processQueue {
+    my ($self) = @_;
 
-    foreach my $identifier (@identifiers) {
-        my $record = $self->search->getRecordByIdentifier($identifier->{identifier}, $identifier->{identifier_field});
-        return $record if $record;
+    if ($self->getType eq "export") {
+        $self->processExportQueue;
+    } elsif ($self->getType eq "import") {
+        $self->processImportQueue;
     }
+}
 
-    return undef;
+sub processImportQueue {
+    my ($self) = @_;
+    my $queue = $self->db->getPendingQueue('import');
+    foreach my $queue (@$queue) {
+        $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
+        my $biblionumber = $queue->{biblio_id};
+        my $frameworkcode = GetFrameworkCode( $biblionumber );
+        my $record = $self->getRecord($queue->{marc});
+
+        if ($record) {
+            my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
+                        overlay_context => {
+                            source       => 'z3950'
+                        }
+                    });
+            if ($success) {
+                if ($queue->{hostrecord}) {
+                    $self->processImportComponentParts($biblionumber, from_json($queue->{componentparts}));
+                }
+                $self->getLogger->info("Updated record $biblionumber\n")
+            } else {
+                $self->getLogger->info("Failed to update record $biblionumber\n");
+            }
+            $self->db->updateQueueStatus($queue->{id}, 'completed', $success);
+        } else {
+            $self->db->updateQueueStatus($queue->{id}, 'failed', 'Record not found, check the logs');
+            $self->getLogger->info("Failed to update record $biblionumber\n");
+        }
+        
+    }
+}
+
+sub processExportQueue {
+    my ($self) = @_;
+    my $queue = $self->db->getPendingQueue('export');
+    foreach my $queue (@$queue) {
+        warn Data::Dumper::Dumper $queue;
+    }
+}
+
+sub processImportComponentParts {
+    my ($self, $biblio_id, $broadcastcomponentparts) = @_;
+    $broadcastcomponentparts = $self->sortComponentParts($broadcastcomponentparts);
+    my $localcomponentparts = $self->getComponentParts->fetch($biblio_id);
+    if ($localcomponentparts) {
+        $localcomponentparts = $self->sortComponentParts($localcomponentparts);
+        my $localcomponentpartscount = scalar @{$localcomponentparts};
+        for (my $i = 0; $i < $localcomponentpartscount; $i++) {
+            my $localcomponentpart = $localcomponentparts->[$i];
+            my $biblionumber = $localcomponentpart->{biblionumber};
+            my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
+            my $frameworkcode = GetFrameworkCode( $biblionumber );
+            my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
+            if ($record) {
+                my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
+                            overlay_context => {
+                                source       => 'z3950'
+                            }
+                        });
+                $self->getLogger->info("Updated component part $biblionumber\n") if $success;
+            }
+        }
+    } else {
+        my $broadcastcomponentpartscount = scalar @{$broadcastcomponentparts};
+        for (my $i = 0; $i < $broadcastcomponentpartscount; $i++) {
+            my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
+            my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
+            if ($record) {
+                my ($biblionumber, $biblioitemnumber) = &AddBiblio($record, '');
+                $self->getLogger->info("Added component part $biblionumber\n");
+            }
+        }
+    }
+}
+
+sub processParams {
+    my ($self, $activerecord, $broadcastrecord) = @_;
+
+    my $params = {
+        broadcast_interface => $self->getBroadcastInterface,
+        user_id => $self->getUserId,
+        type => $self->getType,
+        biblio_id => $activerecord->{biblionumber},
+        broadcast_biblio_id => $broadcastrecord->{biblio}->{biblionumber},
+        marc => $broadcastrecord->{biblio}->{marcxml},
+        componentparts => $broadcastrecord->{componentparts} ? to_json($broadcastrecord->{componentparts}) : undef,
+    };
+    my $diff = $self->getDiff($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
+    $params->{diff} = $diff ne "{}" ? $diff : undef;
+    $params->{hostrecord} = 1 if $params->{componentparts};
+
+    return $params;
+}
+
+sub compareEncodingLevels {
+    my ($self, $localmarc, $broadcastmarc) = @_;
+    my $localEncoding = $self->getEncodingLevel($localmarc);
+    my $broadcastEncoding = $self->getEncodingLevel($broadcastmarc);
+    return $self->compareRecords->compareEncodingLevels($localEncoding, $broadcastEncoding);
+}
+
+sub getEncodingLevel {
+    my ($self, $marcxml) = @_;
+    my $record = MARC::Record->new_from_xml($marcxml);
+    my $leader = $record->leader();
+    my $encodingLevel = substr($leader, 17, 1);
+    my $encodingStatus = substr($leader, 5, 1);
+    return {encodingLevel => $encodingLevel, encodingStatus => $encodingStatus};
+}
+
+sub sortComponentParts {
+    my ($self, $componentparts) = @_;
+    my @sorted = sort { $a->{biblionumber} <=> $b->{biblionumber} } @{$componentparts};
+    return \@sorted;
 }
 
 1;
