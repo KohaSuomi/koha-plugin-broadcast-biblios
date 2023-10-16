@@ -53,10 +53,53 @@ sub get {
     }
 }
 
-sub add {
+sub find {
     my $c = shift->openapi->valid_input or return;
 
     my $logger = Koha::Logger->get({ interface => 'api' });
+
+    try {
+        my $body = $c->req->json;
+        my $identifiers = $body->{identifiers};
+        my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+        my $biblio_id = $body->{biblio_id};
+        foreach my $identifier (@$identifiers) {
+            my $bib = $search->findByIdentifier($identifier->{identifier}, $identifier->{identifier_field});
+            $biblio_id = $bib->subfield('999', 'c')+0;
+            last if $bib;
+        }
+
+        my $biblio = Koha::Biblios->find($biblio_id);
+
+        unless ($biblio) {
+            return $c->render(status => 404, openapi => {error => "Biblio not found"});
+        }
+
+        my $bibliowrapper = {
+            marcxml => $biblio->metadata->metadata,
+            biblionumber => $biblio->biblionumber,
+
+        };
+
+        my $componentparts = $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
+        my $components;
+        foreach my $componentpart (@{$componentparts}) {
+            my $biblionumber = $componentpart->subfield('999', 'c')+0;
+            push @$components, {biblionumber => $biblionumber, marcxml => $componentpart->as_xml_record()};
+        }
+        
+        return $c->render(status => 200, openapi => { biblio => $bibliowrapper, componentparts => $components });
+    } catch {
+        my $error = $_;
+        $logger->error($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+    }
+}
+
+sub add {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'broadcast' });
 
     try {
 
