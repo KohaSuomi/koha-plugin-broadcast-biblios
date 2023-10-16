@@ -291,46 +291,30 @@
       }
     }
   },
-  "/broadcast/queue": {
+  "/broadcast/biblios": {
     "post": {
-      "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#queue",
-      "operationId": "addToBroadcastQueue",
-      "tags": [
-        "biblios"
-      ],
+      "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#find",
+      "operationId": "findBiblio",
+      "tags": ["biblios"],
       "parameters": [
         {
-          "name": "broadcast_interface",
+          "name": "body",
           "in": "body",
-          "description": "Broadcast interface name",
+          "description": "Record search parameters",
           "required": true,
-          "type": "string"
-        },
-        {
-          "name": "broadcast_biblio_id",
-          "in": "body",
-          "description": "Broadcast interface's biblio id",
-          "required": true,
-          "type": "integer"
-        },
-        {
-          "name": "marc",
-          "in": "body",
-          "description": "Marc record",
-          "required": true,
-          "type": "string"
-        },
-        {
-          "name": "biblio_id",
-          "in": "body",
-          "description": "Source interface's biblio id",
-          "type": "integer"
-        },
-        {
-          "name": "borrowernumber",
-          "in": "body",
-          "description": "Linked borrowernumber",
-          "type": "integer"
+          "schema": {
+            "type": "object",
+            "properties": {
+              "identifiers": {
+                "type": "array",
+                "description": "Record's identifiers"
+              },
+              "biblio_id": {
+                "type": ["integer", "null"],
+                "description": "Record's internal identifier"
+              }
+            }
+          }
         }
       ],
       "produces": [
@@ -338,21 +322,9 @@
       ],
       "responses": {
         "200": {
-          "description": "Added record to broadcast queue",
+          "description": "A biblio record with componentparts",
           "schema": {
             "type": "object"
-          }
-        },
-        "400": {
-          "description": "An error occured",
-          "schema": {
-            "type": "object",
-            "properties": {
-              "error": {
-                "description": "Bad request",
-                "type": "string"
-              }
-            }
           }
         },
         "404": {
@@ -361,7 +333,7 @@
             "type": "object",
             "properties": {
               "error": {
-                "description": "Not found",
+                "description": "Biblio not found",
                 "type": "string"
               }
             }
@@ -378,11 +350,6 @@
               }
             }
           }
-        }
-      },
-      "x-koha-authorization": {
-        "permissions": {
-          "editcatalogue": "edit_catalogue"
         }
       }
     }
