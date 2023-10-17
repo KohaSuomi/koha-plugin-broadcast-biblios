@@ -82,7 +82,7 @@ sub dbh {
 sub getActiveRecordByBiblionumber {
     my ($self, $biblionumber) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM " . $self->activerecords . " WHERE biblionumber = ?");
+    my $sth = $dbh->prepare("SELECT ar.*, bm.metadata FROM " . $self->activerecords . " AS ar JOIN biblio_metadata AS bm ON ar.biblionumber = bm.biblionumber WHERE biblionumber = ?");
     $sth->execute($biblionumber);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
@@ -92,7 +92,7 @@ sub getActiveRecordByBiblionumber {
 sub getActiveRecordByIdentifier {
     my ($self, $identifier, $identifier_field) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM " . $self->activerecords . " WHERE identifier = ? AND identifier_field = ?");
+    my $sth = $dbh->prepare("SELECT ar.*, bm.metadata FROM " . $self->activerecords . " AS ar JOIN biblio_metadata AS bm ON ar.biblionumber = bm.biblionumber WHERE identifier = ? AND identifier_field = ?");
     $sth->execute($identifier, $identifier_field);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
@@ -137,6 +137,10 @@ sub getNewActiveRecords {
 =head Queue
 
     Queue database functions
+        
+            my $queue = $db->getPendingQueue($type);
+            $db->insertToQueue($params);
+            $db->updateQueueStatus($id, $status, $statusmessage);
 
 =cut
 
@@ -170,8 +174,61 @@ sub updateQueueStatus {
 =head Logs
 
     Log database functions
+            
+            $db->setBroadcastLog($biblionumber, $timestamp);
+            my $log = $db->getBroadcastLogByBiblionumber($biblionumber);
+            my $log = $db->getBroadcastLogByTimestamp($timestamp);
+            my $log = $db->getBroadcastLogLatest();
     
 =cut
+
+sub setBroadcastLog {
+    my ($self, $biblionumber, $timestamp) = @_;
+
+    my $dbh = $self->dbh;
+    my $query = "INSERT INTO ".$self->logs." (biblionumber, updated) VALUES (?,?);";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($biblionumber, $timestamp) or die $sth->errstr;
+    
+}
+
+sub getBroadcastLogByBiblionumber {
+    my ($self, $biblionumber) = @_;
+
+    my $dbh = $self->dbh;
+    my $query = "SELECT * FROM ".$self->logs." WHERE biblionumber = ?;";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($biblionumber) or die $sth->errstr; 
+    my $data = $sth->fetchrow_hashref;
+
+    return $data;
+}
+
+sub getBroadcastLogByTimestamp {
+    my ($self, $timestamp) = @_;
+
+    my $dbh = $self->dbh;
+    my $query = "SELECT * FROM ".$self->logs." WHERE updated = ?;";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($timestamp) or die $sth->errstr;
+    my $data = $sth->fetchrow_hashref;
+    
+    return $data;
+    
+}
+
+sub getBroadcastLogLatest {
+    my ($self) = @_;
+
+    my $dbh = $self->dbh;
+    my $query = "SELECT * FROM ".$self->logs." order by id desc limit 1;";
+    my $sth = $dbh->prepare($query);
+    $sth->execute() or die $sth->errstr;
+    my $data = $sth->fetchrow_hashref;
+    
+    return $data;
+    
+}
 
 =head Users
 
