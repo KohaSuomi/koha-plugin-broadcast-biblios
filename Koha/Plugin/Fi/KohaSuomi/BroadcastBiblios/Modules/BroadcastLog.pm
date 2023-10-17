@@ -23,6 +23,7 @@ use Scalar::Util qw( blessed );
 use Try::Tiny;
 use Koha::DateUtils qw( dt_from_string );
 use C4::Context;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
 
 =head new
 
@@ -31,7 +32,7 @@ use C4::Context;
 =cut
 
 sub new {
-    my ($class, $params) = _validateNew(@_);
+    my ($class, $params) = @_;
     my $self = {};
     $self->{_params} = $params;
     bless($self, $class);
@@ -39,69 +40,30 @@ sub new {
 
 }
 
-sub _validateNew {
-    my ($class, $params) = @_;
-
-    unless ($params->{table}) {
-        die "Missing database table name";
-    }
-
-    return @_;
-}
-
-sub getTable {
-    return shift->{_params}->{table};
+sub db {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database->new;
 }
 
 sub setBroadcastLog {
     my ($self, $biblionumber, $timestamp) = @_;
 
-    my $dbh = C4::Context->dbh;
-    my $table = $self->getTable();
-    my $query = "INSERT INTO $table (biblionumber, updated) VALUES (?,?);";
-    my $sth = $dbh->prepare($query);
-    $sth->execute($biblionumber, $timestamp) or die $sth->errstr;
+    $self->db->setBroadcastLog($biblionumber, $timestamp);
     
 }
 
 sub getBroadcastLogByBiblionumber {
     my ($self, $biblionumber) = @_;
-
-    my $dbh = C4::Context->dbh;
-    my $table = $self->getTable();
-    my $query = "SELECT * FROM $table WHERE biblionumber = ?;";
-    my $sth = $dbh->prepare($query);
-    $sth->execute($biblionumber) or die $sth->errstr; 
-    my $data = $sth->fetchrow_hashref;
-
-    return $data;
+    return $self->db->getBroadcastLogByBiblionumber($biblionumber);
 }
 
 sub getBroadcastLogByTimestamp {
     my ($self, $timestamp) = @_;
-
-    my $dbh = C4::Context->dbh;
-    my $table = $self->getTable();
-    my $query = "SELECT * FROM $table WHERE updated = ?;";
-    my $sth = $dbh->prepare($query);
-    $sth->execute($timestamp) or die $sth->errstr;
-    my $data = $sth->fetchrow_hashref;
-    
-    return $data;
-    
+    return $self->db->getBroadcastLogByTimestamp($timestamp);
 }
 
 sub getBroadcastLogLatest {
     my ($self) = @_;
-
-    my $dbh = C4::Context->dbh;
-    my $table = $self->getTable();
-    my $query = "SELECT * FROM $table order by id desc limit 1;";
-    my $sth = $dbh->prepare($query);
-    $sth->execute() or die $sth->errstr;
-    my $data = $sth->fetchrow_hashref;
-    
-    return $data;
-    
+    return $self->db->getBroadcastLogLatest();  
 }
 1;
