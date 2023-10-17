@@ -214,7 +214,7 @@
       }
     }
   },
-  "/biblios/active": {
+  "/broadcast/biblios/active": {
     "get": {
       "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::ActiveRecordController#get",
       "operationId": "findActivatedRecord",
@@ -224,14 +224,14 @@
       "parameters": [
         {
           "name": "identifier",
-          "in": "formData",
+          "in": "query",
           "description": "Record's identifier",
           "required": true,
           "type": "string"
         },
         {
           "name": "identifier_field",
-          "in": "formData",
+          "in": "query",
           "description": "Record's identifier field",
           "required": true,
           "type": "string"
@@ -282,11 +282,6 @@
               }
             }
           }
-        }
-      },
-      "x-koha-authorization": {
-        "permissions": {
-          "editcatalogue": "edit_catalogue"
         }
       }
     }
