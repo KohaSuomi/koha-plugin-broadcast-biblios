@@ -20,6 +20,7 @@ use Modern::Perl;
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode BiblioAutoLink);
 use C4::Context;
 use Try::Tiny;
@@ -81,12 +82,8 @@ sub find {
 
         };
 
-        my $componentparts = $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
-        my $components;
-        foreach my $componentpart (@{$componentparts}) {
-            my $biblionumber = $componentpart->subfield('999', 'c')+0;
-            push @$components, {biblionumber => $biblionumber, marcxml => $componentpart->as_xml_record()};
-        }
+        my $componentparts = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new();
+        my $components = $componentparts->fetch($biblio_id);
         
         return $c->render(status => 200, openapi => { biblio => $bibliowrapper, componentparts => $components });
     } catch {
