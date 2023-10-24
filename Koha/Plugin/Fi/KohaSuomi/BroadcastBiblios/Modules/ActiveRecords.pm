@@ -50,6 +50,10 @@ sub new {
 
 }
 
+sub verbose {
+    return shift->{_params}->{verbose};
+}
+
 sub getTimestamp {
     return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
 }
@@ -87,9 +91,16 @@ sub getIdentifiers {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers->new;
 }
 
+sub getRecord {
+    my ($self, $marcxml) = @_;
+
+    my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+    return $biblios->getRecord($marcxml);
+}
+
 sub processNewActiveRecords {
     my ($self) = @_;
-    my $activerecords = $self->db->getNewActiveRecords();
+    my $activerecords = $self->db->getPendingActiveRecords();
     foreach my $activerecord (@$activerecords) {
         my @identifiers = $self->getIdentifiers->fetchIdentifiers($activerecord->{metadata});
         my $ua = Mojo::UserAgent->new;
@@ -101,15 +112,24 @@ sub processNewActiveRecords {
             $self->db->activeRecordUpdated($activerecord->{id});
         } else {
             my $error = $tx->res->json;
-            $self->getLogger->error("Error while processing new active record. ".$tx->res->code." Error code: ".$error->{error}."\n");
+            $self->getLogger->error("REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$error->{error}."\n");
         }
     }
 }
 
 sub getActiveRecordByIdentifier {
     my ($self, $identifier, $identifier_field) = @_;
-    my $result = $self->db->getActiveRecordByIdentifier($identifier, $identifier_field);
-    return $result;
+    return $self->db->getActiveRecordByIdentifier($identifier, $identifier_field);
+}
+
+sub getActiveRecordByBiblionumber {
+    my ($self, $biblionumber) = @_;
+    return $self->db->getActiveRecordByBiblionumber($biblionumber);
+}
+
+sub updateActiveRecord {
+    my ($self, $id, $params) = @_;
+    return $self->db->updateActiveRecord($id, $params);
 }
 
 sub setActiveRecords {
@@ -121,13 +141,26 @@ sub setActiveRecords {
         my $biblios = $newbiblios->fetch();
         my $count = 0;
         foreach my $biblio (@{$biblios}) {
+            if ($self->verbose) {
+                print "Processing biblio ".$biblio->{biblionumber}."\n";
+            }
             $count++;
-            next if $self->db->getActiveRecordByBiblionumber($biblio->{biblionumber});
-            next if $self->checkComponentPart(MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8'));
-            my ($identifier, $identifier_field) = $self->getActiveField($biblio);
-            next unless $identifier && $identifier_field;
-            my $update_on = $params->{all} ? $biblio->{timestamp} : undef;
-            $self->db->insertActiveRecord($biblio->{biblionumber}, $identifier, $identifier_field, $update_on);
+            try {
+                my $record = $self->getRecord($biblio->{metadata});
+                return unless $record;
+                return if $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
+                return if $self->checkComponentPart($record);
+                my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
+                return unless $identifier && $identifier_field;
+                my $update_on = $params->{all} ? $biblio->{timestamp} : undef;
+                my $activerecord_id = $self->db->insertActiveRecord($biblio->{biblionumber}, $identifier, $identifier_field, $update_on);
+                if ($self->getConfig) {
+                    $self->processAddedActiveRecord($self->db->getActiveRecordById($activerecord_id));
+                }
+            } catch {
+                print "Error while processing record ".$biblio->{biblionumber}.", check the logs!\n";
+                $self->getLogger->error("Error while processing record ".$biblio->{biblionumber}." with error: ".$@."\n");
+            }
         }
         print "$count biblios processed!\n";
         if ($count eq $params->{chunks}) {
@@ -138,6 +171,23 @@ sub setActiveRecords {
         }
     }
 
+}
+
+sub processAddedActiveRecord {
+    my ($self, $activerecord) = @_;
+    my @identifiers = $self->getIdentifiers->fetchIdentifiers($activerecord->{metadata});
+    my $ua = Mojo::UserAgent->new;
+    my $tx = $ua->post($self->getConfig->{rest}->{baseUrl}."/broadcast/biblios", {'Content-Type' => 'application/json'}, json => {identifiers => @identifiers, biblio_id => $activerecord->{remote_biblionumber}});
+    if ($tx->res->code eq '200' || $tx->res->code eq '201') {
+        $self->db->updateActiveRecordRemoteBiblionumber($activerecord->{id}, $tx->res->json->{biblio}->{biblionumber});
+        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $self->getConfig->{interface_name}, user_id => $self->getConfig->{user_id}, type => 'import'});
+        $queue->setToQueue($activerecord, $tx->res->json);
+        $self->db->activeRecordUpdated($activerecord->{id});
+        $self->getLogger->info("Active record id:".$activerecord->{id}." update added to queue \n");
+    } else {
+        my $error = $tx->res->json;
+        $self->getLogger->error("REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$error->{error}."\n");
+    }
 }
 
 sub getActiveRecordsByBiblionumber {
@@ -155,7 +205,7 @@ sub getActiveRecordsByBiblionumber {
         foreach my $biblio (@{$biblios}) {
             $count++;
             next if $self->checkComponentPart(MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8'));
-            my ($identifier, $identifier_field) = $self->getActiveField($biblio);
+            my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
             if (!$self->activated($params->{endpoint}, $params->{headers}, $interface, $target_id) && $identifier && $identifier_field) {
@@ -188,7 +238,7 @@ sub getAllActiveRecords {
         my $biblios = $newbiblios->fetch();
         my $count = 0;
         foreach my $biblio (@{$biblios}) {
-            my ($identifier, $identifier_field) = $self->getActiveField($biblio);
+            my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
             if ($identifier && $identifier_field) {
