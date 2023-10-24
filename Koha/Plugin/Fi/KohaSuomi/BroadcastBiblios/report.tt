@@ -170,7 +170,7 @@
 				<ol v-if="result.componentparts">
 					<li v-for="componentpart in result.componentparts">
 						{{componentpart.marcjson | title}} (<a v-bind:href="'/cgi-bin/koha/catalogue/detail.pl?biblionumber='+componentpart.biblionumber" target="_blank">{{componentpart.biblionumber}}</a>) <i class="fa fa-code text-muted" @click="toggleShowComponentPart($event, componentpart.biblionumber)"></i>
-						<div v-show="showComponentPart == componentpart.biblionumber" :inner-html.prop="result.marcjson | record"></div>
+						<div v-show="showComponentPart == componentpart.biblionumber" :inner-html.prop="componentpart.marcjson | record"></div>
 					</li>
 				</ol>
 			</td>
