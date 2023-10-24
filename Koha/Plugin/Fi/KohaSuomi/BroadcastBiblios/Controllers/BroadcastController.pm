@@ -26,17 +26,38 @@ use Koha::Logger;
 
 =cut
 
-sub queue {
+sub setToQueue {
     my $c = shift->openapi->valid_input or return;
 
     my $logger = Koha::Logger->get({ interface => 'api' });
 
     try {
-        my $body = $c->req->body;
-        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new($body);
-        $queue->setToQueue();
+        my $body = $c->req->json;
+        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{broadcast_interface}, type => $body->{type}, user_id => $body->{user_id}});
+        $queue->setToQueue($body->{active_biblio}, $body->{broadcast_biblio});
 
-        return $c->render(status => 200, openapi => {message => "Success"});
+        return $c->render(status => 201, openapi => {message => "Success"});
+    } catch {
+        my $error = $_;
+        $logger->error($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+    }
+}
+
+sub listQueue {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'api' });
+
+    try {
+        my $status = $c->validation->param('status');
+        my $page = $c->validation->param('page');
+        my $limit = $c->validation->param('limit');
+        my $biblio_id = $c->validation->param('biblio_id');
+        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new();
+        my $results = $queue->getQueue($status, $biblio_id, $page, $limit);
+
+        return $c->render(status => 200, openapi => $results);
     } catch {
         my $error = $_;
         $logger->error($error);
