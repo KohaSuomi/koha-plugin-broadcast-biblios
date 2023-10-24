@@ -1,0 +1,36 @@
+MYEXPORTINTERFACE:
+  interface_name: "TATI"
+  type: "export"
+  user_id: 1
+  rest:
+    baseUrl: http://127.0.0.1:8080/api/v1/contrib/kohasuomi
+    inactivityTimeout: 60000
+    findBiblios: 
+      path: broadcast/biblios
+      method: post
+    findActiveBiblios:
+      path: broadcast/biblios/active
+      method: get
+    setToQueue:
+      path: broadcast/queue
+      method: post
+  sru:
+    baseUrl: http://
+MYIMPORTINTERFACE:
+  interface_name: "OUTI"
+  type: "import"
+  user_id: 1
+  rest:
+    baseUrl: http://127.0.0.1:8080/api/v1/contrib/kohasuomi
+    inactivityTimeout: 60000
+    findBiblios: 
+      path: broadcast/biblios
+      method: post
+    findActiveBiblios:
+      path: broadcast/biblios/active
+      method: get
+    setToQueue:
+      path: broadcast/queue
+      method: post
+  sru:
+    baseUrl: http://
