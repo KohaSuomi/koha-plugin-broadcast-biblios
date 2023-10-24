@@ -79,10 +79,20 @@ sub dbh {
         $db->insertActiveRecord($biblionumber, $identifier, $identifier_field, $updated_on);
 =cut
 
+sub getActiveRecordById {
+    my ($self, $id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT ar.*, bm.metadata FROM " . $self->activerecords . " AS ar JOIN biblio_metadata AS bm ON ar.biblionumber = bm.biblionumber WHERE ar.id = ?");
+    $sth->execute($id);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
 sub getActiveRecordByBiblionumber {
     my ($self, $biblionumber) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("SELECT ar.*, bm.metadata FROM " . $self->activerecords . " AS ar JOIN biblio_metadata AS bm ON ar.biblionumber = bm.biblionumber WHERE biblionumber = ?");
+    my $sth = $dbh->prepare("SELECT ar.*, bm.metadata FROM " . $self->activerecords . " AS ar JOIN biblio_metadata AS bm ON ar.biblionumber = bm.biblionumber WHERE ar.biblionumber = ?");
     $sth->execute($biblionumber);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
@@ -104,7 +114,9 @@ sub insertActiveRecord {
     my $dbh = $self->dbh;
     my $sth = $dbh->prepare("INSERT INTO " . $self->activerecords . " (biblionumber, identifier, identifier_field, updated_on) VALUES (?, ?, ?, ?)");
     $sth->execute($biblionumber, $identifier, $identifier_field, $updated_on);
+    my $id = $sth->{mysql_insertid};
     $sth->finish();
+    return $id;
 }
 
 sub updateActiveRecordRemoteBiblionumber {
@@ -123,7 +135,7 @@ sub activeRecordUpdated {
     $sth->finish();
 }
 
-sub getNewActiveRecords {
+sub getPendingActiveRecords {
     my ($self) = @_;
     my $dbh = $self->dbh;
     my $query = "SELECT ar.*, bm.metadata FROM " . $self->activerecords . " AS ar JOIN biblio_metadata AS bm ON ar.biblionumber = bm.biblionumber WHERE updated_on is null";
@@ -132,6 +144,14 @@ sub getNewActiveRecords {
     my $results = $sth->fetchall_arrayref({});
     $sth->finish();
     return $results;
+}
+
+sub updateActiveRecord {
+    my ($self, $id, $params) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("UPDATE " . $self->activerecords . " SET identifier = ?, identifier_field = ?, blocked = ? WHERE id = ?");
+    $sth->execute($params->{identifier}, $params->{identifier_field}, $params->{blocked}, $id);
+    $sth->finish();
 }
 
 =head Queue
@@ -152,6 +172,66 @@ sub getPendingQueue {
     my $results = $sth->fetchall_arrayref({});
     $sth->finish();
     return $results;
+}
+
+sub getQueue {
+    my ($self, $status, $biblio_id, $page, $limit) = @_;
+    my $dbh = $self->dbh;
+    my $query = "SELECT * FROM " . $self->queue;
+
+    if ($status && !$biblio_id) {
+        $query .= " WHERE status = ?";
+    } elsif ($biblio_id && !$status) {
+        $query .= " WHERE biblio_id = ?";
+    } elsif ($status && $biblio_id) {
+        $query .= " WHERE status = ? AND biblio_id = ?";
+    }
+
+    if ($page && $limit) {
+        $query .= " ORDER BY id ASC LIMIT " . ($page-1)*$limit . ", " . $limit;
+    } else {
+        $query .= " ORDER BY id ASC";
+    }
+
+    my $sth = $dbh->prepare($query);
+    if ($status && !$biblio_id) {
+        $sth->execute($status);
+    } elsif ($biblio_id && !$status) {
+        $sth->execute($biblio_id);
+    } elsif ($status && $biblio_id) {
+        $sth->execute($status, $biblio_id);
+    } else {
+        $sth->execute();
+    }
+    my $results = $sth->fetchall_arrayref({});
+    $sth->finish();
+    return $results;
+}
+
+sub countQueue {
+    my ($self, $status, $biblio_id) = @_;
+    my $dbh = $self->dbh;
+    my $query = "SELECT COUNT(*) FROM " . $self->queue;
+    if ($status && !$biblio_id) {
+        $query .= " WHERE status = ?";
+    } elsif ($biblio_id && !$status) {
+        $query .= " WHERE biblio_id = ?";
+    } elsif ($status && $biblio_id) {
+        $query .= " WHERE status = ? AND biblio_id = ?";
+    }
+    my $sth = $dbh->prepare($query);
+    if ($status && !$biblio_id) {
+        $sth->execute($status);
+    } elsif ($biblio_id && !$status) {
+        $sth->execute($biblio_id);
+    } elsif ($status && $biblio_id) {
+        $sth->execute($status, $biblio_id);
+    } else {
+        $sth->execute();
+    }
+    my $result = $sth->fetchrow;
+    $sth->finish();
+    return $result;
 }
 
 sub insertToQueue {
