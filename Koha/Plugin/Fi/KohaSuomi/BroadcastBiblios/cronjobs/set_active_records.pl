@@ -56,7 +56,7 @@ GetOptions(
 );
 
 my $usage = <<USAGE;
-    Broadcast biblios to REST endpoint
+    Fetch records from Koha and add them to the active records table
 
     -h, --help              This message.
     -v, --verbose           Verbose.
@@ -64,7 +64,7 @@ my $usage = <<USAGE;
     -c, --chunks            Process biblios in chunks, default is 200.
     -b, --biblionumber      Start sending from defined biblionumber.
     -l, --limit             Limiting the results of biblios.
-    -i, --interface         Interface to use for broadcasting.
+    -i, --interface         Interface to use for broadcasting, if set the script is trying to fetch records from interface.
 
 USAGE
 
