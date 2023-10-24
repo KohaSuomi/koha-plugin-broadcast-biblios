@@ -86,6 +86,11 @@ sub getComponentParts {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new;
 }
 
+sub getActiveRecords {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new;
+}
+
 sub getRecord {
     my ($self, $marcxml) = @_;
     my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
@@ -198,6 +203,7 @@ sub processImportQueue {
                     die "Failed to update record $biblionumber\n";
                 }
                 $self->db->updateQueueStatus($queue->{id}, 'completed', $success);
+                $self->getActiveRecords->activeRecordUpdatedByBiblionumber($biblionumber);
             }
         } catch {
             my $error = $_;
@@ -218,49 +224,47 @@ sub processExportQueue {
 sub processImportComponentParts {
     my ($self, $biblio_id, $broadcastcomponentparts) = @_;
     $broadcastcomponentparts = $self->sortComponentParts($broadcastcomponentparts);
-    try {
-        my $localcomponentparts = $self->getComponentParts->fetch($biblio_id);
-        if ($localcomponentparts) {
-            $localcomponentparts = $self->sortComponentParts($localcomponentparts);
-            my $localcomponentpartscount = scalar @{$localcomponentparts};
-            for (my $i = 0; $i < $localcomponentpartscount; $i++) {
-                my $localcomponentpart = $localcomponentparts->[$i];
-                my $biblionumber = $localcomponentpart->{biblionumber};
-                my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
-                my $frameworkcode = GetFrameworkCode( $biblionumber );
-                my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
-                if ($record) {
-                    my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
-                                overlay_context => {
-                                    source       => 'z3950'
-                                }
-                            });
-                    if ($success) {
-                        $self->getLogger->info("Updated component part $biblionumber\n");
-                    } else {
-                        die "Failed to update component part $biblionumber\n";
-                    }
+    my $localcomponentparts = $self->getComponentParts->fetch($biblio_id);
+    if ($localcomponentparts) {
+        $localcomponentparts = $self->sortComponentParts($localcomponentparts);
+        my $localcomponentpartscount = scalar @{$localcomponentparts};
+        for (my $i = 0; $i < $localcomponentpartscount; $i++) {
+            my $localcomponentpart = $localcomponentparts->[$i];
+            my $biblionumber = $localcomponentpart->{biblionumber};
+            my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
+            my $frameworkcode = GetFrameworkCode( $biblionumber );
+            my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
+            if ($record) {
+                my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
+                            overlay_context => {
+                                source       => 'z3950'
+                            }
+                        });
+                if ($success) {
+                    $self->getLogger->info("Updated component part $biblionumber\n");
+                } else {
+                    die "Failed to update component part $biblionumber\n";
                 }
-            }
-        } else {
-            my $broadcastcomponentpartscount = scalar @{$broadcastcomponentparts};
-            for (my $i = 0; $i < $broadcastcomponentpartscount; $i++) {
-                my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
-                my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
-                if ($record) {
-                    my ($biblionumber, $biblioitemnumber) = &AddBiblio($record, '');
-                    if ($biblionumber) {
-                        $self->getLogger->info("Added component part $biblionumber\n");
-                    } else {
-                        die "Failed to add component part ".$broadcastcomponentpart->{biblionumber}."\n";
-                    }
-                }
+            } else {
+                die "Failed to update component part $biblionumber\n";
             }
         }
-    } catch {
-        my $error = $_;
-        $self->getLogger->error("Failed to update component parts for $biblio_id\n");
-        die $error;
+    } else {
+        my $broadcastcomponentpartscount = scalar @{$broadcastcomponentparts};
+        for (my $i = 0; $i < $broadcastcomponentpartscount; $i++) {
+            my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
+            my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
+            if ($record) {
+                my ($biblionumber, $biblioitemnumber) = &AddBiblio($record, '');
+                if ($biblionumber) {
+                    $self->getLogger->info("Added component part $biblionumber\n");
+                } else {
+                    die "Failed to add component part ".$broadcastcomponentpart->{biblionumber}."\n";
+                }
+            } else {
+                die "Failed to add component part ".$broadcastcomponentpart->{biblionumber}."\n";
+            }
+        }
     }
 }
 
