@@ -33,7 +33,7 @@ use File::Basename;
 use Fcntl qw( :DEFAULT :flock :seek );
 use Koha::Plugins;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
-use Mojolicious::Lite;
+use YAML::XS;
 
 
 my $help = 0;
@@ -43,8 +43,6 @@ my $biblionumber;
 my $verbose = 0;
 my $limit = 0;
 my $interface;
-my $directory;
-my $database;
 
 GetOptions(
     'h|help'                     => \$help,
@@ -53,6 +51,7 @@ GetOptions(
     'c|chunks:i'                 => \$chunks,
     'b|biblionumber:i'           => \$biblionumber,
     'l|limit:i'                  => \$limit,
+    'i|interface:s'              => \$interface,
 
 );
 
@@ -65,6 +64,7 @@ my $usage = <<USAGE;
     -c, --chunks            Process biblios in chunks, default is 200.
     -b, --biblionumber      Start sending from defined biblionumber.
     -l, --limit             Limiting the results of biblios.
+    -i, --interface         Interface to use for broadcasting.
 
 USAGE
 
@@ -73,13 +73,22 @@ if ($help) {
     exit 0;
 }
 
-my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
+my $configPath = $ENV{"KOHA_CONF"};
+my($file, $path, $ext) = fileparse($configPath);
+my $configfile = eval { YAML::XS::LoadFile($path.'broadcast-config.yaml') };
+
+my $params = {
     all => $all,
     chunks => $chunks,
-    biblionumber => $biblionumber,
     limit => $limit,
     page => 1,
     verbose => $verbose,
-});
+};
+
+if ($interface) {
+    $params->{config} = $configfile->{$interface};
+}
+
+my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new($params);
 
 $plugin->set_active();
