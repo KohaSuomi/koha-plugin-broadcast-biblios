@@ -109,12 +109,23 @@ sub processNewActiveRecords {
             $self->db->updateActiveRecordRemoteBiblionumber($activerecord->{id}, $tx->res->json->{biblio}->{biblionumber});
             my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $self->getConfig->{interface_name}, user_id => $self->getConfig->{user_id}, type => 'import'});
             $queue->setToQueue($activerecord, $tx->res->json);
-            $self->db->activeRecordUpdated($activerecord->{id});
+            $self->activeRecordUpdated($activerecord->{id});
         } else {
             my $error = $tx->res->json;
             $self->getLogger->error("REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$error->{error}."\n");
         }
     }
+}
+
+sub activeRecordUpdated {
+    my ($self, $id) = @_;
+    $self->db->activeRecordUpdated($id);
+}
+
+sub activeRecordUpdatedByBiblionumber {
+    my ($self, $biblionumber) = @_;
+    my $activerecord = $self->getActiveRecordByBiblionumber($biblionumber);
+    $self->activeRecordUpdated($activerecord->{id});
 }
 
 sub getActiveRecordByIdentifier {
