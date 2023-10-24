@@ -20,18 +20,18 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 
 ## Here we set our plugin version
-our $VERSION = "2.0.0";
+our $VERSION = "2.5.0";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
-    name            => 'Broadcast biblios',
+    name            => 'Tietuesiirtäjä',
     author          => 'Johanna Räisä',
     date_authored   => '2021-09-09',
-    date_updated    => '2022-01-26',
+    date_updated    => '2023-10-20',
     minimum_version => '21.11.00.0000',
     maximum_version => '',
     version         => $VERSION,
-    description     => 'Tietuesiirtäjä valutukseen',
+    description     => 'Tietueiden lähetys ja vastaanotto Kohassa',
 };
 
 ## This is the minimum code required for a plugin's 'new' method
@@ -93,6 +93,20 @@ sub new {
     return $self;
 }
 
+sub report {
+    my ( $self, $args ) = @_;
+    my $cgi = $self->{'cgi'};
+
+    my $template = $self->get_template({ file => 'report.tt' });
+
+    $template->param(
+        notifyfields => $self->retrieve_data('notifyfields')
+    );
+
+    print $cgi->header(-charset    => 'utf-8');
+    print $template->output();
+}
+
 sub configure {
     my ( $self, $args ) = @_;
     my $cgi = $self->{'cgi'};
@@ -103,7 +117,8 @@ sub configure {
         ## Grab the values we already have for our settings, if any exist
         $template->param(
             exportapis => $self->retrieve_data('exportapis'),
-            importapi => $self->retrieve_data('importapi')
+            importapi => $self->retrieve_data('importapi'),
+            notifyfields => $self->retrieve_data('notifyfields')
         );
 
         print $cgi->header(-charset    => 'utf-8');
@@ -112,10 +127,12 @@ sub configure {
     else {
         my $exportapis = $cgi->param('exportapis');
         my $importapi = $cgi->param('importapi');
+        my $notifyfields = $cgi->param('notifyfields');
         $self->store_data(
             {
                 exportapis          => $exportapis,
-                importapi           => $importapi
+                importapi           => $importapi,
+                notifyfields        => $notifyfields
             }
         );
         $self->go_home();
@@ -250,6 +267,29 @@ sub run {
 
 }
 
+sub fetch_broadcast {
+    my ( $self ) = @_;
+
+    my $broadcast = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast->new({
+        config => $self->{config},
+        all => $self->{all},
+        verbose => $self->{verbose},
+        blocked_encoding_level => $self->{blocked_encoding_level},
+        block_component_parts => $self->{block_component_parts},
+    });
+
+    my $params = {
+        chunks => $self->{chunks},
+        biblionumber => $self->{biblionumber},
+        limit => $self->{limit},
+        page => $self->{page},
+        timestamp => undef
+    };
+
+    $broadcast->fetchBroadcastBiblios($params);
+
+}
+
 sub get_active {
     my ( $self ) = @_;
 
@@ -282,7 +322,9 @@ sub set_active {
         biblionumber => $self->{biblionumber},
         limit => $self->{limit},
         page => $self->{page},
-        all => $self->{all}
+        all => $self->{all},
+        verbose => $self->{verbose},
+        config => $self->{config},
     };
 
     my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new($params);
@@ -354,7 +396,7 @@ sub create_active_records_table {
         `remote_biblionumber` int(11) DEFAULT NULL,
         `identifier_field` varchar(255) NOT NULL,
         `identifier` varchar(255) NOT NULL,
-        `block` tinyint(1) NOT NULL DEFAULT 0,
+        `blocked` tinyint(1) NOT NULL DEFAULT 0,
         `updated_on` datetime DEFAULT NULL,
         `created_on` datetime NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (`id`),
@@ -404,7 +446,9 @@ sub create_users_table {
         `client_id` varchar(50) DEFAULT NULL,
         `client_secret` varchar(50) DEFAULT NULL,
         `access_token` varchar(100) DEFAULT NULL,
-        `token_expires` datetime DEFAULT NULL,
+        `token_expires` int(11) DEFAULT NULL,
+        `access_token_url` varchar(255) DEFAULT NULL,
+        `grant_type` varchar(50) DEFAULT 'client_credentials',
         `linked_borrowernumber` int(11) DEFAULT NULL,
         `created_on` datetime NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (`id`),
