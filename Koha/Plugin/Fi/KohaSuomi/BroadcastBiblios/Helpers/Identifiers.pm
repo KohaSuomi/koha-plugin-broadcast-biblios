@@ -23,6 +23,7 @@ use Scalar::Util qw( blessed );
 use Try::Tiny;
 use JSON;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use C4::Context;
 
 =head new
@@ -39,9 +40,17 @@ sub new {
     return $self;
 }
 
+sub getRecord {
+    my ($self, $marcxml) = @_;
+
+    my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+    return $biblios->getRecord($marcxml);
+}
+
 sub getIdentifierField {
     my ($self, $marc) = @_;
-    my $record = MARC::Record::new_from_xml($marc, 'UTF-8');
+    my $record = $self->getRecord($marc);
+    return unless $record;
     my $activefield;
     my $fieldname;
 
@@ -93,7 +102,8 @@ sub getIdentifierField {
 
 sub fetchIdentifiers {
     my ($self, $marc) = @_;
-    my $record = MARC::Record::new_from_xml($marc, 'UTF-8');
+    my $record = $self->getRecord($marc);
+    return unless $record;
     my @identifiers;
 
     if ($record->field('035')) {
