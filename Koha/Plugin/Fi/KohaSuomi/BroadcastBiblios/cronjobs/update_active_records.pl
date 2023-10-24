@@ -77,6 +77,7 @@ unless ($interface) {
 my $configPath = $ENV{"KOHA_CONF"};
 my($file, $path, $ext) = fileparse($configPath);
 my $configfile = eval { YAML::XS::LoadFile($path.'broadcast-config.yaml') };
+
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     chunks => $chunks,
     limit => $limit,
