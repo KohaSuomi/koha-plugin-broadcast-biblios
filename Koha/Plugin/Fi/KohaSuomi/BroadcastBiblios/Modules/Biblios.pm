@@ -26,6 +26,7 @@ use Koha::Database;
 use Koha::DateUtils qw(dt_from_string);
 use MARC::Record;
 use Koha::Logger;
+use XML::LibXML;
 
 =head new
 
@@ -105,12 +106,12 @@ sub importedRecords {
 }
 
 sub getRecord {
-    my ($self, $biblio) = @_;
-    
-    my $record = eval {MARC::Record::new_from_xml($biblio, 'UTF-8')};
+    my ($self, $marcxml) = @_;
+
+    my $record = eval {MARC::Record::new_from_xml($marcxml, 'UTF-8')};
     if ($@) {
-        $self->getLogger->error("Error while parsing MARCXML: $@\n");
-        return 0;
+        die "Error while parsing MARC RECORD: $@";
+        return;
     }
 
     return $record;
