@@ -155,7 +155,7 @@ Process:
 ## Broadcast record from Koha to another interface.
 
 ```bash
-perl fetch_broadcast_biblios.pl --block_component_parts
+perl fetch_broadcast_biblios.pl --block_component_parts --blocked_encoding_level "5|8|u|z"
 ```
 This script is recommended to set in crontab and run regulary.
 
