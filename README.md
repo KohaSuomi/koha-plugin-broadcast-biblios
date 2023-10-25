@@ -154,7 +154,7 @@ Process:
 
 ## Process import queue
 
-Records processed with set_active_records.pl or fetch_broadcast_biblios.pl are import type broadcasts.
+Records processed with **set_active_records.pl** or **fetch_broadcast_biblios.pl** are import type broadcasts.
 
 ```sh
 perl process_queue.pl -t import
