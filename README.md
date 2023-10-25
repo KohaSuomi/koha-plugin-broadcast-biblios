@@ -42,7 +42,7 @@ MYEXPORTINTERFACE:
   type: "export"
   user_id: 1
   rest:
-    baseUrl: http://127.0.0.1:8080/api/v1/contrib/kohasuomi
+    baseUrl: https://foobaa.fi/api/v1/contrib/kohasuomi
     inactivityTimeout: 60000
     findBiblios: 
       path: broadcast/biblios
@@ -53,14 +53,12 @@ MYEXPORTINTERFACE:
     setToQueue:
       path: broadcast/queue
       method: post
-  sru:
-    baseUrl: http://
 MYIMPORTINTERFACE:
   interface_name: "OUTI"
   type: "import"
   user_id: 1
   rest:
-    baseUrl: http://127.0.0.1:8080/api/v1/contrib/kohasuomi
+    baseUrl: https://foobaa.fi/api/v1/contrib/kohasuomi
     inactivityTimeout: 60000
     findBiblios: 
       path: broadcast/biblios
@@ -71,8 +69,6 @@ MYIMPORTINTERFACE:
     setToQueue:
       path: broadcast/queue
       method: post
-  sru:
-    baseUrl: http://
 ```
 
 
