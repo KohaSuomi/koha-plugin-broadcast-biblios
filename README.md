@@ -111,6 +111,8 @@ activation: enabled
 
 # Update records on your local Koha
 
+The basic workflow for import type broadcasts.
+
 ## Build active records table
 
 To activate records on your local Koha we need to build an active records table, koha_plugin_fi_kohasuomi_broadcastbiblios_activerecords.
