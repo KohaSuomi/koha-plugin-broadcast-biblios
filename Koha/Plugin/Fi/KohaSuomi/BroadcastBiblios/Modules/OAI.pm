@@ -43,6 +43,21 @@ sub new {
 
 }
 
+sub verbose {
+    my ($self) = @_;
+    return shift->{_params}->{verbose};
+}
+
+sub getSetSpec {
+    my ($self) = @_;
+    return shift->{_params}->{set_spec};
+} 
+
+sub getSetName {
+    my ($self) = @_;
+    return shift->{_params}->{set_name};
+} 
+
 sub getDate {
     my ($self) = @_;
     my $date;
@@ -63,16 +78,32 @@ sub getBibliosClass {
 
 sub buildOAI {
     my ($self) = @_;
-    my @biblios = $self->getBibliosClass()->importedRecords($self->getDate());
-    my $set_id = $self->createOAISet();
+    my @biblios = $self->processDuplicateFromBibliosArray();
+    return unless @biblios;
+    my $set_id = $self->findOAISet();
+    print "Adding biblios to OAI set ".$self->getSetSpec."\n" if $self->verbose();
     AddOAISetsBiblios({$set_id => \@biblios});
 }
 
-sub createOAISet {
+sub processDuplicateFromBibliosArray {
+    my ($self) = @_;
+    my @biblios = $self->getBibliosClass()->importedRecords($self->getDate());
+    my @results;
+    foreach my $biblionumber (@biblios) {
+        my $result = GetOAISetsBiblio($biblionumber);
+        if (scalar(@$result) == 0) {
+            print "Adding biblio ".$biblionumber." to OAI set ".$self->getSetSpec."\n" if $self->verbose();
+            push @results, $biblionumber;
+        }
+    }
+    return @results;
+}
+
+sub findOAISet {
     my ($self) = @_;
 
-    my $spec = 'dailyset-'. $self->getDate();
-    my $name = 'Daily set '. $self->getDate();
+    my $spec = $self->getSetSpec();
+    my $name = $self->getSetName();
 
     return $self->getOAISet()->{id} || AddOAISet({
         spec => $spec,
@@ -82,7 +113,7 @@ sub createOAISet {
 
 sub getOAISet {
     my ($self) = @_;
-    my $set = GetOAISetBySpec('dailyset-'. $self->getDate());
+    my $set = GetOAISetBySpec($self->getSetSpec());
     return $set if $set;
 }
 

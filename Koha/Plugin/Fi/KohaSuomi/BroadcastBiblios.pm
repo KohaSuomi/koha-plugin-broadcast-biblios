@@ -337,7 +337,9 @@ sub build_oai {
 
     my $params = {
         verbose => $self->{verbose},
-        date => $self->{date}
+        date => $self->{date},
+        set_spec => $self->{set_spec},
+        set_name => $self->{set_name},
     };
 
     my $oai = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI->new($params);

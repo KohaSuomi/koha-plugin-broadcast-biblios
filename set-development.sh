@@ -13,6 +13,8 @@ ln -s "$SCRIPT_DIR/Koha/Plugin/Fi/KohaSuomi/BroadcastBiblios.pm" $kohaplugindir/
 
 rm $kohadir/misc/cronjobs/run_broadcast_biblios.pl
 ln -s $kohaplugindir/Koha/Plugin/Fi/KohaSuomi/BroadcastBiblios/cronjobs/run_broadcast_biblios.pl $kohadir/misc/cronjobs/run_broadcast_biblios.pl
+rm $kohadir/misc/cronjobs/build_oai_sets.pl
+ln -s $kohaplugindir/Koha/Plugin/Fi/KohaSuomi/BroadcastBiblios/cronjobs/build_oai_sets.pl $kohadir/misc/cronjobs/build_oai_sets.pl
 
 perl $kohadir/misc/devel/install_plugins.pl
 
