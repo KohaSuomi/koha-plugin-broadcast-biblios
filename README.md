@@ -139,8 +139,18 @@ Activation process will skip two types of records.
 perl set_active_records.pl -i INTERFACENAME
 ```
 
-This will activate the record and trying to fetch a updated record from an interface. If found the record is added to a queue table.
 This is recommended to set in crontab and run regulary.
+
+Needed configurations:
+1. Create config for interface (broadcast-config.yaml)
+2. Create user for interface, plugin's koha_plugin_fi_kohasuomi_broadcastbiblios_users table.
+    1. Create user on another Koha interface.
+    1. Add authorization values to user.
+
+Process:
+1. Will activate the record
+2. Tries to fetch updated record from specified interface.
+    1. If found the record is added to a plugin's queue table.
 
 ## Broadcast record from Koha to another interface.
 
@@ -148,6 +158,12 @@ This is recommended to set in crontab and run regulary.
 perl fetch_broadcast_biblios.pl --block_component_parts
 ```
 This script is recommended to set in crontab and run regulary.
+
+Needed configurations:
+1. Create config for interface (broadcast-config.yaml)
+2. Create user for interface, plugin's koha_plugin_fi_kohasuomi_broadcastbiblios_users table.
+    1. Create user on another Koha interface.
+    1. Add authorization values to user.
 
 Process:
 1. Find recently updated records.
