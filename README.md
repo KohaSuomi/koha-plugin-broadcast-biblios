@@ -142,7 +142,7 @@ This is recommended to set in crontab and run regulary.
 
 ## Broadcast record from Koha to another interface.
 
-```sh
+```bash
 perl fetch_broadcast_biblios.pl --block_component_parts
 ```
 This script is recommended to set in crontab and run regulary.
@@ -153,6 +153,8 @@ Process:
     1. If found then push record to interface's queue table.
 
 ## Process import queue
+
+Records processed with set_active_records.pl or fetch_broadcast_biblios.pl are import type broadcasts.
 
 ```sh
 perl process_queue.pl -t import
