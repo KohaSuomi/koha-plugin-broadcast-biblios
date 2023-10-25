@@ -39,11 +39,16 @@ use Mojolicious::Lite;
 my $help = 0;
 my $verbose = 0;
 my $date = '';
+my $set_spec = '';
+my $set_name = '';
 
 GetOptions(
     'h|help'                     => \$help,
     'v|verbose'                  => \$verbose,
     'd|date:s'                   => \$date,
+    'set_spec:s'                 => \$set_spec,
+    'set_name:s'                 => \$set_name,
+
 
 );
 
@@ -53,6 +58,8 @@ my $usage = <<USAGE;
     -h, --help              This message.
     -v, --verbose           Verbose.
     -d, --date              Find imported on a selected date, default is today.
+    --set_spec              Set spec for OAI set.
+    --set_name              Set name for OAI set.
 
 USAGE
 
@@ -63,7 +70,9 @@ if ($help) {
 
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     verbose => $verbose,
-    date => $date
+    date => $date,
+    set_spec => $set_spec,
+    set_name => $set_name,
 });
 
 $plugin->build_oai();
