@@ -121,15 +121,13 @@ To activate records on your local Koha we need to build an active records table,
 perl set_active_records.pl --all
 ```
 
-This will activate all records which have specific identifier, the identifiers are
-
+Checked identifiers on record:
 1. 035a (only if it has FI-Melinda value)
 2. 020a (ISBN)
 3. 024a (EAN, ISMN)
 4. 003|001 (only if 003 is FI-BTJ)
 
-Activation process will skip two types of records.
-
+Activation process will skip two types of records:
 1. If record is already added to the table.
 2. If record is a component part.
 
@@ -145,7 +143,8 @@ Needed configurations:
 1. Create config for interface (broadcast-config.yaml)
 2. Create user for interface, plugin's koha_plugin_fi_kohasuomi_broadcastbiblios_users table.
     1. Create user on another Koha interface.
-    1. Add authorization values to user.
+    1. User needs edit_catalogue permissions.
+    1. Add authorization values to user. Recommended to use oauth method.
 
 Process:
 1. Will activate the record
