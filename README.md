@@ -137,10 +137,10 @@ Activation process will skip two types of records:
 perl set_active_records.pl -i INTERFACENAME
 ```
 
-This is recommended to set in crontab and run regulary.
+:white_check_mark: This is recommended to set in crontab and run regulary.
 
 Needed configurations:
-1. Create config for interface (broadcast-config.yaml)
+1. Create config for the interface (broadcast-config.yaml)
 2. Create user for interface, plugin's koha_plugin_fi_kohasuomi_broadcastbiblios_users table.
     1. Create user on another Koha interface.
     1. User needs edit_catalogue permissions.
@@ -156,7 +156,7 @@ Process:
 ```bash
 perl fetch_broadcast_biblios.pl --block_component_parts --blocked_encoding_level "5|8|u|z"
 ```
-This script is recommended to set in crontab and run regulary.
+:white_check_mark: This script is recommended to set in crontab and run regulary.
 
 Needed configurations:
 1. Create config for interface (broadcast-config.yaml)
@@ -177,4 +177,4 @@ Records processed with **set_active_records.pl** or **fetch_broadcast_biblios.pl
 perl process_queue.pl -t import
 ```
 
-This script will process the broadcast queue and updates the records. Should be run regulary on crontab.
+:white_check_mark: This script will process the broadcast queue and updates the records. Should be run regulary on crontab.
