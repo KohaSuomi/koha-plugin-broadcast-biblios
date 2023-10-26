@@ -37,7 +37,7 @@ Once set up is complete you will need to alter your UseKohaPlugins system prefer
 For interface broadcast define broadcast-config.yaml to KOHA_CONF path.
 
 ```yaml
-MYEXPORTINTERFACE:
+EXPORTINTERFACE:
   interface_name: "TATI"
   type: "export"
   user_id: 1
@@ -53,7 +53,7 @@ MYEXPORTINTERFACE:
     setToQueue:
       path: broadcast/queue
       method: post
-MYIMPORTINTERFACE:
+IMPORTINTERFACE:
   interface_name: "OUTI"
   type: "import"
   user_id: 1
@@ -134,7 +134,7 @@ Activation process will skip two types of records:
 ## Activate incoming records and try to pull record from an interface
 
 ```sh
-perl set_active_records.pl -i INTERFACENAME
+perl set_active_records.pl -i IMPORTINTERFACE
 ```
 
 :yellow_circle: This is recommended to set in crontab and run regulary.
