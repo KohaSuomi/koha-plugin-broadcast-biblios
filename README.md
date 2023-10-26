@@ -14,9 +14,9 @@ The plugin system needs to be turned on by a system administrator.
 
 To set up the Koha plugin system you must first make some changes to your install.
 
-:yellow_circle: Change ```xml<enable_plugins>0<enable_plugins>``` to ```xml<enable_plugins>1<enable_plugins>``` in your **koha-conf.xml** file
+:yellow_circle: Change ```<enable_plugins>0<enable_plugins>``` to ```<enable_plugins>1<enable_plugins>``` in your **koha-conf.xml** file
 
-:yellow_circle: Confirm that the path to ```xml<pluginsdir>``` exists, is correct, and is writable by the web server
+:yellow_circle: Confirm that the path to ```<pluginsdir>``` exists, is correct, and is writable by the web server
 
 :yellow_circle: Remember to allow access to plugin directory from Apache
 
