@@ -137,7 +137,7 @@ Activation process will skip two types of records:
 perl set_active_records.pl -i INTERFACENAME
 ```
 
-:white_check_mark: This is recommended to set in crontab and run regulary.
+:yellow_circle: This is recommended to set in crontab and run regulary.
 
 Needed configurations:
 1. Create config for the interface (broadcast-config.yaml)
@@ -156,7 +156,7 @@ Process:
 ```bash
 perl fetch_broadcast_biblios.pl --block_component_parts --blocked_encoding_level "5|8|u|z"
 ```
-:white_check_mark: This script is recommended to set in crontab and run regulary.
+:yellow_circle: This script is recommended to set in crontab and run regulary.
 
 Needed configurations:
 1. Create config for interface (broadcast-config.yaml)
@@ -177,4 +177,4 @@ Records processed with **set_active_records.pl** or **fetch_broadcast_biblios.pl
 perl process_queue.pl -t import
 ```
 
-:white_check_mark: This script will process the broadcast queue and updates the records. Should be run regulary on crontab.
+:yellow_circle: This script will process the broadcast queue and updates the records. Should be run regulary on crontab.
