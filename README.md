@@ -174,7 +174,7 @@ Process:
 Records processed with **set_active_records.pl** or **fetch_broadcast_biblios.pl** are import type broadcasts.
 
 ```sh
-perl process_queue.pl -t import
+perl process_broadcast_queue.pl -t import
 ```
 
 :yellow_circle: This script will process the broadcast queue and updates the records. Should be run regulary on crontab.
