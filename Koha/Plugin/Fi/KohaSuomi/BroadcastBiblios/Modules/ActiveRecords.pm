@@ -102,18 +102,7 @@ sub processNewActiveRecords {
     my ($self) = @_;
     my $activerecords = $self->db->getPendingActiveRecords();
     foreach my $activerecord (@$activerecords) {
-        my @identifiers = $self->getIdentifiers->fetchIdentifiers($activerecord->{metadata});
-        my $ua = Mojo::UserAgent->new;
-        my $tx = $ua->post($self->getConfig->{rest}->{baseUrl}."/broadcast/biblios", {'Content-Type' => 'application/json'}, json => {identifiers => @identifiers, biblio_id => $activerecord->{remote_biblionumber}});
-        if ($tx->res->code eq '200' || $tx->res->code eq '201') {
-            $self->db->updateActiveRecordRemoteBiblionumber($activerecord->{id}, $tx->res->json->{biblio}->{biblionumber});
-            my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $self->getConfig->{interface_name}, user_id => $self->getConfig->{user_id}, type => 'import'});
-            $queue->setToQueue($activerecord, $tx->res->json);
-            $self->activeRecordUpdated($activerecord->{id});
-        } else {
-            my $error = $tx->res->json;
-            $self->getLogger->error("REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$error->{error}."\n");
-        }
+        $self->processAddedActiveRecord($activerecord);
     }
 }
 
