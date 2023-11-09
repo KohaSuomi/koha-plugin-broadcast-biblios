@@ -196,8 +196,9 @@ sub processAddedActiveRecord {
         $self->db->activeRecordUpdated($activerecord->{id});
         $self->getLogger->info("Active record id:".$activerecord->{id}." update added to queue \n");
     } else {
-        my $error = $tx->res->json;
-        $self->getLogger->error("REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$error->{error}."\n");
+        my $error = $tx->res->json || $tx->error;
+        my $errormessage = $error->{error} || $error->{message};
+        $self->getLogger->error("REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$errormessage."\n");
     }
 }
 
