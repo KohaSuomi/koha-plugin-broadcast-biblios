@@ -96,11 +96,6 @@ sub xmlPath {
     return $self->{_params}->{xmlPath} || "/zs:searchRetrieveResponse/zs:records/zs:record/zs:recordData/*";
 }
 
-sub getLogger {
-    my ($self) = @_;
-    return Koha::Logger->get({class => 'broadcastbiblios'});
-}
-
 sub ua {
     my ($self) = @_;
     return Mojo::UserAgent->new;
@@ -135,7 +130,7 @@ sub search {
     my ($self) = @_;
 
     my $path = $self->buildPath();
-    $self->getLogger()->debug("SRU path: ".$path);
+    print "SRU path: ".$path ."\n";
     my $res = $self->buildTX('GET', $path);
     my $records = $self->getRecords($res->res->body);
     return $records;

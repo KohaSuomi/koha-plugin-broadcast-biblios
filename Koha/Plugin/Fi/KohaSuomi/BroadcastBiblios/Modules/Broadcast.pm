@@ -182,11 +182,6 @@ sub getIdentifiers {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers->new();
 }
 
-sub getLogger {
-    my ($self) = @_;
-    return Koha::Logger->get( {interface => "broadcast"});
-}
-
 sub getConfig {
     my ($self) = @_;
     my $config = shift->{_params}->{config};
@@ -219,6 +214,9 @@ sub fetchBroadcastBiblios {
         my $lastnumber;
         my ($error, $response);
         foreach my $biblio (@{$biblios}) {
+            if ($self->verbose > 1) {
+                print "Processing: $biblio->{biblionumber}\n";
+            }
             $count++;
             try {
                 my $record = $self->getRecord($biblio);
@@ -248,7 +246,8 @@ sub fetchBroadcastBiblios {
                     }
                 }
             } catch {
-                $self->getLogger->error("Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $_\n");
+                my $error = $_;
+                print "Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $error\n";
             };
 
             $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp});
@@ -307,7 +306,8 @@ sub broadcastBiblios {
                 $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
                 $self->_loopComponentParts($biblio, $componentsArr, $success);
             } catch {
-                $self->getLogger->error("Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $_\n");
+                my $error = $_;
+                print "Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $error\n";
             };
 
             $lastnumber = $biblio->{biblionumber};

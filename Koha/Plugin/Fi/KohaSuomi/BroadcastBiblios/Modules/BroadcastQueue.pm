@@ -49,6 +49,11 @@ sub new {
 
 }
 
+sub verbose {
+    my ($self) = @_;
+    return $self->{_params}->{verbose};
+}
+
 sub getBroadcastInterface {
     shift->{_params}->{broadcast_interface};
 }
@@ -97,11 +102,6 @@ sub getRecord {
     return $biblios->getRecord($marcxml);
 }
 
-sub getLogger {
-    my ($self) = @_;
-    return Koha::Logger->get( {interface => "broadcast"});
-}
-
 sub getDiff {
     my ($self, $localmarcxml, $broadcastmarcxml) = @_;
     return $self->compareRecords->getDiff($self->getMarcXMLToJSON->toJSON($localmarcxml), $self->getMarcXMLToJSON->toJSON($broadcastmarcxml));
@@ -125,9 +125,11 @@ sub pushToRest {
     });
 
     if ($tx->res->code eq '200' || $tx->res->code eq '201') {
-        $self->getLogger->info("Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{interface_name}."\n");
+        print "Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{interface_name}."\n";
     } else {
-        $self->getLogger->error("Failed to push record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{interface_name}.": ".$tx->res->error->{message}."\n");
+        my $error = $tx->res->json || $tx->res->error;
+        my $errormessage = $error->{message} ? $error->{message} : $error;
+        print "Failed to push record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{interface_name}.": ".$errormessage."\n";
     }
 }
 
@@ -198,7 +200,7 @@ sub processImportQueue {
                     if ($queue->{hostrecord}) {
                         $self->processImportComponentParts($biblionumber, from_json($queue->{componentparts}));
                     }
-                    $self->getLogger->info("Updated record $biblionumber\n")
+                    print "Updated record $biblionumber\n" if $self->verbose;
                 } else {
                     die "Failed to update record $biblionumber\n";
                 }
@@ -208,7 +210,7 @@ sub processImportQueue {
         } catch {
             my $error = $_;
             $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
-            $self->getLogger->error("Failed to update record $biblionumber\n");
+            print "Error while processing import queue: $error\n";
         }
     }
 }
@@ -241,7 +243,7 @@ sub processImportComponentParts {
                             }
                         });
                 if ($success) {
-                    $self->getLogger->info("Updated component part $biblionumber\n");
+                    print "Updated component part $biblionumber\n" if $self->verbose;
                 } else {
                     die "Failed to update component part $biblionumber\n";
                 }
@@ -257,7 +259,7 @@ sub processImportComponentParts {
             if ($record) {
                 my ($biblionumber, $biblioitemnumber) = &AddBiblio($record, '');
                 if ($biblionumber) {
-                    $self->getLogger->info("Added component part $biblionumber\n");
+                    print "Added component part $biblionumber\n" if $self->verbose;
                 } else {
                     die "Failed to add component part ".$broadcastcomponentpart->{biblionumber}."\n";
                 }

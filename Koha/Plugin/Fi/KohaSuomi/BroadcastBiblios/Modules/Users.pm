@@ -64,10 +64,6 @@ sub ua {
     return Mojo::UserAgent->new;
 }
 
-sub getLogger {
-    return Koha::Logger->get({instance => 'broadcast'});
-}
-
 sub addUser {
 
 }
@@ -119,7 +115,7 @@ sub refreshAccessToken {
     my $tx = $self->ua->post($user->{access_token_url} => form => {client_id => $user->{client_id}, client_secret => $user->{client_secret}, grant_type => $user->{grant_type}});
     
     if ($tx->res->error) {
-        $self->getLogger->error($tx->res->error->{message} . " " . $tx->res->body);
+        print "Error while refreshing token " . $tx->res->error->{message} . " " . $tx->res->body . "\n";
         $self->db->updateAccessToken($user->{id}, undef, undef);
         return 0;
     }

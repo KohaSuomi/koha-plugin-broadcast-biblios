@@ -63,10 +63,6 @@ sub getTimestamp {
     return shift->{_params}->{timestamp};
 }
 
-sub getLogger {
-    return Koha::Logger->get({instance => 'broadcast'});
-}
-
 sub fetch {
     my ($self) = @_;
     print "Starting offset ". $self->getPage() ." as from ". $self->getTimestamp() . "!\n";

@@ -71,11 +71,6 @@ sub getParams {
     return shift->{_params};
 }
 
-sub getLogger {
-    my ($self) = @_;
-    return Koha::Logger->get( {interface => "broadcast"});
-}
-
 sub db {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database->new;
@@ -158,8 +153,8 @@ sub setActiveRecords {
                     $self->processAddedActiveRecord($self->db->getActiveRecordById($activerecord_id));
                 }
             } catch {
-                print "Error while processing record ".$biblio->{biblionumber}.", check the logs!\n";
-                $self->getLogger->error("Error while processing record ".$biblio->{biblionumber}." with error: ".$@."\n");
+                my $error = $_;
+                print "Error while processing record ".$biblio->{biblionumber}." with error: ".$error."\n";
             }
         }
         print "$count biblios processed!\n";
@@ -183,11 +178,11 @@ sub processAddedActiveRecord {
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $self->getConfig->{interface_name}, user_id => $self->getConfig->{user_id}, type => 'import'});
         $queue->setToQueue($activerecord, $tx->res->json);
         $self->db->activeRecordUpdated($activerecord->{id});
-        $self->getLogger->info("Active record id: ".$activerecord->{id}." update added to queue \n");
+        print "Active record id: ".$activerecord->{id}." update added to queue \n" if $self->verbose;
     } else {
         my $error = $tx->res->json || $tx->error;
         my $errormessage = $error->{error} || $error->{message};
-        $self->getLogger->error("REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$errormessage."\n");
+        print "REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$errormessage."\n";
     }
 }
 
