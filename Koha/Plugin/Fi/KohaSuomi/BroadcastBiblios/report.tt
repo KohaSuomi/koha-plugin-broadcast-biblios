@@ -70,7 +70,10 @@
 							<table class="table table-striped table-sm">
 							<thead>
 								<tr>
-								<th><span v-if="status == 'pending'">Luotu</span><span v-else>Käsitelty</span></th>
+								<th>
+									<span v-if="status == 'pending'">Luotu</span>
+									<span v-if="status == 'processing'">Aloitettu</span>
+									<span v-else>Käsitelty</span></th>
 								<th>Tietue</th>
 								<th>Osakohteet</th>
 								<th v-if="status == 'completed'">Muutokset</th>
