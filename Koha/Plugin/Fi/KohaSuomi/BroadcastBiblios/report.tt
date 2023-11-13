@@ -72,7 +72,7 @@
 								<tr>
 								<th>
 									<span v-if="status == 'pending'">Luotu</span>
-									<span v-if="status == 'processing'">Aloitettu</span>
+									<span v-else-if="status == 'processing'">Aloitettu</span>
 									<span v-else>Käsitelty</span></th>
 								<th>Tietue</th>
 								<th>Osakohteet</th>
