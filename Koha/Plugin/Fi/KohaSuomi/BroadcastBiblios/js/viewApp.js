@@ -233,7 +233,7 @@ Vue.component('result-list', {
                   </div>'
       );
       $('#modalWrapper').append(html);
-      var source = parseDiff(this.result.diff);
+      var source = recordParser.parseDiff(this.result.diff);
       $('#recordModal')
         .find('#recordWrapper')
         .append($('<div class="container">' + source + '</div>'));
@@ -252,7 +252,7 @@ Vue.component('result-list', {
       this.showComponentPart = part;
     },
     notify() {
-      let record = JSON.parse(this.result.diff);
+      let record = this.result.diff;
       let tags = Object.keys(record);
       let notifyFieldsArr = notifyFields.split(',');
       tags.sort();
