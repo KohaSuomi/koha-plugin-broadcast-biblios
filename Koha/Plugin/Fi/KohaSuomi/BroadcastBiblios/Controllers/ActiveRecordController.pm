@@ -19,6 +19,7 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config;
 use Try::Tiny;
 use Koha::Logger;
 
@@ -66,6 +67,41 @@ sub find {
         }
 
         return $c->render(status => 200, openapi => $activeRecord);
+    } catch {
+        my $error = $_;
+        $logger->error($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+    }
+}
+
+sub add {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'api' });
+
+    try {
+        my $biblio = Koha::Biblios->find($c->validation->param('biblio_id'));
+        my $body = $c->req->json;
+        unless ($biblio) {
+            return $c->render(status => 404, openapi => {error => "Biblio not found"});
+        }
+
+        my $marcxml = $biblio->metadata->metadata;
+        $biblio = $biblio->unblessed;
+        $biblio->{metadata} = $marcxml;
+
+        my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new({interface => $body->{broadcast_interface}});
+        my $params->{config} = $config->getConfig();
+
+        my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new($params);
+
+        my $response = $activeRecords->setActiveRecord($biblio);
+
+        if ($response->{status} != 201) {
+            return $c->render(status => $response->{status}, openapi => { error => $response->{message} });
+        } else {
+            return $c->render(status => 201, openapi => { message => "Success" });
+        }
     } catch {
         my $error = $_;
         $logger->error($error);

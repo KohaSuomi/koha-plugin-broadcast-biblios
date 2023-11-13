@@ -140,21 +140,9 @@ sub setActiveRecords {
                 print "Processing biblio ".$biblio->{biblionumber}."\n";
             }
             $count++;
-            try {
-                my $record = $self->getRecord($biblio->{metadata});
-                return unless $record;
-                return if $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
-                return if $self->checkComponentPart($record);
-                my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
-                return unless $identifier && $identifier_field;
-                my $update_on = $params->{all} ? $biblio->{timestamp} : undef;
-                my $activerecord_id = $self->db->insertActiveRecord($biblio->{biblionumber}, $identifier, $identifier_field, $update_on);
-                if ($self->getConfig) {
-                    $self->processAddedActiveRecord($self->db->getActiveRecordById($activerecord_id));
-                }
-            } catch {
-                my $error = $_;
-                print "Error while processing record ".$biblio->{biblionumber}." with error: ".$error."\n";
+            my $response = $self->setActiveRecord($biblio);
+            unless ($response->{status} eq '201') {
+                print "Error while processing biblio ".$biblio->{biblionumber}." with message: ".$response->{message}."\n";
             }
         }
         print "$count biblios processed!\n";
@@ -168,8 +156,39 @@ sub setActiveRecords {
 
 }
 
+sub setActiveRecord {
+    my ($self, $biblio) = @_;
+    my $params = $self->getParams();
+    try {
+        my $record = $self->getRecord($biblio->{metadata});
+        return {status => 404, message => "Not found"} unless $record;
+        return {status => 403, message => "Already exists"} if $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
+        return {status => 403, message => "Not a parent record"} if $self->checkComponentPart($record);
+        my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
+        return {status => 400, message => "No valid identifiers"} unless $identifier && $identifier_field;
+        my $update_on = $params->{all} ? $biblio->{timestamp} : undef;
+        my $blocked = $self->checkBlock($record) ? 1 : 0;
+        my $activerecord_id = $self->db->insertActiveRecord($biblio->{biblionumber}, $identifier, $identifier_field, $update_on, $blocked);
+        if ($self->getConfig) {
+            $self->processAddedActiveRecord($self->db->getActiveRecordById($activerecord_id));
+        }
+        return {status => 201, message => "Success"};
+    } catch {
+        my $error = $_;
+        return {status => 500, message => $error};
+    }
+
+}
+
 sub processAddedActiveRecord {
     my ($self, $activerecord) = @_;
+
+    if ($activerecord->{blocked}) {
+        print "Active record id: ".$activerecord->{id}." is blocked \n" if $self->verbose;
+        $self->db->activeRecordUpdated($activerecord->{id});
+        return;
+    }
+
     my @identifiers = $self->getIdentifiers->fetchIdentifiers($activerecord->{metadata});
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->post($self->getConfig->{rest}->{baseUrl}."/broadcast/biblios", {'Content-Type' => 'application/json'}, json => {identifiers => @identifiers, biblio_id => $activerecord->{remote_biblionumber}});
@@ -257,8 +276,7 @@ sub getAllActiveRecords {
 }
 
 sub checkBlock {
-    my ($self, $biblio) = @_;
-    my $record = MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8');
+    my ($self, $record) = @_;
     return $record->subfield('942', "b");
 }
 
@@ -283,6 +301,5 @@ sub activated {
     return 0 unless $tx->res->code eq '200' || $tx->res->code eq '201';
     return 1;
 }
-
 
 1;

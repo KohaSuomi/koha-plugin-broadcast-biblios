@@ -350,6 +350,112 @@
         }
       }
     },
+    "post":{
+      "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::ActiveRecordController#add",
+      "operationId": "addActivatedRecord",
+      "tags": [
+        "biblios"
+      ],
+      "parameters": [
+        {
+          "name": "biblio_id",
+          "in": "path",
+          "description": "Record's identifier",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "body",
+          "in": "body",
+          "description": "Broadcast data",
+          "required": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "broadcast_interface": {
+                "type": "string",
+                "description": "Broadcast interface"
+              },
+              "user_id": {
+                "type": "integer",
+                "description": "Interface user id"
+              }
+            }
+          }
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "201": {
+          "description": "Activated record",
+          "schema": {
+            "type": "object"
+          }
+        },
+        "400": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Bad request",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Forbidden",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Not found",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error": {
+                "description": "Conflict",
+                "type": "string"
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "An error occured",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "error":{
+                "description": "Internal server error",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
     "put": {
       "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::ActiveRecordController#update",
       "operationId": "updateActivatedRecord",

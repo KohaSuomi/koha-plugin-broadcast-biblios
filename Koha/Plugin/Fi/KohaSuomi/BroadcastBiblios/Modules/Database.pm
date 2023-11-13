@@ -110,10 +110,10 @@ sub getActiveRecordByIdentifier {
 }
 
 sub insertActiveRecord {
-    my ($self, $biblionumber, $identifier, $identifier_field, $updated_on) = @_;
+    my ($self, $biblionumber, $identifier, $identifier_field, $updated_on, $blocked) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("INSERT INTO " . $self->activerecords . " (biblionumber, identifier, identifier_field, updated_on) VALUES (?, ?, ?, ?)");
-    $sth->execute($biblionumber, $identifier, $identifier_field, $updated_on);
+    my $sth = $dbh->prepare("INSERT INTO " . $self->activerecords . " (biblionumber, identifier, identifier_field, updated_on, blocked) VALUES (?, ?, ?, ?, ?)");
+    $sth->execute($biblionumber, $identifier, $identifier_field, $updated_on, $blocked);
     my $id = $sth->{mysql_insertid};
     $sth->finish();
     return $id;

@@ -90,6 +90,8 @@ sub new {
         $self->{type} = $args->{type};
     }
 
+    $self->{cgi} = CGI->new();
+
     return $self;
 }
 
@@ -118,7 +120,8 @@ sub configure {
         $template->param(
             exportapis => $self->retrieve_data('exportapis'),
             importapi => $self->retrieve_data('importapi'),
-            notifyfields => $self->retrieve_data('notifyfields')
+            notifyfields => $self->retrieve_data('notifyfields'),
+            importinterface => $self->retrieve_data('importinterface'),
         );
 
         print $cgi->header(-charset    => 'utf-8');
@@ -128,11 +131,13 @@ sub configure {
         my $exportapis = $cgi->param('exportapis');
         my $importapi = $cgi->param('importapi');
         my $notifyfields = $cgi->param('notifyfields');
+        my $importinterface = $cgi->param('importinterface');
         $self->store_data(
             {
                 exportapis          => $exportapis,
                 importapi           => $importapi,
-                notifyfields        => $notifyfields
+                notifyfields        => $notifyfields,
+                importinterface     => $importinterface,
             }
         );
         $self->go_home();
@@ -145,8 +150,10 @@ sub configure {
 sub intranet_catalog_biblio_enhancements_toolbar_button {
     my ( $self ) = @_;
 
+    my $biblionumber = $self->{'cgi'}->param('biblionumber');
     my $exportapis = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('exportapis')));
     my $importapi = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('importapi')));
+    my $importinterface = $self->retrieve_data('importinterface');
     my $dropdown;
     if ($exportapis && $importapi && haspermission(C4::Context->userenv->{'id'}, {'editcatalogue' => 'edit_catalogue'})) {
         my $pluginpath = $self->get_plugin_http_path();
@@ -174,9 +181,10 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
             data-token="'.Digest::SHA::hmac_sha256_hex($importapi->{apiToken}).'"
             data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
         $dropdown .= '</ul></div>';
-        if ($importapi->{activation} eq "enabled") {
-            $dropdown .= '<div class="btn-group"><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
+        if ($importinterface) {
+            $dropdown .= '<div class="btn-group"><input type="hidden" id="importBroadcastInterface" value="'.$importinterface.'" /><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
         }
+        $dropdown .= '<div><input type="hidden" id="biblioId" value="'.$biblionumber.'" /></div>';
         $dropdown .= '<recordmodal></recordmodal>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/vue.min.js"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/vuex.min.js"></script>';
