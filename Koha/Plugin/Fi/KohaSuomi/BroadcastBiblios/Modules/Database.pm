@@ -188,9 +188,9 @@ sub getQueue {
     }
 
     if ($page && $limit) {
-        $query .= " ORDER BY id ASC LIMIT " . ($page-1)*$limit . ", " . $limit;
+        $query .= " ORDER BY id DESC LIMIT " . ($page-1)*$limit . ", " . $limit;
     } else {
-        $query .= " ORDER BY id ASC";
+        $query .= " ORDER BY id DESC";
     }
 
     my $sth = $dbh->prepare($query);
