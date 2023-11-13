@@ -70,7 +70,7 @@
 							<table class="table table-striped table-sm">
 							<thead>
 								<tr>
-								<th>Aikaleima</th>
+								<th><span v-if="status == 'pending'">Luotu</span><span v-else>Käsitelty</span></th>
 								<th>Tietue</th>
 								<th>Osakohteet</th>
 								<th v-if="status == 'completed'">Muutokset</th>
@@ -160,7 +160,7 @@
 		<template id="list-items">
 		<tr>
 			<td class="col-2">
-				{{result.transfered_on | moment}}
+				<span v-if="result.status == 'pending'">{{result.created_on | moment}}</span><span v-else>{{result.transfered_on | moment}}</span>
 			</td>
 			<td class="col-4">
 				<div>{{result.marcjson | author}} {{result.marcjson | title}} (<a v-bind:href="'/cgi-bin/koha/catalogue/detail.pl?biblionumber='+result.biblio_id" target="_blank">{{result.biblio_id}}</a>) <i class="fa fa-code text-muted" @click="toggleShowRecord($event)"></i></div>

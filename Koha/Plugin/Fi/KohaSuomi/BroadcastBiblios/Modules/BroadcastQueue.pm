@@ -164,6 +164,7 @@ sub getQueue {
             statusmessage => $result->{statusmessage} ? $result->{statusmessage} : undef,
             diff => $diff,
             transfered_on => $result->{transfered_on},
+            created_on => $result->{created_on},
         };
     }
     my $count = $self->db->countQueue($status, $biblio_id);
