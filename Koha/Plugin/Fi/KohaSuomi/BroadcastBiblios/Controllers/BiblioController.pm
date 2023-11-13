@@ -98,7 +98,7 @@ sub find {
 sub add {
     my $c = shift->openapi->valid_input or return;
 
-    my $logger = Koha::Logger->get({ interface => 'broadcast' });
+    my $logger = Koha::Logger->get({ interface => 'api' });
 
     try {
 
