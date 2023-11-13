@@ -65,7 +65,9 @@ sub find {
         my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
         my $biblio_id = $body->{biblio_id};
         foreach my $identifier (@$identifiers) {
+            $logger->info("Searching for identifier: ".$identifier->{identifier}." in field: ".$identifier->{identifier_field});
             my $bib = $search->findByIdentifier($identifier->{identifier}, $identifier->{identifier_field});
+            next unless $bib;
             $biblio_id = $bib->subfield('999', 'c')+0;
             last if $bib;
         }
