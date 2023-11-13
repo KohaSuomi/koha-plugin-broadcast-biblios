@@ -183,9 +183,10 @@ sub setActiveRecord {
 sub processAddedActiveRecord {
     my ($self, $activerecord) = @_;
 
+    $self->db->activeRecordUpdated($activerecord->{id});
+    
     if ($activerecord->{blocked}) {
         print "Active record id: ".$activerecord->{id}." is blocked \n" if $self->verbose;
-        $self->db->activeRecordUpdated($activerecord->{id});
         return;
     }
 
