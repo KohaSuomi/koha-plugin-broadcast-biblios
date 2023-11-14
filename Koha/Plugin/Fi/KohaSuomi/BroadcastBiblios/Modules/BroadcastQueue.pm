@@ -136,8 +136,8 @@ sub pushToRest {
 sub setToQueue {
     my ($self, $activerecord, $broadcastrecord) = @_;
     my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
-    if ($self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml})) {
-        $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord)) if $encodingLevel eq 'lower';
+    if ($self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml}) && $encodingLevel ne 'greater') {
+        $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
     }
 }
 

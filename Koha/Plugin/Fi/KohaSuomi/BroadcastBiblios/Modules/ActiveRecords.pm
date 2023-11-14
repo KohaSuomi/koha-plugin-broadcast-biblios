@@ -141,8 +141,10 @@ sub setActiveRecords {
             }
             $count++;
             my $response = $self->setActiveRecord($biblio);
-            unless ($response->{status} eq '201') {
+            unless ($response->{status} eq '201' || $response->{status} eq '200') {
                 print "Error while processing biblio ".$biblio->{biblionumber}." with message: ".$response->{message}."\n";
+            } else {
+                print "Biblio ".$biblio->{biblionumber}." processed with: ".$response->{message}."\n" if $self->verbose;
             }
         }
         print "$count biblios processed!\n";
@@ -167,7 +169,7 @@ sub setActiveRecord {
             if ($self->getConfig) {
                 $self->processAddedActiveRecord($activerecord);
             }
-            return {status => 200, message => "Success"};
+            return {status => 200, message => "Already exists"};
         };
         return {status => 403, message => "Not a parent record"} if $self->checkComponentPart($record);
         my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
