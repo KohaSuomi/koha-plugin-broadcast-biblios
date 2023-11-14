@@ -136,8 +136,8 @@ sub pushToRest {
 sub setToQueue {
     my ($self, $activerecord, $broadcastrecord) = @_;
     my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
-    if ($encodingLevel eq 'lower') {
-        $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
+    if ($self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml})) {
+        $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord)) if $encodingLevel eq 'lower';
     }
 }
 
@@ -295,6 +295,25 @@ sub compareEncodingLevels {
     my $localEncoding = $self->getEncodingLevel($localmarc);
     my $broadcastEncoding = $self->getEncodingLevel($broadcastmarc);
     return $self->compareRecords->compareEncodingLevels($localEncoding, $broadcastEncoding);
+}
+
+sub compareTimestamps {
+    my ($self, $localmarc, $broadcastmarc) = @_;
+    my $localTimestamp = $self->getTimestamp($localmarc);
+    my $broadcastTimestamp = $self->getTimestamp($broadcastmarc);
+    if ($localTimestamp < $broadcastTimestamp) {
+        # If local timestamp is lower than broadcast timestamp, then we can update the record
+        return 1;
+    }
+    return 0;
+}
+
+sub getTimestamp {
+    my ($self, $marcxml) = @_;
+    my $record = $self->getRecord($marcxml);
+    my $timestamp = $record->field('005')->data();
+    $timestamp =~ s/\.//g;
+    return $timestamp;
 }
 
 sub getEncodingLevel {
