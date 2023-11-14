@@ -162,7 +162,13 @@ sub setActiveRecord {
     try {
         my $record = $self->getRecord($biblio->{metadata});
         return {status => 404, message => "Not found"} unless $record;
-        return {status => 403, message => "Already exists"} if $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
+        my $activerecord = $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
+        if ($activerecord) {
+            if ($self->getConfig) {
+                $self->processAddedActiveRecord($activerecord);
+            }
+            return {status => 200, message => "Success"};
+        };
         return {status => 403, message => "Not a parent record"} if $self->checkComponentPart($record);
         my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
         return {status => 400, message => "No valid identifiers"} unless $identifier && $identifier_field;
