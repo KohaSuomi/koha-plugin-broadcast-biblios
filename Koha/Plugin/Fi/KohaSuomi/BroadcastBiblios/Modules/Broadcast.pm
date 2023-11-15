@@ -218,6 +218,7 @@ sub fetchBroadcastBiblios {
                 print "Processing: $biblio->{biblionumber}\n";
             }
             $count++;
+            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
             try {
                 my $record = $self->getRecord($biblio);
                 return unless $record;
@@ -249,8 +250,6 @@ sub fetchBroadcastBiblios {
                 my $error = $_;
                 print "Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $error\n";
             };
-
-            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
 
             $lastnumber = $biblio->{biblionumber};
         }
