@@ -173,6 +173,7 @@ sub setActiveRecords {
             } else {
                 print "Biblio ".$biblio->{biblionumber}." processed with: ".$response->{message}."\n" if $self->verbose;
             }
+            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp});
         }
         print "$count biblios processed!\n";
         if ($count eq $params->{chunks}) {
