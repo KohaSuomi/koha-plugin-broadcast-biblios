@@ -203,7 +203,7 @@ sub configKeys {
 sub fetchBroadcastBiblios {
     my ($self, $params) = @_;
     my $pageCount = 1;
-    my $latest = $self->broadcastLog()->getBroadcastLogLatest();
+    my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
     my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{timestamp} = $timestamp if !$self->getAll();
     my $configKeys = $self->configKeys;
@@ -250,7 +250,7 @@ sub fetchBroadcastBiblios {
                 print "Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $error\n";
             };
 
-            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp});
+            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
 
             $lastnumber = $biblio->{biblionumber};
         }

@@ -155,7 +155,7 @@ sub setActiveRecords {
     my ($self) = @_;
     my $params = $self->getParams();
     my $pageCount = 1;
-    my $latest = $self->broadcastLog()->getBroadcastLogLatest();
+    my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
     my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{timestamp} = $timestamp if !$params->{all};
     while ($pageCount >= $params->{page}) {
@@ -173,7 +173,7 @@ sub setActiveRecords {
             } else {
                 print "Biblio ".$biblio->{biblionumber}." processed with: ".$response->{message}."\n" if $self->verbose;
             }
-            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp});
+            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
         }
         print "$count biblios processed!\n";
         if ($count eq $params->{chunks}) {

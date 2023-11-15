@@ -308,12 +308,12 @@ sub getBroadcastLogByTimestamp {
 }
 
 sub getBroadcastLogLatest {
-    my ($self) = @_;
+    my ($self, $type) = @_;
 
     my $dbh = $self->dbh;
-    my $query = "SELECT * FROM ".$self->logs." order by id desc limit 1;";
+    my $query = "SELECT * FROM ".$self->logs." WHERE type = ? order by id desc limit 1;";
     my $sth = $dbh->prepare($query);
-    $sth->execute() or die $sth->errstr;
+    $sth->execute($type) or die $sth->errstr;
     my $data = $sth->fetchrow_hashref;
     
     return $data;

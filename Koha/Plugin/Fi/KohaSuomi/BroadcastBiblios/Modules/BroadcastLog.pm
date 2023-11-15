@@ -46,9 +46,9 @@ sub db {
 }
 
 sub setBroadcastLog {
-    my ($self, $biblionumber, $timestamp) = @_;
+    my ($self, $biblionumber, $timestamp, $type) = @_;
 
-    $self->db->setBroadcastLog($biblionumber, $timestamp);
+    $self->db->setBroadcastLog($biblionumber, $timestamp, $type);
     
 }
 
@@ -62,8 +62,14 @@ sub getBroadcastLogByTimestamp {
     return $self->db->getBroadcastLogByTimestamp($timestamp);
 }
 
-sub getBroadcastLogLatest {
+sub getBroadcastLogLatestExport {
     my ($self) = @_;
-    return $self->db->getBroadcastLogLatest();  
+    return $self->db->getBroadcastLogLatest('export');  
 }
+
+sub getBroadcastLogLatestImport {
+    my ($self) = @_;
+    return $self->db->getBroadcastLogLatest('import');  
+}
+
 1;

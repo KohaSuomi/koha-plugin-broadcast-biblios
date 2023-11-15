@@ -389,8 +389,10 @@ sub create_log_table {
     $dbh->do("CREATE TABLE IF NOT EXISTS `$log_table` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
         `biblionumber` int(11) NOT NULL,
+        `type` ENUM('export','import') DEFAULT 'import',
         `updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-        PRIMARY KEY (`id`)
+        PRIMARY KEY (`id`),
+        KEY `type` (`type`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }
