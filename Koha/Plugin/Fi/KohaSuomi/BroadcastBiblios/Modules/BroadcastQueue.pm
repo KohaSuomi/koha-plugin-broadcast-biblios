@@ -136,8 +136,15 @@ sub pushToRest {
 sub setToQueue {
     my ($self, $activerecord, $broadcastrecord) = @_;
     my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
-    if ($self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml}) && $encodingLevel ne 'greater') {
+    if ($encodingLevel eq 'lower') {
         $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
+    } elsif ($encodingLevel eq 'equal') {
+        my $timestamp = $self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
+        if ($timestamp) {
+            $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
+        }
+    } else {
+        print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
     }
 }
 

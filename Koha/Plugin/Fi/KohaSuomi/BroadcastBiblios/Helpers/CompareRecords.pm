@@ -47,23 +47,23 @@ sub compareEncodingLevels {
     my $broadcast_status = $broadcast->{encodingStatus};
     my $encoding_level;
 
-    # 1. If the local record's number is greater than broadcast record's or local record's status is u or z, the encoding level is lower
-    # 2. If the local record's number is equal to broadcast record's, the encoding level is equal
-    # 3. If the local record's number is lower than broadcast record's, the encoding level is greater
-    # 4. If the local record's number is equal to broadcast record's and the local record's status is c and the broadcast record's status is n, the encoding level is greater
-    # 5. If the local record's number is equal to broadcast record's and the local record's status is n and the broadcast record's status is c, the encoding level is lower
     if ((int($local_level) > int($broadcast_level)) || $local_level eq 'u' || $local_level eq 'z') {
+        # If the local record's number is greater than broadcast record's or local record's status is u or z, the encoding level is lower
         $encoding_level = 'lower';   
     } elsif (int($local_level) == int($broadcast_level)) {
         if ($local_status eq 'c' && $broadcast_status eq 'n') {
+            # If the local record's number is equal to broadcast record's and the local record's status is c and the broadcast record's status is n, the encoding level is greater
             $encoding_level = 'greater';
         } elsif ($local_status eq 'n' && $broadcast_status eq 'c') {
+            # If the local record's number is equal to broadcast record's and the local record's status is n and the broadcast record's status is c, the encoding level is lower
             $encoding_level = 'lower';
         } else {
+            # If the local record's number is equal to broadcast record's, the encoding level is equal
             $encoding_level = 'equal';
         }
 
     } else {
+        # If the local record's number is lower than broadcast record's, the encoding level is greater
         $encoding_level = 'greater'; 
     }
 
