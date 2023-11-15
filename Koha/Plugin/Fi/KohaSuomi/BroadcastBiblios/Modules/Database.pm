@@ -208,6 +208,16 @@ sub getQueue {
     return $results;
 }
 
+sub getQueuedRecordByBiblionumber {
+    my ($self, $biblionumber) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE biblio_id = ?");
+    $sth->execute($biblionumber);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
 sub countQueue {
     my ($self, $status, $biblio_id) = @_;
     my $dbh = $self->dbh;

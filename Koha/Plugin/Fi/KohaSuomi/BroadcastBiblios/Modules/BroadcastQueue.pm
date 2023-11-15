@@ -135,6 +135,12 @@ sub pushToRest {
 
 sub setToQueue {
     my ($self, $activerecord, $broadcastrecord) = @_;
+
+    if ($self->checkBiblionumberQueueStatus($activerecord->{biblionumber}) eq 'pending' || $self->checkBiblionumberQueueStatus($activerecord->{biblionumber}) eq 'processing') {
+        print "Local record ".$activerecord->{biblionumber}." is already in queue\n" if $self->verbose;
+        return;
+    };
+
     my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
     if ($encodingLevel eq 'lower') {
         $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
@@ -176,6 +182,12 @@ sub getQueue {
     }
     my $count = $self->db->countQueue($status, $biblio_id);
     return {results => $res, count => $count};
+}
+
+sub checkBiblionumberQueueStatus {
+    my ($self, $biblionumber) = @_;
+    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber);
+    return $queue->{status};
 }
 
 sub processQueue {
