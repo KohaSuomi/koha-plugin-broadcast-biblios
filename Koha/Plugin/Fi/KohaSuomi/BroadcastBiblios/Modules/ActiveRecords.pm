@@ -194,7 +194,7 @@ sub processAddedActiveRecord {
     $self->db->activeRecordUpdated($activerecord->{id});
     
     if ($activerecord->{blocked}) {
-        print "Active record id: ".$activerecord->{id}." is blocked \n" if $self->verbose;
+        print "Active record biblionumber: ".$activerecord->{biblionumber}." is blocked \n" if $self->verbose;
         return;
     }
 
@@ -206,11 +206,11 @@ sub processAddedActiveRecord {
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $self->getConfig->{interface_name}, user_id => $self->getConfig->{user_id}, type => 'import'});
         $queue->setToQueue($activerecord, $tx->res->json);
         $self->db->activeRecordUpdated($activerecord->{id});
-        print "Active record id: ".$activerecord->{id}." update added to queue \n" if $self->verbose;
+        print "Active record biblionumber: ".$activerecord->{biblionumber}." update added to queue \n" if $self->verbose;
     } else {
         my $error = $tx->res->json || $tx->error;
         my $errormessage = $error->{error} || $error->{message};
-        print "REST error for active record id: ".$activerecord->{id}." with code ".$tx->res->code." and message: ".$errormessage."\n";
+        print "REST error for active record biblionumber: ".$activerecord->{biblionumber}." with code ".$tx->res->code." and message: ".$errormessage."\n";
     }
 }
 
