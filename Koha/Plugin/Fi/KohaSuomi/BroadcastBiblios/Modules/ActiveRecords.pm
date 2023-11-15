@@ -31,6 +31,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog;
 use Mojo::UserAgent;
 use JSON;
 use Koha::Logger;
@@ -56,6 +57,24 @@ sub verbose {
 
 sub getTimestamp {
     return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
+}
+
+sub getStartTime {
+    my ($self) = @_;
+    return 9;
+}
+
+sub getUpdateTime {
+    my ($self, $updated) = @_; 
+
+    return $self->getTimestamp() unless $updated;
+
+    my $hour = (localtime(time))[2];
+    if ($self->getStartTime() >= $hour) {
+        return $self->getTimestamp();
+    } else {
+        return $updated;
+    }
 }
 
 sub getConfig {
@@ -91,6 +110,11 @@ sub getRecord {
 
     my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
     return $biblios->getRecord($marcxml);
+}
+
+sub broadcastLog {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog->new();
 }
 
 sub processNewActiveRecords {
@@ -131,6 +155,9 @@ sub setActiveRecords {
     my ($self) = @_;
     my $params = $self->getParams();
     my $pageCount = 1;
+    my $latest = $self->broadcastLog()->getBroadcastLogLatest();
+    my $timestamp = $self->getUpdateTime($latest->{updated});
+    $params->{timestamp} = $timestamp if !$params->{all};
     while ($pageCount >= $params->{page}) {
         my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
         my $biblios = $newbiblios->fetch();
