@@ -456,7 +456,7 @@ new Vue({
         .get('/api/v1/contrib/kohasuomi/broadcast/biblios/active/'+this.biblionumber)
         .then((response) => {
           this.loader = false;
-          this.activated = "Aktivoitu valutukseen "+moment(response.data.created).locale('fi').format('D.M.Y H:mm:ss');
+          this.activated = "Aktivoitu valutukseen "+moment(response.data.created_on).locale('fi').format('D.M.Y H:mm:ss');
         })
         .catch((error) => {
           if (error.response.status == '404') {
