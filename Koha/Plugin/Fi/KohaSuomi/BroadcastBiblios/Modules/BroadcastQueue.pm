@@ -136,7 +136,8 @@ sub pushToRest {
 sub setToQueue {
     my ($self, $activerecord, $broadcastrecord) = @_;
 
-    if ($self->checkBiblionumberQueueStatus($activerecord->{biblionumber}) eq 'pending' || $self->checkBiblionumberQueueStatus($activerecord->{biblionumber}) eq 'processing') {
+    my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblio}->{biblionumber});
+    if ($queueStatus eq 'pending' || $queueStatus eq 'processing') {
         print "Local record ".$activerecord->{biblionumber}." is already in queue\n" if $self->verbose;
         return;
     };
@@ -171,6 +172,7 @@ sub getQueue {
         push @$res, {
             id => $result->{id},
             biblio_id => $result->{biblio_id},
+            itemtype => $self->getBiblioItemType($result->{biblio_id}),
             marcjson => $self->getMarcXMLToJSON->toJSON($result->{marc}),
             componentparts => $self->sortComponentParts($parts),
             status => $result->{status},
@@ -211,6 +213,7 @@ sub processImportQueue {
             my $record = $self->getRecord($queue->{marc});
 
             if ($record) {
+                $record = $self->addItemTypeToBiblio($record, $biblionumber);
                 my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
                             overlay_context => {
                                 source       => 'z3950'
@@ -257,6 +260,7 @@ sub processImportComponentParts {
             my $frameworkcode = GetFrameworkCode( $biblionumber );
             my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
             if ($record) {
+                $record = $self->addItemTypeToBiblio($record, $biblio_id);
                 my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
                             overlay_context => {
                                 source       => 'z3950'
@@ -277,6 +281,7 @@ sub processImportComponentParts {
             my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
             my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
             if ($record) {
+                $record = $self->addItemTypeToBiblio($record, $biblio_id);
                 my ($biblionumber, $biblioitemnumber) = &AddBiblio($record, '');
                 if ($biblionumber) {
                     print "Added component part $biblionumber\n" if $self->verbose;
@@ -348,6 +353,25 @@ sub sortComponentParts {
     my ($self, $componentparts) = @_;
     my @sorted = sort { $a->{biblionumber} <=> $b->{biblionumber} } @{$componentparts};
     return \@sorted;
+}
+
+sub addItemTypeToBiblio {
+    my ($self, $record, $biblionumber) = @_;
+    my $itemtype = $self->getBiblioItemType($biblionumber);
+    if ($itemtype) {
+        my $itemtypefield = MARC::Field->new('942', ' ', ' ', 'c' => $itemtype);
+        $record->insert_fields_ordered($itemtypefield);
+    } else {
+        die "Failed to get itemtype for biblionumber $biblionumber\n";
+    }
+
+    return $record;
+}
+
+sub getBiblioItemType {
+    my ($self, $biblionumber) = @_;
+    my $biblio = Koha::Biblios->find($biblionumber);
+    return $biblio->itemtype;
 }
 
 1;
