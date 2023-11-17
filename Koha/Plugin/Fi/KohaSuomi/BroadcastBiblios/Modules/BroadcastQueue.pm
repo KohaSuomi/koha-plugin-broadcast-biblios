@@ -32,7 +32,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use JSON;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode);
-use Koha::Logger;
+use MARC::Field;
 
 =head new
 
@@ -364,7 +364,7 @@ sub addItemTypeToBiblio {
     } else {
         die "Failed to get itemtype for biblionumber $biblionumber\n";
     }
-
+    
     return $record;
 }
 
