@@ -307,6 +307,9 @@ Vue.component('result-list', {
     author: function (record) {
       return recordParser.recordAuthor(record);
     },
+    itemType: function (record) {
+      return recordParser.recordItemType(record);
+    },
   },
   props: ['result'],
 });

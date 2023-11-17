@@ -41,6 +41,15 @@ export const recordTitle = (record) => {
                 if (v.code == 'a') {
                     title = v.value;
                 }
+                if (v.code == 'b') {
+                    title += ' ' + v.value;
+                } 
+                if (v.code == 'n') {
+                    title += ' ' + v.value;
+                } 
+                if (v.code == 'p') {
+                    title += ' ' + v.value;
+                }
                 });
             }
         }
@@ -59,9 +68,41 @@ export const recordAuthor = (record) => {
                 }
                 });
             }
+        } else if (v.tag == '110') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                if (v.code == 'a') {
+                    author = v.value;
+                }
+                });
+            }
+        } else if (v.tag == '111') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                if (v.code == 'a') {
+                    author = v.value;
+                }
+                });
+            }
         }
     });
     return author;
+}
+
+export const recordItemType = (record) => {
+    let itemType = '';
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '942') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                if (v.code == 'c') {
+                    itemType = v.value;
+                }
+                });
+            }
+        }
+    });
+    return itemType;
 }
 
 export const parseDiff = (record) => {
