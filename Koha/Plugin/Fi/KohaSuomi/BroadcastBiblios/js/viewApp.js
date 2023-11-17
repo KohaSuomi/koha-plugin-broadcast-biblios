@@ -24,9 +24,11 @@ new Vue({
     identifier: '',
     blocked: false,
     success: '',
+    showLoader: false,
   },
   methods: {
     fetchQueue() {
+      this.showLoader = true;
       this.errors = [];
       this.results = [];
       axios
@@ -40,6 +42,7 @@ new Vue({
             this.pages = 1;
           }
           this.activate();
+          this.showLoader = false;
         })
         .catch((error) => {
           if (!error.response.data.error) {
@@ -49,6 +52,7 @@ new Vue({
         });
     },
     getQueue() {
+      this.showLoader = true;
       this.errors = [];
       this.results = [];
       this.page = 1;
@@ -68,6 +72,7 @@ new Vue({
             this.pages = 1;
           }
           this.activate();
+          this.showLoader = false;
         })
         .catch((error) => {
           this.errors.push(error.response.data.error);
