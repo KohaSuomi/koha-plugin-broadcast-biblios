@@ -186,11 +186,11 @@ sub getQueue {
     } elsif ($status && $biblio_id) {
         $query .= " WHERE status = ? AND biblio_id = ?";
     }
-
+    my $orderBy = $status eq 'pending' || $status eq 'processing' ? 'created_on' : 'transfered_on';
     if ($page && $limit) {
-        $query .= " ORDER BY id DESC LIMIT " . ($page-1)*$limit . ", " . $limit;
+        $query .= " ORDER BY ".$orderBy." DESC LIMIT " . ($page-1)*$limit . ", " . $limit;
     } else {
-        $query .= " ORDER BY id DESC";
+        $query .= " ORDER BY ".$orderBy." DESC";
     }
 
     my $sth = $dbh->prepare($query);
