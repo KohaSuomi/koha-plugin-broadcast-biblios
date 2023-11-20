@@ -213,16 +213,16 @@ sub processImportQueue {
             my $record = $self->getRecord($queue->{marc});
 
             if ($record) {
-                $record = $self->addItemTypeToBiblio($record, $biblionumber);
+                if ($queue->{hostrecord}) {
+                    my $f942 = $self->get942Field($record);
+                    $self->processImportComponentParts($biblionumber, from_json($queue->{componentparts}), $f942);
+                }
                 my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
                             overlay_context => {
                                 source       => 'z3950'
                             }
                         });
                 if ($success) {
-                    if ($queue->{hostrecord}) {
-                        $self->processImportComponentParts($biblionumber, from_json($queue->{componentparts}));
-                    }
                     print "Updated record $biblionumber\n" if $self->verbose;
                 } else {
                     die "Failed to update record $biblionumber\n";
@@ -247,9 +247,12 @@ sub processExportQueue {
 }
 
 sub processImportComponentParts {
-    my ($self, $biblio_id, $broadcastcomponentparts) = @_;
+    my ($self, $biblio_id, $broadcastcomponentparts, $f942) = @_;
     $broadcastcomponentparts = $self->sortComponentParts($broadcastcomponentparts);
     my $localcomponentparts = $self->getComponentParts->fetch($biblio_id);
+    unless (scalar @{$broadcastcomponentparts} == scalar @{$localcomponentparts}) {
+        die "Component parts count mismatch, broadcast: ".scalar @{$broadcastcomponentparts}.", local: ".scalar @{$localcomponentparts}."\n";
+    }
     if ($localcomponentparts) {
         $localcomponentparts = $self->sortComponentParts($localcomponentparts);
         my $localcomponentpartscount = scalar @{$localcomponentparts};
@@ -260,7 +263,7 @@ sub processImportComponentParts {
             my $frameworkcode = GetFrameworkCode( $biblionumber );
             my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
             if ($record) {
-                $record = $self->addItemTypeToBiblio($record, $biblio_id);
+                $record = $self->add942ToBiblio($record, $f942);
                 my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
                             overlay_context => {
                                 source       => 'z3950'
@@ -281,7 +284,7 @@ sub processImportComponentParts {
             my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
             my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
             if ($record) {
-                $record = $self->addItemTypeToBiblio($record, $biblio_id);
+                $record = $self->add942ToBiblio($record, $f942);
                 my ($biblionumber, $biblioitemnumber) = &AddBiblio($record, '');
                 if ($biblionumber) {
                     print "Added component part $biblionumber\n" if $self->verbose;
@@ -366,6 +369,26 @@ sub addItemTypeToBiblio {
     }
     
     return $record;
+}
+
+sub add942ToBiblio {
+    my ($self, $record, $f942) = @_;
+    
+    if ($f942) {
+        $record->insert_fields_ordered($f942);
+    }
+    
+    return $record;
+}
+
+sub get942Field {
+    my ($self, $record) = @_;
+    my $f942;
+    my @f942 = $record->field('942');
+    if (@f942) {
+        $f942 = $f942[0];
+    }
+    return $f942;
 }
 
 sub getBiblioItemType {
