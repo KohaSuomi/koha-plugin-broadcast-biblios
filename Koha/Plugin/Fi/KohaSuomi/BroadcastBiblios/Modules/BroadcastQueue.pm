@@ -214,8 +214,7 @@ sub processImportQueue {
 
             if ($record) {
                 if ($queue->{hostrecord}) {
-                    my $f942 = $self->get942Field($record);
-                    $self->processImportComponentParts($biblionumber, from_json($queue->{componentparts}), $f942);
+                    $self->processImportComponentParts($biblionumber, from_json($queue->{componentparts}));
                 }
                 my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
                             overlay_context => {
@@ -247,13 +246,14 @@ sub processExportQueue {
 }
 
 sub processImportComponentParts {
-    my ($self, $biblio_id, $broadcastcomponentparts, $f942) = @_;
+    my ($self, $biblio_id, $broadcastcomponentparts) = @_;
     $broadcastcomponentparts = $self->sortComponentParts($broadcastcomponentparts);
     my $localcomponentparts = $self->getComponentParts->fetch($biblio_id);
-    unless (scalar @{$broadcastcomponentparts} == scalar @{$localcomponentparts}) {
-        die "Component parts count mismatch, broadcast: ".scalar @{$broadcastcomponentparts}.", local: ".scalar @{$localcomponentparts}."\n";
-    }
+    my $f942 = $self->get942Field($biblio_id);
     if ($localcomponentparts) {
+        unless (scalar @{$broadcastcomponentparts} == scalar @{$localcomponentparts}) {
+            die "Component parts count mismatch, broadcast: ".scalar @{$broadcastcomponentparts}.", local: ".scalar @{$localcomponentparts}."\n";
+        }
         $localcomponentparts = $self->sortComponentParts($localcomponentparts);
         my $localcomponentpartscount = scalar @{$localcomponentparts};
         for (my $i = 0; $i < $localcomponentpartscount; $i++) {
@@ -382,12 +382,9 @@ sub add942ToBiblio {
 }
 
 sub get942Field {
-    my ($self, $record) = @_;
-    my $f942;
-    my @f942 = $record->field('942');
-    if (@f942) {
-        $f942 = $f942[0];
-    }
+    my ($self, $biblionumber) = @_;
+    my $record = Koha::Biblios->find($biblionumber);
+    my $f942 = $self->getRecord($record->metadata->metadata)->field('942');
     return $f942;
 }
 
