@@ -154,6 +154,14 @@ sub updateActiveRecord {
     $sth->finish();
 }
 
+sub updateActiveRecordBlocked {
+    my ($self, $id, $blocked) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("UPDATE " . $self->activerecords . " SET blocked = ? WHERE id = ?");
+    $sth->execute($blocked, $id);
+    $sth->finish();
+}
+
 =head Queue
 
     Queue database functions

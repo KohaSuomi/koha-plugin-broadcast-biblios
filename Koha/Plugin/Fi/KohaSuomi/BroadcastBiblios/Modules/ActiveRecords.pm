@@ -194,6 +194,11 @@ sub setActiveRecord {
         return {status => 404, message => "Not found"} unless $record;
         my $activerecord = $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
         if ($activerecord) {
+            my $record_block = $self->checkBlock($record);
+            if ($record_block ne "" && $activerecord->{blocked} ne $record_block) {
+                $activerecord->{blocked} = $record_block;
+                $self->db->updateActiveRecordBlocked($activerecord->{id}, $activerecord->{blocked});
+            }
             if ($self->getConfig) {
                 $self->processAddedActiveRecord($activerecord);
             }
