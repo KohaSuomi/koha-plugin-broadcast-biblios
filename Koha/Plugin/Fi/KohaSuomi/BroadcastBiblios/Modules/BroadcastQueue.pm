@@ -149,6 +149,8 @@ sub setToQueue {
         my $timestamp = $self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
         if ($timestamp) {
             $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
+        } else {
+            print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
         }
     } else {
         print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
