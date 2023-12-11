@@ -137,23 +137,35 @@ sub setToQueue {
     my ($self, $activerecord, $broadcastrecord) = @_;
 
     my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblio}->{biblionumber});
-    if ($queueStatus eq 'pending' || $queueStatus eq 'processing') {
-        print "Local record ".$activerecord->{biblionumber}." is already in queue\n" if $self->verbose;
+    if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
+        print "Broadcast record ".$broadcastrecord->{biblio}->{biblionumber}." is already in queue\n" if $self->verbose;
         return;
     };
-
-    my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
-    if ($encodingLevel eq 'lower') {
-        $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
-    } elsif ($encodingLevel eq 'equal') {
-        my $timestamp = $self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
-        if ($timestamp) {
+    try {
+        my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
+        if ($encodingLevel eq 'lower') {
             $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
+        } elsif ($encodingLevel eq 'equal') {
+            my $timestamp = $self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
+            if ($timestamp) {
+                $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
+            } elsif (!$timestamp && $broadcastrecord->{componentparts}) {
+                # If broadcast record has component parts, then we need to check if local record has component parts
+                $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
+            } else {
+                print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+            }
         } else {
-            print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+            if ($broadcastrecord->{componentparts}) {
+                # If broadcast record has component parts, then we need to check if local record has component parts
+                $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
+            } else {
+                print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+            }
         }
-    } else {
-        print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+    } catch {
+        my $error = $_;
+        print "Error while setting record ".$broadcastrecord->{biblio}->{biblionumber}." to queue: $error\n";
     }
 }
 
@@ -209,27 +221,39 @@ sub processImportQueue {
     my $queue = $self->db->getPendingQueue('import');
     foreach my $queue (@$queue) {
         $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
-        my $biblionumber = $queue->{biblio_id};
-        my $frameworkcode = GetFrameworkCode( $biblionumber );
+        my $biblio_id = $queue->{biblio_id};
+        my $frameworkcode = GetFrameworkCode( $biblio_id );
         try {
             my $record = $self->getRecord($queue->{marc});
-
+            
             if ($record) {
-                if ($queue->{hostrecord}) {
-                    $self->processImportComponentParts($biblionumber, from_json($queue->{componentparts}));
-                }
-                my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
-                            overlay_context => {
-                                source       => 'z3950'
-                            }
-                        });
-                if ($success) {
-                    print "Updated record $biblionumber\n" if $self->verbose;
+                if ($biblio_id) {
+                    if ($queue->{hostrecord}) {
+                        $self->processImportComponentParts($biblio_id, from_json($queue->{componentparts}));
+                    }
+                    my $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
+                                overlay_context => {
+                                    source       => 'z3950'
+                                }
+                            });
+                    if ($success) {
+                        print "Updated record $biblio_id\n" if $self->verbose;
+                    } else {
+                        die "Failed to update record $biblio_id\n";
+                    }
+                    $self->db->updateQueueStatus($queue->{id}, 'completed', $success);
+                    $self->getActiveRecords->activeRecordUpdatedByBiblionumber($biblio_id);
                 } else {
-                    die "Failed to update record $biblionumber\n";
+                    my ($biblionumber, $biblioitemnumber) = &AddBiblio($record, '');
+                    if ($biblionumber) {
+                        print "Added a record $biblionumber\n" if $self->verbose;
+                        $self->db->updateQueueStatusAndBiblioId($queue->{id}, $biblionumber, 'completed', 'Record added');
+                    } else {
+                        die "Failed to add a record\n";
+                        $self->db->updateQueueStatus($queue->{id}, 'failed', 'Failed to add a record');
+                    }
+                    
                 }
-                $self->db->updateQueueStatus($queue->{id}, 'completed', $success);
-                $self->getActiveRecords->activeRecordUpdatedByBiblionumber($biblionumber);
             }
         } catch {
             my $error = $_;
@@ -300,6 +324,37 @@ sub processImportComponentParts {
     }
 }
 
+sub processNewComponentPartsToQueue {
+    my ($self, $biblio_id, $broadcastcomponentparts) = @_;
+    my $localcomponentparts = $self->getComponentParts->fetch($biblio_id);
+    my $f942 = $self->get942Field($biblio_id);
+    unless ($localcomponentparts) {
+        $broadcastcomponentparts = $self->sortComponentParts($broadcastcomponentparts);
+        foreach my $broadcastcomponentpart (@$broadcastcomponentparts) {
+            my $biblionumber = $broadcastcomponentpart->{biblionumber};
+            my $queueStatus = $self->checkBiblionumberQueueStatus($biblionumber);
+            if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
+                print "Broadcast record $biblionumber is already in queue\n" if $self->verbose;
+                next;
+            };
+            my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
+            if ($record) {
+                my $host = Koha::Biblios->find($biblio_id);
+                my $match = $self->compareRecords->matchComponentPartToHost($record, $self->getRecord($host->metadata->metadata));
+                if ($match) {
+                    $record = $self->add942ToBiblio($record, $f942);
+                    $self->db->insertToQueue($self->processParams({}, $broadcastcomponentpart));
+                } else {
+                    die "Mismatch between component part $biblionumber and host record $biblio_id\n";
+                }
+            } else {
+                die "Failed to add component part $biblionumber to queue\n";
+            }
+        }
+    }
+        
+}
+
 sub processParams {
     my ($self, $activerecord, $broadcastrecord) = @_;
 
@@ -307,14 +362,15 @@ sub processParams {
         broadcast_interface => $self->getBroadcastInterface,
         user_id => $self->getUserId,
         type => $self->getType,
-        biblio_id => $activerecord->{biblionumber},
-        broadcast_biblio_id => $broadcastrecord->{biblio}->{biblionumber},
-        marc => $broadcastrecord->{biblio}->{marcxml},
-        componentparts => $broadcastrecord->{componentparts} ? to_json($broadcastrecord->{componentparts}) : undef,
     };
-    my $diff = $self->getDiff($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
-    $params->{diff} = $diff ne "{}" ? $diff : undef;
+
+    $params->{broadcast_biblio_id} = $broadcastrecord->{biblio}->{biblionumber} ? $broadcastrecord->{biblio}->{biblionumber} : $broadcastrecord->{biblionumber};
+    $params->{biblio_id} = $activerecord->{biblionumber} if $activerecord->{biblionumber};
+    $params->{marc} = $broadcastrecord->{biblio}->{marcxml} ? $broadcastrecord->{biblio}->{marcxml} : $broadcastrecord->{marcxml};
+    my $diff = $self->getDiff($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml}) if $activerecord->{metadata};
+    $params->{diff} = $diff ne "{}" ? $diff : undef if $diff;
     $params->{hostrecord} = $params->{componentparts} ? 1 : 0;
+    $params->{componentparts} = $broadcastrecord->{componentparts} ? to_json($broadcastrecord->{componentparts}) : undef;
 
     return $params;
 }
@@ -393,7 +449,8 @@ sub get942Field {
 sub getBiblioItemType {
     my ($self, $biblionumber) = @_;
     my $biblio = Koha::Biblios->find($biblionumber);
-    return $biblio->itemtype;
+    return $biblio->itemtype if $biblio;
+    return undef;
 }
 
 1;

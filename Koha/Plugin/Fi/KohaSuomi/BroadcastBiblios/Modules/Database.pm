@@ -219,7 +219,7 @@ sub getQueue {
 sub getQueuedRecordByBiblionumber {
     my ($self, $biblionumber) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE biblio_id = ?");
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE broadcast_biblio_id = ?");
     $sth->execute($biblionumber);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
@@ -266,6 +266,14 @@ sub updateQueueStatus {
     my $dbh = $self->dbh;
     my $sth = $dbh->prepare("UPDATE " . $self->queue . " SET status = ?, statusmessage = ?, transfered_on = NOW() WHERE id = ?");
     $sth->execute($status, $statusmessage, $id);
+    $sth->finish();
+}
+
+sub updateQueueStatusAndBiblioId {
+    my ($self, $id, $biblio_id, $status, $statusmessage) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("UPDATE " . $self->queue . " SET biblio_id = ?, status = ?, statusmessage = ?, transfered_on = NOW() WHERE id = ?");
+    $sth->execute($biblio_id, $status, $statusmessage, $id);
     $sth->finish();
 }
 
