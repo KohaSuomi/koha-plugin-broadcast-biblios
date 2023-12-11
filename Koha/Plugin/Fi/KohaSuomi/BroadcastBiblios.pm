@@ -428,7 +428,7 @@ sub create_queue_table {
         `user_id` int(11) NOT NULL,
         `type` ENUM('export','import') DEFAULT 'import',
         `broadcast_interface` varchar(30) NOT NULL,
-        `biblio_id` int(11) NOT NULL,
+        `biblio_id` int(11) DEFAULT NULL,
         `status` ENUM('pending','processing','completed','failed') DEFAULT 'pending',
         `statusmessage` varchar(255) DEFAULT NULL,
         `broadcast_biblio_id` int(11) NOT NULL,
