@@ -229,5 +229,25 @@ sub compareArrays {
     return $notequal;
 }
 
+sub matchComponentPartToHost {
+    my ($self, $component, $host) = @_;
+
+    my $match = 0;
+    my $host001 = $host->field('001')->data();
+    my $host003 = $host->field('003')->data();
+    my $hostcontrolfields = '('.$host003.')'.$host001;
+    my $component773w = $component->subfield('773', 'w');
+    my $component001 = $component->field('001')->data();
+    my $component003 = $component->field('003')->data();
+
+    if ($hostcontrolfields eq $component773w) {
+        $match = 1;
+    } elsif ($host003 eq $component003 && $host001 eq $component773w) {
+        $match = 1;
+    }
+
+    return $match;
+}
+
 
 1;
