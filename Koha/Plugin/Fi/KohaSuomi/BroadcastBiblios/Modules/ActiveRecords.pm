@@ -167,13 +167,13 @@ sub setActiveRecords {
                 print "Processing biblio ".$biblio->{biblionumber}."\n";
             }
             $count++;
-            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
             my $response = $self->setActiveRecord($biblio);
             unless ($response->{status} eq '201' || $response->{status} eq '200') {
                 print "Error while processing biblio ".$biblio->{biblionumber}." with message: ".$response->{message}."\n";
             } else {
                 print "Biblio ".$biblio->{biblionumber}." processed with: ".$response->{message}."\n" if $self->verbose;
             }
+            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
         }
         print "$count biblios processed!\n";
         if ($count eq $params->{chunks}) {
