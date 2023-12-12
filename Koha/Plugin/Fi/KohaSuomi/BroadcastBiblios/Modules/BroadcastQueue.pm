@@ -228,7 +228,7 @@ sub processImportQueue {
             
             if ($record) {
                 if ($biblio_id) {
-                    if ($queue->{hostrecord}) {
+                    if ($queue->{hostrecord} || $queue->{componentparts}) {
                         $self->processImportComponentParts($biblio_id, from_json($queue->{componentparts}));
                     }
                     my $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
