@@ -228,9 +228,11 @@ sub processImportQueue {
             
             if ($record) {
                 if ($biblio_id) {
+                    my $f942 = $self->get942Field($biblio_id);
                     if ($queue->{hostrecord} || $queue->{componentparts}) {
                         $self->processImportComponentParts($biblio_id, from_json($queue->{componentparts}));
                     }
+                    $record = $self->add942ToBiblio($record, $f942);
                     my $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
                                 overlay_context => {
                                     source       => 'z3950'
@@ -442,7 +444,15 @@ sub get942Field {
     my ($self, $biblionumber) = @_;
     my $record = Koha::Biblios->find($biblionumber);
     my $f942 = $self->getRecord($record->metadata->metadata)->field('942');
-    return $f942;
+
+    if ($f942->subfield('c')) {
+        return $f942;
+    }
+
+    if ($self->getBiblioItemType($biblionumber)) {
+        return MARC::Field->new('942', ' ', ' ', 'c' => $self->getBiblioItemType($biblionumber));
+    }
+    return undef;
 }
 
 sub getBiblioItemType {
