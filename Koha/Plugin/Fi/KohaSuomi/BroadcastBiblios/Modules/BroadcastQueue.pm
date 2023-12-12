@@ -202,7 +202,7 @@ sub getQueue {
 
 sub checkBiblionumberQueueStatus {
     my ($self, $biblionumber) = @_;
-    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber);
+    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface);
     return $queue->{status};
 }
 
@@ -332,11 +332,10 @@ sub processNewComponentPartsToQueue {
         $broadcastcomponentparts = $self->sortComponentParts($broadcastcomponentparts);
         foreach my $broadcastcomponentpart (@$broadcastcomponentparts) {
             my $biblionumber = $broadcastcomponentpart->{biblionumber};
-            my $queueStatus = $self->checkBiblionumberQueueStatus($biblionumber);
-            if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
+            if($self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface)) {
                 print "Broadcast record $biblionumber is already in queue\n" if $self->verbose;
                 next;
-            };
+            }
             my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
             if ($record) {
                 my $host = Koha::Biblios->find($biblio_id);

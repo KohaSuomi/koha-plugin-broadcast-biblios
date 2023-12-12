@@ -217,10 +217,10 @@ sub getQueue {
 }
 
 sub getQueuedRecordByBiblionumber {
-    my ($self, $biblionumber) = @_;
+    my ($self, $biblionumber, $interface) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE broadcast_biblio_id = ?");
-    $sth->execute($biblionumber);
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE broadcast_biblio_id = ? AND broadcast_interface = ?");
+    $sth->execute($biblionumber, $interface);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
     return $result;
@@ -275,6 +275,16 @@ sub updateQueueStatusAndBiblioId {
     my $sth = $dbh->prepare("UPDATE " . $self->queue . " SET biblio_id = ?, status = ?, statusmessage = ?, transfered_on = NOW() WHERE id = ?");
     $sth->execute($biblio_id, $status, $statusmessage, $id);
     $sth->finish();
+}
+
+sub getLastBiblioTransferedOn {
+    my ($self, $biblio_id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT transfered_on FROM " . $self->queue . " WHERE broadcast_biblio_id = ? ORDER BY transfered_on DESC LIMIT 1");
+    $sth->execute($biblio_id);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
 }
 
 =head Logs
