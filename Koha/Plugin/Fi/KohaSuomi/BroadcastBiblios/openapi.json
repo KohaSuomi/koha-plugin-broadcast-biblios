@@ -79,7 +79,7 @@
   "/biblios": {
     "post": {
       "x-mojo-to": "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#add",
-      "operationId": "addBiblio",
+      "operationId": "addBroadcastBiblio",
       "tags": [
         "biblios"
       ],
