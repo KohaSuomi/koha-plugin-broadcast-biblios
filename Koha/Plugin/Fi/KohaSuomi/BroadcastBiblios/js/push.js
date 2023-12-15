@@ -8,6 +8,7 @@ const store = new Vuex.Store({
     biblionumber: 0,
     remoteRecord: {},
     username: '',
+    importBroadcastInterface: '',
   },
   mutations: {
     setLoader(state, value) {
@@ -36,6 +37,9 @@ const store = new Vuex.Store({
     },
     setUsername(state, value) {
       state.username = value;
+    },
+    setImportBroadcastInterface(state, value) {
+      state.importBroadcastInterface = value;
     },
   },
   actions: {
@@ -357,7 +361,7 @@ new Vue({
       record: '',
       active: false,
       loader: true,
-      activated: null
+      activated: null,
     };
   },
   created() {
@@ -373,11 +377,10 @@ new Vue({
       activation: interface.getAttribute('data-activation'),
     };
     store.commit('setImportApi', importapi);
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    store.commit('setBiblionumber', urlParams.get('biblionumber'));
+    store.commit('setBiblionumber', document.getElementById('biblioId').value);
+    store.commit('setImportBroadcastInterface', document.getElementById('importBroadcastInterface').value);
     this.getRecord();
-    if (this.importapi.activation == 'enabled') {
+    if (store.state.importBroadcastInterface) {
       this.checkActivation();
     }
   },
@@ -449,17 +452,11 @@ new Vue({
         });
     },
     checkActivation() {
-      const headers = { Authorization: this.importapi.token };
       axios
-        .get(
-          this.importapi.host + '/service/api/biblio/active/' + this.importapi.interface + '/' + this.biblionumber,
-          {
-            headers,
-          }
-        )
+        .get('/api/v1/contrib/kohasuomi/broadcast/biblios/active/'+this.biblionumber)
         .then((response) => {
           this.loader = false;
-          this.activated = "Aktivoitu valutukseen "+moment(response.data.created).locale('fi').format('D.M.Y H:mm:ss');
+          this.activated = "Aktivoitu valutukseen "+moment(response.data.created_on).locale('fi').format('D.M.Y H:mm:ss');
         })
         .catch((error) => {
           if (error.response.status == '404') {
@@ -471,15 +468,11 @@ new Vue({
     activateRecord() {
       this.loader = true;
       this.active = false;
-      const body = {
-        endpoint: this.importapi.host + '/service/api/biblio/active/identifier',
-        endpoint_type: 'identifier_activation',
-        interface: this.importapi.interface,
-        apiKey: this.importapi.token,
-      };
       axios
         .post(
-          '/api/v1/contrib/kohasuomi/biblios/' + this.biblionumber + '/activate', body
+          '/api/v1/contrib/kohasuomi/broadcast/biblios/active/' + this.biblionumber, {
+            broadcast_interface: store.state.importBroadcastInterface
+          }
         )
         .then(() => {
           this.checkActivation();

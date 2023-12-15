@@ -24,6 +24,9 @@ use Try::Tiny;
 use Koha::Biblio::Metadatas;
 use Koha::Database;
 use Koha::DateUtils qw(dt_from_string);
+use MARC::Record;
+use Koha::Logger;
+use XML::LibXML;
 
 =head new
 
@@ -62,7 +65,7 @@ sub getTimestamp {
 
 sub fetch {
     my ($self) = @_;
-    print "Starting broadcasting offset ". $self->getPage() ." as from ". $self->getTimestamp() . "!\n";
+    print "Starting offset ". $self->getPage() ." as from ". $self->getTimestamp() . "!\n";
     my $terms;
     $terms = {timestamp => { '>' => $self->getTimestamp() }} if $self->getTimestamp();
     $terms = {biblionumber => {'>=' => $self->getBiblionumber()}} if $self->getBiblionumber();
@@ -75,42 +78,6 @@ sub fetch {
     my $biblios = Koha::Biblio::Metadatas->search($terms, $fetch)->unblessed;
 
     return $biblios;
-}
-
-sub getHostRecord {
-    my ($self, $r) = @_;
-
-    my $f773w = $r->subfield('773', 'w');
-    my $f003;
-    if ($f773w =~ /\((.*)\)/ ) { 
-        $f003 = $1; 
-        $f773w =~ s/\D//g;
-    }
-    my $cn = $f773w;
-    my $cni = $r->field('003')->data();
-
-    return undef unless $cn && $cni;
-
-    my $query = "Control-number,ext:\"$cn\" AND cni,ext:\"$cni\"";
-    require Koha::SearchEngine::Search;
-
-    my $searcher = Koha::SearchEngine::Search->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
-
-    my ( $error, $results, $total_hits ) = $searcher->simple_search_compat( $query, 0, 10 );
-    if ($error) {
-        die "getHostRecord():> Searching ($query):> Returned an error:\n$error";
-    }
-
-    my $marcflavour = C4::Context->preference('marcflavour');
-
-    if ($total_hits == 1) {
-        my $record = $results->[0];
-        return ref($record) ne 'MARC::Record' ? MARC::Record::new_from_xml($record, 'UTF-8', $marcflavour) : $record;
-    }
-    elsif ($total_hits > 1) {
-        die "getHostRecord():> Searching ($query):> Returned more than one record?";
-    }
-    return undef;
 }
 
 sub importedRecords {
@@ -132,6 +99,18 @@ sub importedRecords {
             })->get_column('biblionumber')->all;
 
     return @biblios;
+}
+
+sub getRecord {
+    my ($self, $marcxml) = @_;
+
+    my $record = eval {MARC::Record::new_from_xml($marcxml, 'UTF-8')};
+    if ($@) {
+        die "Error while parsing MARC RECORD: $@";
+        return;
+    }
+
+    return $record;
 }
 
 1;

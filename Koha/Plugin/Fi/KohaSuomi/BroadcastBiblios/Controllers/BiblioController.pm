@@ -19,7 +19,8 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Biblios;
-use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode BiblioAutoLink);
 use C4::Context;
 use Try::Tiny;
@@ -53,6 +54,47 @@ sub get {
     }
 }
 
+sub find {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'api' });
+
+    try {
+        my $body = $c->req->json;
+        my $identifiers = $body->{identifiers};
+        my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+        my $biblio_id = $body->{biblio_id};
+        foreach my $identifier (@$identifiers) {
+            $logger->info("Searching for identifier: ".$identifier->{identifier}." in field: ".$identifier->{identifier_field});
+            my $bib = $search->findByIdentifier($identifier->{identifier}, $identifier->{identifier_field});
+            next unless $bib;
+            $biblio_id = $bib->subfield('999', 'c')+0;
+            last if $bib;
+        }
+
+        my $biblio = Koha::Biblios->find($biblio_id);
+
+        unless ($biblio) {
+            return $c->render(status => 404, openapi => {error => "Biblio not found"});
+        }
+
+        my $bibliowrapper = {
+            marcxml => $biblio->metadata->metadata,
+            biblionumber => $biblio->biblionumber,
+
+        };
+
+        my $componentparts = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new();
+        my $components = $componentparts->fetch($biblio_id);
+        
+        return $c->render(status => 200, openapi => { biblio => $bibliowrapper, componentparts => $components });
+    } catch {
+        my $error = $_;
+        $logger->error($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+    }
+}
+
 sub add {
     my $c = shift->openapi->valid_input or return;
 
@@ -72,8 +114,8 @@ sub add {
         if ($@) {
             return $c->render(status => 400, openapi => {error => $@});
         } else {
-            my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
-            my $hostrecord = $biblios->getHostRecord($record);
+            my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+            my $hostrecord = $search->getHostRecord($record);
             if ($hostrecord && $hostrecord->subfield('942','c')) {
                 my $field = MARC::Field->new('942','','','c' => $hostrecord->subfield('942','c'));
                 $record->append_fields($field);
@@ -114,8 +156,8 @@ sub update {
             if (C4::Context->preference("BiblioAddsAuthorities")){
                 BiblioAutoLink($record, $frameworkcode);
             }
-            my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
-            my $hostrecord = $biblios->getHostRecord($record);
+            my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+            my $hostrecord = $search->getHostRecord($record);
             
             if ($hostrecord && $hostrecord->subfield('942','c')) {
                 my $field = MARC::Field->new('942','','','c' => $hostrecord->subfield('942','c'));

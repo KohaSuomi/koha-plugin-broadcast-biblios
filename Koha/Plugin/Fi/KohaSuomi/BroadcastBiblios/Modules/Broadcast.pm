@@ -28,11 +28,13 @@ use Mojo::JSON qw(decode_json encode_json);
 use Koha::DateUtils qw( dt_from_string );
 use MARC::Record;
 use Data::Dumper;
+use Koha::Logger;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers;
 
 =head new
 
@@ -41,7 +43,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 =cut
 
 sub new {
-    my ($class, $params) = _validateNew(@_);
+    my ($class, $params) = @_;
     my $self = {};
     $self->{_params} = $params;
     bless($self, $class);
@@ -170,14 +172,96 @@ sub blockComponentParts {
 
 sub getRecord {
     my ($self, $biblio) = @_;
+
+    my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+    return $biblios->getRecord($biblio->{metadata});
+}
+
+sub getIdentifiers {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers->new();
+}
+
+sub getConfig {
+    my ($self) = @_;
+    my $config = shift->{_params}->{config};
+    return $config;
+}
+
+sub configKeys {
+    my ($self) = @_;
     
-    my $record = eval {MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8')};
-    if ($@) {
-        print $biblio->{biblionumber}." record is broken\n";
-        return 0;
+    my $config = shift->{_params}->{config};
+    my @keys;
+    foreach my $key (keys %{$config}) {
+        push @keys, $key;
     }
 
-    return $record;
+    return \@keys;
+}
+
+sub fetchBroadcastBiblios {
+    my ($self, $params) = @_;
+    my $pageCount = 1;
+    my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
+    my $timestamp = $self->getUpdateTime($latest->{updated});
+    $params->{timestamp} = $timestamp if !$self->getAll();
+    my $configKeys = $self->configKeys;
+    while ($pageCount >= $params->{page}) {
+        my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
+        my $biblios = $newbiblios->fetch();
+        my $count = 0;
+        my $lastnumber;
+        my ($error, $response);
+        foreach my $biblio (@{$biblios}) {
+            if ($self->verbose > 1) {
+                print "Processing: $biblio->{biblionumber}\n";
+            }
+            $count++;
+            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
+            try {
+                my $record = $self->getRecord($biblio);
+                return unless $record;
+                return if $self->blockComponentParts($record);
+                return if $self->blockByEncodingLevel($record);
+                my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
+                my $bibliowrapper = {
+                    biblio => {
+                        marcxml => $biblio->{metadata},
+                        biblionumber => $biblio->{biblionumber},
+                    },
+                    componentparts => $componentsArr || undef
+                };
+                my $identifiers = $self->getIdentifiers->fetchIdentifiers($biblio->{metadata});
+                my $success;
+                foreach my $configKey (@$configKeys) {
+                    my $config = $self->getConfig->{$configKey};
+                    next unless $config->{type} eq 'import';
+                    foreach my $identifier (@$identifiers) {
+                        my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
+                        if ($activeBiblio) {
+                            my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{interface_name}, user_id => $config->{user_id}, type => 'import'});
+                            $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
+                            last;
+                        }
+                    }
+                }
+            } catch {
+                my $error = $_;
+                print "Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $error\n";
+            };
+
+            $lastnumber = $biblio->{biblionumber};
+        }
+        print "last processed biblio $lastnumber\n" if $lastnumber;
+        print "$count biblios processed!\n";
+        if ($count eq $params->{chunks}) {
+            $pageCount++;
+            $params->{page} = $pageCount;
+        } else {
+            $pageCount = 0;
+        }
+    }
 }
 
 
@@ -198,27 +282,32 @@ sub broadcastBiblios {
             if ($self->verbose > 1) {
                 print "Processing: $biblio->{biblionumber}\n";
             }
-            my $record = $self->getRecord($biblio);
             $count++;
-            next unless $record;
-            next if $self->blockComponentParts($record);
-            next if $self->blockByEncodingLevel($record);
-            my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
-            $biblio->{componentparts_count} = scalar @{$componentsArr} if $componentsArr && @{$componentsArr};
-            my $requestparams = $self->getEndpointParameters($biblio);
-            my $success;
-            if ($self->getEndpointType eq 'identifier_activation') { 
-                if ($requestparams) {
-                    push @pusharray, $requestparams;
+            try {
+                my $record = $self->getRecord($biblio);
+                return unless $record;
+                return if $self->blockComponentParts($record);
+                return if $self->blockByEncodingLevel($record);
+                my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
+                $biblio->{componentparts_count} = scalar @{$componentsArr} if $componentsArr && @{$componentsArr};
+                my $requestparams = $self->getEndpointParameters($biblio);
+                my $success;
+                if ($self->getEndpointType eq 'identifier_activation') { 
+                    if ($requestparams) {
+                        push @pusharray, $requestparams;
+                    } else {
+                        $self->_verboseResponse('No valid identifier!', undef, $biblio->{biblionumber});
+                    }
                 } else {
-                    $self->_verboseResponse('No valid identifier!', undef, $biblio->{biblionumber});
+                    ($error, $response) = $self->_restRequestCall($requestparams, undef);
+                    $success = $self->_verboseResponse($error, $response, $biblio->{biblionumber});
                 }
-            } else {
-                ($error, $response) = $self->_restRequestCall($requestparams, undef);
-                $success = $self->_verboseResponse($error, $response, $biblio->{biblionumber});
-            }
-            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
-            $self->_loopComponentParts($biblio, $componentsArr, $success);
+                $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
+                $self->_loopComponentParts($biblio, $componentsArr, $success);
+            } catch {
+                my $error = $_;
+                print "Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $error\n";
+            };
 
             $lastnumber = $biblio->{biblionumber};
         }
@@ -258,42 +347,6 @@ sub activateSingleBiblio {
     return {message => "Success"};
 
 }
-
-# sub broadcastStaged {
-#     my ($self) = @_;
-#     my @biblios = import_records();
-#     my $count = 0;
-#     foreach my $biblio (@biblios) {
-#         my $parameters;
-#         if ($stage_type eq "update") {
-#             my $record = MARC::Record::new_from_xml($biblio->{marcxml}, 'UTF-8');
-#             if($record->field($target_field)) {
-#                 my $target_id = $record->field($target_field)->subfield($target_subfield);
-#                 if ($target_id =~ /$field_check/) {
-#                     print "Target id ($target_id) found from $biblio->{biblionumber}!\n";
-#                     $target_id =~ s/\D//g;
-#                     $parameters = {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, target_id => $target_id, interface => $self->getInterface, check => Mojo::JSON->true};
-#                 }
-#             }
-#         } else {
-#             $parameters = $biblio->{parent_id} ? {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, interface => $self->getInterface, parent_id => $biblio->{parent_id}, force => 1} : {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, interface => $self->getInterface};
-#         }
-#         if ($parameters) {
-#             my $tx = $ua->inactivity_timeout($inactivity_timeout)->post($endpoint => $headers => json => $parameters);
-#             my $response = decode_json($tx->res->body);
-#             my $error = $response->{error} || $tx->res->error->{message} if $response->{error} || $tx->res->error;
-#             if ($error) {
-#                 print "$biblio->{biblionumber} biblio failed with: $error!\n";
-#             }
-#             if ($verbose && defined $response->{message} && $response->{message} eq "Success") {
-#                 print "$biblio->{biblionumber} biblio added succesfully\n";
-#             }
-#             $count++;
-#         }
-#     }
-
-#     print "$count biblios processed!\n";
-# }
 
 sub getLastRecord {
     my ($self) = @_;
@@ -373,6 +426,21 @@ sub _restRequestCall {
     my $response = decode_json($tx->res->body);
     return ($response->{error}, undef) if $response->{error};
     return (undef, $response->{message});
+
+}
+
+sub _getActiveRecord {
+    my ($self, $config, $identifier, $identifier_field) = @_;
+    my $restConfig = $config->{rest};
+    my $path = $restConfig->{baseUrl}.'/'.$restConfig->{findActiveBiblios}->{path}.'?identifier='.$identifier.'&identifier_field='.$identifier_field;
+    my $ua = Mojo::UserAgent->new;
+    my $tx = $ua->inactivity_timeout($restConfig->{inactivityTimeout})->get($path);
+    unless ($tx->res->code eq '200' || $tx->res->code eq '201') {
+        die "_getActiveRecord failed with: ".$tx->res->json->{error};
+        return;
+    }
+    my $response = $tx->res->json;
+    return $response;
 
 }
 

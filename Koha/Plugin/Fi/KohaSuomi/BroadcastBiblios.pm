@@ -15,22 +15,23 @@ use Encode;
 use Mojo::JSON qw(decode_json);
 
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 
 ## Here we set our plugin version
-our $VERSION = "2.0.0";
+our $VERSION = "2.5.0";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
-    name            => 'Broadcast biblios',
+    name            => 'Tietuesiirtäjä',
     author          => 'Johanna Räisä',
     date_authored   => '2021-09-09',
-    date_updated    => '2022-01-26',
+    date_updated    => '2023-10-20',
     minimum_version => '21.11.00.0000',
     maximum_version => '',
     version         => $VERSION,
-    description     => 'Tietuesiirtäjä valutukseen',
+    description     => 'Tietueiden lähetys ja vastaanotto Kohassa',
 };
 
 ## This is the minimum code required for a plugin's 'new' method
@@ -81,7 +82,31 @@ sub new {
         $self->{date} = $args->{date};
     }
 
+    if ($args->{config}) {
+        $self->{config} = $args->{config};
+    }
+
+    if ($args->{type}) {
+        $self->{type} = $args->{type};
+    }
+
+    $self->{cgi} = CGI->new();
+
     return $self;
+}
+
+sub report {
+    my ( $self, $args ) = @_;
+    my $cgi = $self->{'cgi'};
+
+    my $template = $self->get_template({ file => 'report.tt' });
+
+    $template->param(
+        notifyfields => $self->retrieve_data('notifyfields')
+    );
+
+    print $cgi->header(-charset    => 'utf-8');
+    print $template->output();
 }
 
 sub configure {
@@ -94,7 +119,9 @@ sub configure {
         ## Grab the values we already have for our settings, if any exist
         $template->param(
             exportapis => $self->retrieve_data('exportapis'),
-            importapi => $self->retrieve_data('importapi')
+            importapi => $self->retrieve_data('importapi'),
+            notifyfields => $self->retrieve_data('notifyfields'),
+            importinterface => $self->retrieve_data('importinterface'),
         );
 
         print $cgi->header(-charset    => 'utf-8');
@@ -103,10 +130,14 @@ sub configure {
     else {
         my $exportapis = $cgi->param('exportapis');
         my $importapi = $cgi->param('importapi');
+        my $notifyfields = $cgi->param('notifyfields');
+        my $importinterface = $cgi->param('importinterface');
         $self->store_data(
             {
                 exportapis          => $exportapis,
-                importapi           => $importapi
+                importapi           => $importapi,
+                notifyfields        => $notifyfields,
+                importinterface     => $importinterface,
             }
         );
         $self->go_home();
@@ -119,8 +150,10 @@ sub configure {
 sub intranet_catalog_biblio_enhancements_toolbar_button {
     my ( $self ) = @_;
 
+    my $biblionumber = $self->{'cgi'}->param('biblionumber');
     my $exportapis = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('exportapis')));
     my $importapi = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('importapi')));
+    my $importinterface = $self->retrieve_data('importinterface');
     my $dropdown;
     if ($exportapis && $importapi && haspermission(C4::Context->userenv->{'id'}, {'editcatalogue' => 'edit_catalogue'})) {
         my $pluginpath = $self->get_plugin_http_path();
@@ -148,9 +181,10 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
             data-token="'.Digest::SHA::hmac_sha256_hex($importapi->{apiToken}).'"
             data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
         $dropdown .= '</ul></div>';
-        if ($importapi->{activation} eq "enabled") {
-            $dropdown .= '<div class="btn-group"><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
+        if ($importinterface) {
+            $dropdown .= '<div class="btn-group"><input type="hidden" id="importBroadcastInterface" value="'.$importinterface.'" /><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
         }
+        $dropdown .= '<div><input type="hidden" id="biblioId" value="'.$biblionumber.'" /></div>';
         $dropdown .= '<recordmodal></recordmodal>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/vue.min.js"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/vuex.min.js"></script>';
@@ -169,6 +203,9 @@ sub install() {
     my ( $self, $args ) = @_;
 
     $self->create_log_table();
+    $self->create_active_records_table();
+    $self->create_queue_table();
+    $self->create_users_table();
 }
 
 ## This is the 'upgrade' method. It will be triggered when a newer version of a
@@ -238,6 +275,29 @@ sub run {
 
 }
 
+sub fetch_broadcast {
+    my ( $self ) = @_;
+
+    my $broadcast = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast->new({
+        config => $self->{config},
+        all => $self->{all},
+        verbose => $self->{verbose},
+        blocked_encoding_level => $self->{blocked_encoding_level},
+        block_component_parts => $self->{block_component_parts},
+    });
+
+    my $params = {
+        chunks => $self->{chunks},
+        biblionumber => $self->{biblionumber},
+        limit => $self->{limit},
+        page => $self->{page},
+        timestamp => undef
+    };
+
+    $broadcast->fetchBroadcastBiblios($params);
+
+}
+
 sub get_active {
     my ( $self ) = @_;
 
@@ -262,6 +322,24 @@ sub get_active {
 
 }
 
+sub set_active {
+    my ( $self ) = @_;
+
+    my $params = {
+        chunks => $self->{chunks},
+        biblionumber => $self->{biblionumber},
+        limit => $self->{limit},
+        page => $self->{page},
+        all => $self->{all},
+        verbose => $self->{verbose},
+        config => $self->{config},
+    };
+
+    my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new($params);
+    $activeRecords->setActiveRecords();
+
+}
+
 sub build_oai {
     my ( $self ) = @_;
 
@@ -277,6 +355,32 @@ sub build_oai {
 
 }
 
+sub update_active {
+    my ( $self ) = @_;
+
+    my $params = {
+        verbose => $self->{verbose},
+        page => $self->{page},
+        limit => $self->{limit},
+        chunks => $self->{chunks},
+        config => $self->{config}
+    };
+
+    my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new($params);
+    $activeRecords->processNewActiveRecords();
+}
+
+sub process_queue {
+    my ( $self ) = @_;
+    my $params = {
+        verbose => $self->{verbose},
+        type => $self->{type},
+    };
+
+    my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new($params);
+    $queue->processQueue();
+}
+
 sub create_log_table {
     my ( $self ) = @_;
 
@@ -285,8 +389,82 @@ sub create_log_table {
     $dbh->do("CREATE TABLE IF NOT EXISTS `$log_table` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
         `biblionumber` int(11) NOT NULL,
+        `type` ENUM('export','import') DEFAULT 'import',
         `updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-        PRIMARY KEY (`id`)
+        PRIMARY KEY (`id`),
+        KEY `type` (`type`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+}
+
+sub create_active_records_table {
+    my ( $self ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $activerecords_table = $self->get_qualified_table_name('activerecords');
+    $dbh->do("CREATE TABLE IF NOT EXISTS `$activerecords_table` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `biblionumber` int(11) NOT NULL,
+        `remote_biblionumber` int(11) DEFAULT NULL,
+        `identifier_field` varchar(255) NOT NULL,
+        `identifier` varchar(255) NOT NULL,
+        `blocked` tinyint(1) NOT NULL DEFAULT 0,
+        `updated_on` datetime DEFAULT NULL,
+        `created_on` datetime NOT NULL DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`),
+        FOREIGN KEY (`biblionumber`) REFERENCES `biblio_metadata` (`biblionumber`) ON DELETE CASCADE,
+        UNIQUE INDEX(biblionumber, identifier_field, identifier)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+}
+
+sub create_queue_table {
+    my ( $self ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $table = $self->get_qualified_table_name('queue');
+    $dbh->do("CREATE TABLE IF NOT EXISTS `$table` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `user_id` int(11) NOT NULL,
+        `type` ENUM('export','import') DEFAULT 'import',
+        `broadcast_interface` varchar(30) NOT NULL,
+        `biblio_id` int(11) DEFAULT NULL,
+        `status` ENUM('pending','processing','completed','failed') DEFAULT 'pending',
+        `statusmessage` varchar(255) DEFAULT NULL,
+        `broadcast_biblio_id` int(11) NOT NULL,
+        `hostrecord` tinyint(1) NOT NULL DEFAULT 0,
+        `componentparts` longtext DEFAULT NULL,
+        `marc` longtext NOT NULL,
+        `diff` longtext DEFAULT NULL,
+        `transfered_on` datetime DEFAULT NULL,
+        `created_on` datetime NOT NULL DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`),
+        KEY `user_id` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+}
+
+sub create_users_table {
+    my ( $self ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $table = $self->get_qualified_table_name('users');
+    $dbh->do("CREATE TABLE IF NOT EXISTS `$table` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `auth_type` ENUM('basic', 'oauth') DEFAULT 'basic',
+        `broadcast_interface` varchar(30) NOT NULL,
+        `username` varchar(50) DEFAULT NULL,
+        `password` varchar(50) DEFAULT NULL,
+        `client_id` varchar(50) DEFAULT NULL,
+        `client_secret` varchar(50) DEFAULT NULL,
+        `access_token` varchar(100) DEFAULT NULL,
+        `token_expires` int(11) DEFAULT NULL,
+        `access_token_url` varchar(255) DEFAULT NULL,
+        `grant_type` varchar(50) DEFAULT 'client_credentials',
+        `linked_borrowernumber` int(11) DEFAULT NULL,
+        `created_on` datetime NOT NULL DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`),
+        KEY `linked_borrowernumber` (`linked_borrowernumber`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }

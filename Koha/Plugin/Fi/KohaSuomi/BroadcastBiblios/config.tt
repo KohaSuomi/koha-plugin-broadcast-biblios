@@ -28,7 +28,13 @@
             Tuontirajapinta<br/>
             <textarea type="textarea" name="importapi" rows="6" cols="70">[% importapi %]</textarea>
         </p>
-
+        <p>
+            <label for="importinterface">Tuontirajapinnan nimi: </label>
+            <input type="text" name="importinterface" value="[% importinterface %]" />
+        <p>
+            <label for="notifyfield">Ilmoita kentistä (erota pilkulla): </label>
+            <input type="text" name="notifyfields" value="[% notifyfields %]" />
+        </p>
 
         <input type="hidden" name="save" value="1" />
 
