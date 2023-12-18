@@ -464,7 +464,8 @@ sub create_users_table {
         `linked_borrowernumber` int(11) DEFAULT NULL,
         `created_on` datetime NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (`id`),
-        KEY `linked_borrowernumber` (`linked_borrowernumber`)
+        KEY `linked_borrowernumber` (`linked_borrowernumber`),
+        CONSTRAINT `interface_username` UNIQUE (`broadcast_interface`, `username`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 }
