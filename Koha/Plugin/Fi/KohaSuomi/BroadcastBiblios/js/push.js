@@ -378,7 +378,9 @@ new Vue({
     };
     store.commit('setImportApi', importapi);
     store.commit('setBiblionumber', document.getElementById('biblioId').value);
-    store.commit('setImportBroadcastInterface', document.getElementById('importBroadcastInterface').value);
+    if (document.getElementById('importBroadcastInterface')) {
+      store.commit('setImportBroadcastInterface', document.getElementById('importBroadcastInterface').value);
+    }
     this.getRecord();
     if (store.state.importBroadcastInterface) {
       this.checkActivation();
