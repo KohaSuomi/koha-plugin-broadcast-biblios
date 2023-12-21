@@ -190,10 +190,10 @@
 						<i class="fa fa-spinner fa-spin"></i>
 					</div>
 					<div class="row m-0" v-else>
-						<div class="col-sm-3">
+						<div class="col-sm-4">
 							<button v-on:click="getRecord($event)" class="btn btn-sm btn-primary" type="button">Avaa</button>
 						</div>
-						<div v-if="notifyfields" class="col-sm-4 alert alert-warning p-1" role="alert">
+						<div v-if="notifyfields" class="col-sm-5 alert alert-warning p-1" role="alert">
 							<span>{{notifyfields}}</span>
 						</div>
 					</div>
