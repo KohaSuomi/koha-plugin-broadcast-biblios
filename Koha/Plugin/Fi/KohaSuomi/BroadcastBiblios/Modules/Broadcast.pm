@@ -441,7 +441,7 @@ sub _getActiveRecord {
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($restConfig->{inactivityTimeout})->get($path);
     unless ($tx->res->code eq '200' || $tx->res->code eq '201') {
-        print "_getActiveRecord failed with: ".$tx->res->json->{error} if $self->verbose;
+        print "_getActiveRecord failed with: ".$tx->res->json->{error}."\n" if $self->verbose;
         return;
     }
     my $response = $tx->res->json;
