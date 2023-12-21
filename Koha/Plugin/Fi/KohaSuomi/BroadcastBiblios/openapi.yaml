@@ -1,0 +1,514 @@
+"/biblios/{biblio_id}":
+  get:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#get"
+    operationId: getTatiBiblio
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: Internal biblio identifier
+        required: true
+        type: integer
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: A biblio record with componentparts
+        schema:
+          type: object
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Biblio not found
+              type: string
+  put:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#update"
+    operationId: updateBroadcastBiblio
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: Internal biblio identifier
+        required: true
+        type: integer
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Updated biblio
+        schema:
+          type: object
+          properties:
+            biblio:
+              type: object
+              description: Biblio data
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
+/biblios:
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#add"
+    operationId: addBroadcastBiblio
+    tags:
+      - biblios
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Created a new biblio
+        schema:
+          type: object
+          properties:
+            biblio_id:
+              type: integer
+              description: Internal biblio identifier
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
+"/biblios/{biblio_id}/componentparts":
+  get:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#getcomponentparts"
+    operationId: GetComponentParts
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: Internal biblio identifier
+        required: true
+        type: integer
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: A biblio record with componentparts
+        schema:
+          type: object
+          properties:
+            biblio:
+              description: Biblio record
+            componentparts:
+              description: Component parts array
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Biblio not found
+              type: string
+"/biblios/{biblio_id}/activate":
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#activate"
+    operationId: activateBiblio
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: Internal biblio identifier
+        required: true
+        type: integer
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Activated a new biblio
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
+/broadcast/biblios/active:
+  get:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::ActiveRecordController#find"
+    operationId: findActivatedRecord
+    tags:
+      - biblios
+    parameters:
+      - name: identifier
+        in: query
+        description: "Record's identifier"
+        required: true
+        type: string
+      - name: identifier_field
+        in: query
+        description: "Record's identifier field"
+        required: true
+        type: string
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Activated record
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+"/broadcast/biblios/active/{biblio_id}":
+  get:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::ActiveRecordController#get"
+    operationId: getActivatedRecord
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: "Record's identifier"
+        required: true
+        type: string
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Activated record
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::ActiveRecordController#add"
+    operationId: addActivatedRecord
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: "Record's identifier"
+        required: true
+        type: string
+      - name: body
+        in: body
+        description: Broadcast data
+        required: true
+        schema:
+          type: object
+          properties:
+            broadcast_interface:
+              type: string
+              description: Broadcast interface
+            user_id:
+              type: integer
+              description: Interface user id
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Activated record
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "403":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Forbidden
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "409":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Conflict
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+  put:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::ActiveRecordController#update"
+    operationId: updateActivatedRecord
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: "Record's identifier"
+        required: true
+        type: string
+      - name: body
+        in: body
+        description: "Record's data"
+        required: true
+        schema:
+          type: object
+          properties:
+            identifier:
+              type: string
+              description: "Record's identifier"
+            identifier_field:
+              type: string
+              description: "Record's identifier field"
+            blocked:
+              type: integer
+              description: "Record's blocked status"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Activated record
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+/broadcast/biblios:
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#find"
+    operationId: findBiblio
+    tags:
+      - biblios
+    parameters:
+      - name: body
+        in: body
+        description: Record search parameters
+        required: true
+        schema:
+          type: object
+          properties:
+            identifiers:
+              type: array
+              description: "Record's identifiers"
+            biblio_id:
+              type:
+                - integer
+                - "null"
+              description: "Record's internal identifier"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: A biblio record with componentparts
+        schema:
+          type: object
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Biblio not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+/broadcast/queue:
+  get:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#listQueue"
+    operationId: listQueue
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: query
+        description: Biblio id
+        required: false
+        type: integer
+      - name: status
+        in: query
+        description: Queue status
+        required: false
+        type: string
+      - name: page
+        in: query
+        description: Page number
+        required: false
+        type: integer
+      - name: limit
+        in: query
+        description: Page size
+        required: false
+        type: integer
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: A queue of records
+        schema:
+          type: object
+      "401":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Unauthorized
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#setToQueue"
+    operationId: setToQueue
+    tags:
+      - biblios
+    parameters:
+      - name: body
+        in: body
+        description: Record search parameters
+        required: true
+        schema:
+          type: object
+          required:
+            - broadcast_interface
+            - user_id
+            - type
+          properties:
+            broadcast_interface:
+              type: string
+              description: "Record's identifiers"
+            type:
+              type: string
+              description: "Record's internal identifier"
+            user_id:
+              type: integer
+              description: Interface user id
+            active_biblio:
+              type: object
+              description: Active biblio
+            broadcast_biblio:
+              type: object
+              description: Broadcast biblio
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Success
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
