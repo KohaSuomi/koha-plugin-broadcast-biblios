@@ -237,13 +237,18 @@ sub fetchBroadcastBiblios {
                 foreach my $configKey (@$configKeys) {
                     my $config = $self->getConfig->{$configKey};
                     next unless $config->{type} eq 'import';
+                    my $record_found = 0;
                     foreach my $identifier (@$identifiers) {
                         my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
                         if ($activeBiblio) {
                             my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{interface_name}, user_id => $config->{user_id}, type => 'import'});
                             $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
+                            $record_found = 1;
                             last;
                         }
+                    }
+                    unless ($record_found) {
+                        die "No record found for ".$biblio->{biblionumber}."!\n";
                     }
                 }
             } catch {
@@ -436,7 +441,7 @@ sub _getActiveRecord {
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($restConfig->{inactivityTimeout})->get($path);
     unless ($tx->res->code eq '200' || $tx->res->code eq '201') {
-        die "_getActiveRecord failed with: ".$tx->res->json->{error};
+        print "_getActiveRecord failed with: ".$tx->res->json->{error} if $self->verbose;
         return;
     }
     my $response = $tx->res->json;
