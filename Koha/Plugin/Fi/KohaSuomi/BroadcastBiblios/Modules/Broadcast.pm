@@ -409,9 +409,15 @@ sub _verboseResponse {
         print "$biblionumber biblio failed with: $error!\n";
         return 0;
     }
+
     if ($self->verbose && defined $response && $response eq "Success") {
         print "$biblionumber biblio added succesfully\n";
         return 1;
+    }
+
+    if($self->verbose && defined $response) {
+        print "$biblionumber biblio failed with: $response!\n";
+        return 0;
     }
 
     return 0;
