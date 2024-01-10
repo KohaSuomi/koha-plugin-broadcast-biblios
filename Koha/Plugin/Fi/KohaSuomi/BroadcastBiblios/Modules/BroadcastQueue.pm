@@ -433,7 +433,7 @@ sub addItemTypeToBiblio {
 sub add942ToBiblio {
     my ($self, $record, $f942) = @_;
     
-    if ($f942->subfield('c')) {
+    if ($f942 && $f942->subfield('c')) {
         $record->insert_fields_ordered($f942);
     }
     
@@ -445,7 +445,7 @@ sub get942Field {
     my $record = Koha::Biblios->find($biblionumber);
     my $f942 = $self->getRecord($record->metadata->metadata)->field('942');
 
-    if ($f942->subfield('c')) {
+    if ($f942 && $f942->subfield('c')) {
         return $f942;
     }
 
