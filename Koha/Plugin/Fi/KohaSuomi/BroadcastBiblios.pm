@@ -13,6 +13,7 @@ use utf8;
 use YAML::XS;
 use Encode;
 use Mojo::JSON qw(decode_json);
+use UUID 'uuid';
 
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
@@ -206,6 +207,7 @@ sub install() {
     $self->create_active_records_table();
     $self->create_queue_table();
     $self->create_users_table();
+    $self->create_secret();
 }
 
 ## This is the 'upgrade' method. It will be triggered when a newer version of a
@@ -282,7 +284,6 @@ sub fetch_broadcast {
     my ( $self ) = @_;
 
     my $broadcast = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast->new({
-        config => $self->{config},
         all => $self->{all},
         verbose => $self->{verbose},
         blocked_encoding_level => $self->{blocked_encoding_level},
@@ -382,6 +383,13 @@ sub process_queue {
 
     my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new($params);
     $queue->processQueue();
+}
+
+sub create_secret {
+    my ( $self ) = @_;
+
+    my $secret = uuid();
+    $self->store_data({secret => $secret});
 }
 
 sub create_log_table {
