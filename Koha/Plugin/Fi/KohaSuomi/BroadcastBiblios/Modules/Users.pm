@@ -24,6 +24,7 @@ use Try::Tiny;
 use JSON;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config;
 use C4::Context;
 use Crypt::JWT;
 use Mojo::UserAgent;
@@ -54,6 +55,11 @@ sub getConfig {
     return shift->{_params}->{config};
 }
 
+sub getSecret {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new()->getSecret;
+}
+
 sub getEndpoint {
     my ($self) = @_;
     return shift->{_params}->{endpoint};
@@ -64,8 +70,38 @@ sub ua {
     return Mojo::UserAgent->new;
 }
 
-sub addUser {
+sub listUsers {
+    my ($self) = @_;
+    my $users = $self->db->listUsers;
+    my $response = [];
+    foreach my $user (@$users) {
+        push @$response, {id => $user->{id}, username => $user->{username}, auth_type => $user->{auth_type}};
+    }
+    return $response;
+}
 
+sub addUser {
+    my ($self, $params) = @_;
+    my $user = $self->db->getUserByUsername($params->{username});
+    if ($user) {
+        die {error => "User already exists", status => 409};
+    }
+    $params->{password} = Crypt::JWT::encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+    $self->db->insertUser($params);
+    return {message => "User added", status => 201};
+}
+
+sub updateUser {
+    my ($self, $params) = @_;
+    my $user = $self->db->getUserByUserId($params->{id});
+    if (!$user) {
+        die {error => "User not found", status => 404};
+    }
+    if ($params->{password}) {
+        $params->{password} = Crypt::JWT::encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+    }
+    $self->db->updateUser($params);
+    return {message => "User updated", status => 200};
 }
 
 sub getAuthentication {

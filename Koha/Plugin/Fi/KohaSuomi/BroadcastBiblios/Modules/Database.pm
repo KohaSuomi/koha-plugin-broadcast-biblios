@@ -359,6 +359,16 @@ sub getBroadcastLogLatest {
 
 =cut
 
+sub listUsers {
+    my ($self) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->users);
+    $sth->execute();
+    my $results = $sth->fetchall_arrayref({});
+    $sth->finish();
+    return $results;
+}
+
 sub insertUser {
     my ($self, $params) = @_;
     my $dbh = $self->dbh;
