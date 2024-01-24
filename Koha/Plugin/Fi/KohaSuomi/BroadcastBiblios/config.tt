@@ -1,44 +1,84 @@
-[% USE KohaDates %]
-[% INCLUDE 'doc-head-open.inc' %]
- <title>Koha-Suomi - Siirtotyökalu - Asetukset</title>
-[% INCLUDE 'doc-head-close.inc' %]
-</head>
-<body>
-[% INCLUDE 'header.inc' %]
-[% INCLUDE 'cat-search.inc' %]
+<!DOCTYPE html>
+<html>
+	<head>
+	<title>Koha-Suomi - Tietuesiirtäjä - Asetukset</title>
+	<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<meta name="description" content="">
+		<meta name="author" content="">
 
-<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Etusivu</a> &rsaquo; <a href="/cgi-bin/koha/plugins/plugins-home.pl">Plugit</a> &rsaquo; Siirtoraportti &rsaquo; Asetukset</div>
+		<!-- Bootstrap core CSS -->
+		<link rel="stylesheet" href="[% PLUGIN_PATH %]/includes/bootstrap.min.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+		<!-- Custom styles for this template-->
+	</head>
+	<body>
 
-<div id="doc3">
+		<!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="main-breadcrumb">
+            <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/cgi-bin/koha/mainpage.pl">Etusivu</a></li>
+            <li class="breadcrumb-item"><a href="/cgi-bin/koha/plugins/plugins-home.pl">Liitännäiset</a></li>
+            <li class="breadcrumb-item"><a href="/cgi-bin/koha/plugins/plugins-home.pl">Tietuesiirtäjä</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Asetukset</li>
+            </ol>
+        </nav>
+        <!-- /Breadcrumb -->
 
-    <h3>Koha-Suomi siirtotyökalun asetukset</h3>
 
-    <!-- Notice our form here has no 'action', this is good, it means that our forms will always get passed back to 'plugins/run.pl'. You could hard code it instead if you prefer -->
-    <form method="get">
-        <!-- Always pass these two parameters so the plugin system knows what to execute! -->
-        <input type="hidden" name="class" value="[% CLASS %]"/>
-        <input type="hidden" name="method" value="[% METHOD %]"/>
+        <div id="content-wrapper">
+			<div class="container-fluid">
+				<main role="main" class="ml-sm-auto pt-3 px-4">
+                    <div id="configApp">
+                        <div class="container">
+                            <div class="row gutters-sm">
+                                <div class="col-md-4 d-none d-md-block">
+                                    <div class="card">
+                                        <div class="card-body">
+                                        <nav class="nav flex-column nav-pills nav-gap-y-1">
+                                            <a href="#default" data-toggle="tab" class="nav-item nav-link has-icon nav-link-faded active">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings mr-2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Yleiset
+                                            </a>
+                                            <a href="#users" data-toggle="tab" class="nav-item nav-link has-icon nav-link-faded">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-credit-card mr-2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>Käyttäjät
+                                            </a>
+                                        </nav>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-body tab-content">
+                                            <div class="tab-pane active" id="default">
+                                                <h5>Yleiset</h5>
+                                                <hr>
+                                                <config-component/>
+                                            </div>
+                                            <div class="tab-pane" id="users">
+                                                <h5>Käyttäjät</h5>
+                                                <hr>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        <!-- Bootstrap core JavaScript
+		================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.15/vue.global.min.js" integrity="sha512-YX1AhLUs26nJDkqXrSgg6kjMat++etdfsgcphWSPcglBGp/sk5I0/pKuu/XIfOCuzDU4GHcOB1E9LlveutWiBw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-demi/0.14.6/index.iife.min.js" integrity="sha512-4bZPx/4GmRQW9DcQEbYpO4nLPaIceJ/gfouiSkpLCrrYYKFC9W+dk5dCT5WaDkRoWIMyG+Zw853iFABZgatpYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pinia/2.1.7/pinia.iife.min.js" integrity="sha512-o2oH6iY7StQR/0l/6CJpuET6bT1RyGQWUpu1nWLIcGuFZnV4iOlSvtgUrO+i4x3QtoZSve8SAb1LplJWEZTj0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<!--<script src="[% PLUGIN_PATH %]/includes/vue.min.js"></script>-->
+		<script src="[% PLUGIN_PATH %]/includes/axios.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/moment-with-locales.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/jquery-3.3.1.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/popper.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/bootstrap.min.js"></script>
+		<script type="module" src="[% PLUGIN_PATH %]/js/configApp.js"></script>
+    </body>
+</html>
 
-        <p>
-            Vientirajapinnat<br/>
-            <textarea type="textarea" name="exportapis" rows="6" cols="70">[% exportapis %]</textarea>
-        </p>
-
-        <p>
-            Tuontirajapinta<br/>
-            <textarea type="textarea" name="importapi" rows="6" cols="70">[% importapi %]</textarea>
-        </p>
-        <p>
-            <label for="importinterface">Tuontirajapinnan nimi: </label>
-            <input type="text" name="importinterface" value="[% importinterface %]" />
-        <p>
-            <label for="notifyfield">Ilmoita kentistä (erota pilkulla): </label>
-            <input type="text" name="notifyfields" value="[% notifyfields %]" />
-        </p>
-
-        <input type="hidden" name="save" value="1" />
-
-        <input type="submit" value="Tallenna" />
-    </form>
-
-[% INCLUDE 'intranet-bottom.inc' %]

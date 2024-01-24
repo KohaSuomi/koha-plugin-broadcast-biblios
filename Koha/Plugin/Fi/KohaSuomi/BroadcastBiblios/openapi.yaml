@@ -512,3 +512,133 @@
     x-koha-authorization:
       permissions:
         editcatalogue: edit_catalogue
+/broadcast/config:
+  get:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::ConfigController#get"
+    operationId: getBroadcastConfig
+    tags:
+      - biblios
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Broadcast config
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::ConfigController#set"
+    operationId: updateBroadcastConfig
+    tags:
+      - biblios
+    parameters:
+      - name: body
+        in: body
+        description: Broadcast config
+        required: true
+        schema:
+          type: object
+          properties:
+            broadcast_config:
+              type: object
+              description: Broadcast config
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Broadcast config
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+/broadcast/users:
+  get:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::UserController#list"
+    operationId: listBroadcastUsers
+    tags:
+      - biblios
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: List broadcast users
+        schema:
+          type: array
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
