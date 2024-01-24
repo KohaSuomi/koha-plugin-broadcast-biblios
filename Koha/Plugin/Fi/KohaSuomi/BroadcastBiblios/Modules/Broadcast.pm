@@ -184,20 +184,8 @@ sub getIdentifiers {
 
 sub getConfig {
     my ($self) = @_;
-    my $config = shift->{_params}->{config};
-    return $config;
-}
-
-sub configKeys {
-    my ($self) = @_;
-    
-    my $config = shift->{_params}->{config};
-    my @keys;
-    foreach my $key (keys %{$config}) {
-        push @keys, $key;
-    }
-
-    return \@keys;
+    my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new({verbose => $self->verbose});
+    return $config->getConfig();
 }
 
 sub fetchBroadcastBiblios {
@@ -206,7 +194,6 @@ sub fetchBroadcastBiblios {
     my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
     my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{timestamp} = $timestamp if !$self->getAll();
-    my $configKeys = $self->configKeys;
     while ($pageCount >= $params->{page}) {
         my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
         my $biblios = $newbiblios->fetch();
@@ -234,14 +221,13 @@ sub fetchBroadcastBiblios {
                 };
                 my $identifiers = $self->getIdentifiers->fetchIdentifiers($biblio->{metadata});
                 my $success;
-                foreach my $configKey (@$configKeys) {
-                    my $config = $self->getConfig->{$configKey};
+                foreach my $config (@$self->getConfig) {
                     next unless $config->{type} eq 'import';
                     my $record_found = 0;
                     foreach my $identifier (@$identifiers) {
                         my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
                         if ($activeBiblio) {
-                            my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{interface_name}, user_id => $config->{user_id}, type => 'import'});
+                            my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{name}, user_id => $config->{defaultUser}, type => 'import'});
                             $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
                             $record_found = 1;
                             last;

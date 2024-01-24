@@ -75,14 +75,13 @@ if ($help) {
 
 my $configPath = $ENV{"KOHA_CONF"};
 my($file, $path, $ext) = fileparse($configPath);
-my $configfile = eval { YAML::XS::LoadFile($path.'broadcast-config.yaml') };
+my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new({verbose => $verbose});
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     chunks => $chunks,
     limit => $limit,
     all => $all,
     page => 1,
     verbose => $verbose,
-    config => $configfile,
     blocked_encoding_level => $encoding_level,
     block_component_parts => $block_component_parts,
 });
