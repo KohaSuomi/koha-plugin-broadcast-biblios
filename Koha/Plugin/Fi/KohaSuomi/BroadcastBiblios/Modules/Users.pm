@@ -80,28 +80,49 @@ sub listUsers {
     return $response;
 }
 
+sub getUser {
+    my ($self, $user_id) = @_;
+    my $user = $self->db->getUserByUserId($user_id);
+    if (!$user) {
+        die {message => "User not found", status => 404};
+    }
+    return {id => $user->{id}, username => $user->{username}, auth_type => $user->{auth_type}, client_id => $user->{client_id}, client_secret => $user->{client_secret}, access_token_url => $user->{access_token_url}, broadcast_interface => $user->{broadcast_interface}, linked_borrowernumber => $user->{linked_borrowernumber}};
+}
+
 sub addUser {
     my ($self, $params) = @_;
     my $user = $self->db->getUserByUsername($params->{username});
-    if ($user) {
-        die {error => "User already exists", status => 409};
+    if ($user->{username} && $user->{username} eq $params->{username}) {
+        die {message => "User already exists", status => 409};
     }
-    $params->{password} = Crypt::JWT::encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+    if ($params->{password}) {
+        $params->{password} = Crypt::JWT::encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+    }
     $self->db->insertUser($params);
     return {message => "User added", status => 201};
 }
 
 sub updateUser {
-    my ($self, $params) = @_;
-    my $user = $self->db->getUserByUserId($params->{id});
+    my ($self, $user_id, $params) = @_;
+    my $user = $self->db->getUserByUserId($user_id);
     if (!$user) {
         die {error => "User not found", status => 404};
     }
     if ($params->{password}) {
         $params->{password} = Crypt::JWT::encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
     }
-    $self->db->updateUser($params);
+    $self->db->updateUser($user_id, $params);
     return {message => "User updated", status => 200};
+}
+
+sub deleteUser {
+    my ($self, $user_id) = @_;
+    my $user = $self->db->getUserByUserId($user_id);
+    if (!$user) {
+        die {error => "User not found", status => 404};
+    }
+    $self->db->deleteUser($user_id);
+    return {message => "User deleted", status => 200};
 }
 
 sub getAuthentication {
@@ -123,7 +144,8 @@ sub getAuthentication {
 sub basicAuth {
     my ($self, $user) = @_;
     my $endpoint = $self->getConfig->{baseUrl}.'/'.$self->getConfig->{$self->getEndpoint}->{path};
-    my $authentication = $user->{username} . ":" . $user->{password};
+    my $password = Crypt::JWT::decode_jwt(token => $user->{password}, key => $self->getSecret)->{payload};
+    my $authentication = $user->{username} . ":" . $password;
     my $path = Mojo::URL->new($endpoint)->userinfo($authentication);
     my $headers = {'Content-Type' => 'application/json'};
     return ($path, $headers);

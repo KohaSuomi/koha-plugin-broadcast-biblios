@@ -372,18 +372,26 @@ sub listUsers {
 sub insertUser {
     my ($self, $params) = @_;
     my $dbh = $self->dbh;
-    my $query = "INSERT INTO " . $self->users . " (auth_type, broadcast_interface, username, password, client_id, client_secret, linked_borrowernumber) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    my $query = "INSERT INTO " . $self->users . " (auth_type, broadcast_interface, username, password, client_id, client_secret, linked_borrowernumber, access_token_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     my $sth = $dbh->prepare($query);
-    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber});
+    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber}, $params->{access_token_url});
     $sth->finish();
 }
 
 sub updateUser {
     my ($self, $user_id, $params) = @_;
     my $dbh = $self->dbh;
-    my $query = "UPDATE " . $self->users . " SET auth_type = ?, broadcast_interface = ?, username = ?, password = ?, client_id = ?, client_secret = ?, linked_borrowernumber = ? WHERE id = ?";
+    my $query = "UPDATE " . $self->users . " SET auth_type = ?, broadcast_interface = ?, username = ?, password = ?, client_id = ?, client_secret = ?, linked_borrowernumber = ?, access_token_url = ? WHERE id = ?";
     my $sth = $dbh->prepare($query);
-    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber}, $user_id);
+    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber}, $params->{access_token_url}, $user_id);
+    $sth->finish();
+}
+
+sub deleteUser {
+    my ($self, $user_id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("DELETE FROM " . $self->users . " WHERE id = ?");
+    $sth->execute($user_id);
     $sth->finish();
 }
 
@@ -411,6 +419,16 @@ sub getUserByUserId {
     my $dbh = $self->dbh;
     my $sth = $dbh->prepare("SELECT * FROM " . $self->users . " WHERE id = ?");
     $sth->execute($user_id);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
+sub getUserByUsername {
+    my ($self, $username) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->users . " WHERE username = ?");
+    $sth->execute($username);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
     return $result;

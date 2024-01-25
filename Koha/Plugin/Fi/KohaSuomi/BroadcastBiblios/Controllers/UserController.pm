@@ -35,22 +35,84 @@ sub list {
         return $c->render(status => 200, openapi => $response);
     } catch {
         my $error = $_;
-        return $c->render(status => 400, openapi => {error => $error->message});
+        if ($error->{status}) {
+            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
+        }
+        return $c->render(status => 500, openapi => {error => $error->message});
     }
 }
 
-sub set {
+sub get {
+    my $c = shift->openapi->valid_input or return;
+
+    my $user_id = $c->param('user_id');
+    try {
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
+        my $response = $users->getUser($user_id);
+        return $c->render(status => 200, openapi => $response);
+    } catch {
+        my $error = $_;
+        if ($error->{status}) {
+            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
+        }
+        return $c->render(status => 500, openapi => {error => $error->message});
+    }
+
+}
+
+sub add {
     my $c = shift->openapi->valid_input or return;
 
     my $req  = $c->req->json;
     try {
-        my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new($req);
-        $config->setConfig();
-        return $c->render(status => 200, openapi => {message => "Success"});
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
+        my $response = $users->addUser($req);
+        return $c->render(status => 201, openapi => {message => "Success"});
     } catch {
         my $error = $_;
-        return $c->render(status => 400, openapi => {error => $error->message});
+        if ($error->{status}) {
+            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
+        }
+        warn Data::Dumper::Dumper($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong"});
     }
+}
+
+sub update {
+    my $c = shift->openapi->valid_input or return;
+
+    my $user_id = $c->param('user_id');
+    my $req  = $c->req->json;
+    try {
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
+        my $response = $users->updateUser($user_id, $req);
+        return $c->render(status => 200, openapi => $response);
+    } catch {
+        my $error = $_;
+        if ($error->{status}) {
+            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
+        }
+        return $c->render(status => 500, openapi => {error => "Something went wrong"});
+    }
+
+}
+
+sub delete {
+    my $c = shift->openapi->valid_input or return;
+
+    my $user_id = $c->param('user_id');
+    try {
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
+        my $response = $users->deleteUser($user_id);
+        return $c->render(status => 200, openapi => $response);
+    } catch {
+        my $error = $_;
+        if ($error->{status}) {
+            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
+        }
+        return $c->render(status => 500, openapi => {error => "Something went wrong"});
+    }
+
 }
 
 1;

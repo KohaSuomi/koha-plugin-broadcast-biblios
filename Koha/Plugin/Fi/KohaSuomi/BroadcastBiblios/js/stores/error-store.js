@@ -12,7 +12,7 @@ export const useErrorStore = defineStore('error', {
             } else {
                 this.errors.push(error);
             }
-            if (error.response.data.error) {
+            if (error.response) {
                 this.errors.push(error.response.data.error);
             }
         },

@@ -57,6 +57,7 @@
                                             <div class="tab-pane" id="users">
                                                 <h5>Käyttäjät</h5>
                                                 <hr>
+                                                <user-component/>
                                         </div>
                                     </div>
                                 </div>
