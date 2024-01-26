@@ -38,7 +38,11 @@ export default {
           newInterface = false;
         }
       }
-      if (newInterface && this.selectedInterface.name !== "" && Object.keys(this.selectedInterface).length > 0){
+      if (
+        newInterface &&
+        this.selectedInterface.name !== "" &&
+        Object.keys(this.selectedInterface).length > 0
+      ) {
         this.config.interfaces.push(this.selectedInterface);
       }
       const valid = await this.isValid();
@@ -86,16 +90,51 @@ export default {
         this.errors.setError("Tyyppi on pakollinen");
         valid = false;
       }
-      if (!this.selectedInterface.defaultUser) {
-        this.errors.setError("Oletuskäyttäjä on pakollinen");
-        valid = false;
-      }
-      if ((this.selectedInterface.restUrl === undefined || this.selectedInterface.restUrl === "") && this.selectedInterface.sruUrl === undefined || this.selectedInterface.sruUrl === "") {
+      if (
+        ((this.selectedInterface.restUrl === undefined ||
+          this.selectedInterface.restUrl === "") &&
+          this.selectedInterface.sruUrl === undefined) ||
+        this.selectedInterface.sruUrl === ""
+      ) {
         this.errors.setError("REST URL tai SRU URL on pakollinen");
         valid = false;
       }
+      if (
+        this.selectedInterface.restUrl &&
+        !this.validateHttpUrl(this.selectedInterface.restUrl)
+      ) {
+        this.errors.setError("REST URL ei ole validi");
+        valid = false;
+      }
+      if (
+        this.selectedInterface.sruUrl &&
+        !this.validateHttpUrl(this.selectedInterface.sruUrl)
+      ) {
+        this.errors.setError("SRU URL ei ole validi");
+        valid = false;
+      }
       return valid;
-    }
+    },
+    validateHttpUrl(url) {
+      if (!url) {
+        return false;
+      }
+      const pattern = new RegExp(
+        "^(https?:\\/\\/)?" +
+          // protocol
+          "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|" +
+          // domain name
+          "((\\d{1,3}\\.){3}\\d{1,3}))" +
+          // OR ip (v4) address
+          "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" +
+          // port and path
+          "(\\?[;&a-z\\d%_.~+=-]*)?" +
+          // query string
+          "(\\#[-a-z\\d_]*)?$",
+        "i"
+      );
+      return pattern.test(url);
+    },
   },
   template: `
     <div v-if="errors.errors.length > 0" class="alert alert-danger" role="alert">
@@ -105,6 +144,11 @@ export default {
         Asetukset tallennettu
     </div>
     <form>
+    <div class="form-group">
+      <label for="name" class="col-form-label">Ilmoita kentistä (erota pilkulla):</label>
+      <input type="text" class="form-control" id="notifyfields" v-model="config.notifyfields">
+  </div>
+  <hr/>
         <div class="form-group row">
             <div class="col-9">
                 <select class="form-control" id="interfaces" @change="selectedInterfaceChanged($event)" v-model="interfaceName">
@@ -113,20 +157,20 @@ export default {
                 </select>
             </div>
             <div class="col-3">
-                <button type="button" class="btn btn-success" @click="addInterface()">Uusi</button>
+                <button type="button" class="btn btn-success mr-2" @click="addInterface()">Uusi</button>
                 <button type="button" :class="interfaceName ? 'btn-danger' : 'btn-grey'" class="btn" @click="removeInterface()" :disabled="!interfaceName">Poista</button>
             </div>
         </div>
         <hr/>
         <div v-show="showInterface">
-            <h5>Siirtorajapinnan tiedot</h5>
+            <h5>{{interfaceName}}-rajapinnan tiedot</h5>
             <hr>
             <div class="form-group">
-                <label for="name" class="col-form-label">Siirtorajapinnan nimi</label>
+                <label for="name" class="col-form-label">Nimi</label>
                 <input type="text" class="form-control" id="name" v-model="selectedInterface.name">
             </div>
             <div class="form-group">
-                <label for="type" class="col-form-label">Siirtorajapinnan tyyppi</label>
+                <label for="type" class="col-form-label">Tyyppi</label>
                 <select class="form-control" id="type" v-model="selectedInterface.type">
                     <option v-for="type in interfaceTypes" :value="type.id">{{ type.name }}</option>
                 </select>
@@ -137,21 +181,69 @@ export default {
                     <option v-for="user in users.list" :value="user.id">{{ user.username }}</option>
                 </select>
             </div>
+            <hr/>
+            <h5>Rest API</h5>
+            <hr>
             <div class="form-group">
-                <label for="RESTurl" class="col-form-label">Siirtorajapinnan REST URL</label>
-                <input type="text" class="form-control" id="RESTurl" v-model="selectedInterface.restUrl">
+                <label for="restUrl" class="col-form-label">Osoite</label>
+                <input type="text" class="form-control" id="restUrl" placeholder="Osoite" v-model="selectedInterface.restUrl">
+                <small id="restUrlHelp" class="form-text text-muted">Esim. https://tati.koha-suomi.fi</small>
             </div>
-            <div class="form-group">
-                <label for="SRUurl" class="col-form-label">Siirtorajapinnan SRU URL</label>
-                <input type="text" class="form-control" id="SRUurl" v-model="selectedInterface.sruUrl">
+            <div v-if="selectedInterface.type === 'export'">
+              <div class="form-group">
+                  <label for="restGet" class="col-form-label">Get-endpoint</label>
+                  <input type="text" class="form-control" id="restGet" v-model="selectedInterface.restGet">
+                  <small id="restGetHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
+              </div>
+              <div class="form-group">
+                  <div class="row">
+                      <div class="col-9">
+                        <label for="restPost" class="col-form-label">Add-endpoint</label>
+                        <input type="text" class="form-control" id="restAdd" v-model="selectedInterface.restAdd">
+                        <small id="restAddHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
+                      </div>
+                      <div class="col-3">
+                        <label for="restAddMethod" class="col-form-label">Method</label>
+                        <select class="form-control" id="restAddMethod" v-model="selectedInterface.restAddMethod">
+                            <option selected value="">Valitse</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                        </select>
+                      </div>
+                    </div>
+              </div>
+              <div class="form-group">
+                  <div class="row">
+                      <div class="col-9">
+                        <label for="restPut" class="col-form-label">Update-endpoint</label>
+                        <input type="text" class="form-control" id="restUpdate" v-model="selectedInterface.restUpdate">
+                        <small id="restUpdateHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/{biblio_id}</small>
+                      </div>
+                      <div class="col-3">
+                        <label for="restAddMethod" class="col-form-label">Method</label>
+                        <select class="form-control" id="restUpdateMethod" v-model="selectedInterface.restUpdateMethod">
+                            <option selected value="">Valitse</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                        </select>
+                      </div>
+                  </div>
+              </div>
+              <div class="form-group">
+                  <label for="restDelete" class="col-form-label">Delete-endpoint</label>
+                  <input type="text" class="form-control" id="restDelete" v-model="selectedInterface.restDelete">
+                  <small id="restDeleteHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/{biblio_id}</small>
+              </div>
+              <hr/>
+              <h5>SRU-haku</h5>
+              <hr>
+              <div class="form-group">
+                  <label for="sruUrl" class="col-form-label">Osoite</label>
+                  <input type="text" class="form-control" id="sruUrl" v-model="selectedInterface.sruUrl">
+              </div>
             </div>
             <hr/>
         </div>
-        <div class="form-group">
-            <label for="name" class="col-form-label">Ilmoita kentistä (erota pilkulla):</label>
-            <input type="text" class="form-control" id="notifyfields" v-model="config.notifyfields">
-        </div>
-        <hr/>
         <div class="form-group">
             <button type="button" class="btn btn-primary" @click="save()">Tallenna</button>
         </div>
