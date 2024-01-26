@@ -126,7 +126,7 @@ sub pushToRest {
 
     if ($tx->res->code eq '200' || $tx->res->code eq '201' || $tx->res->code eq '204') {
         my $response = $tx->res->json;
-        print "Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{name}.": ". $response->{message}."\n";
+        print "Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{name}." with response: ". $response->{message}."\n";
     } else {
         my $error = $tx->res->json || $tx->res->error;
         my $errormessage = $error->{message} ? $error->{message} : $error;
