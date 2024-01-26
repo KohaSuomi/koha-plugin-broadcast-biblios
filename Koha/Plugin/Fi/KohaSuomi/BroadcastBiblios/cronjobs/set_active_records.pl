@@ -86,7 +86,7 @@ my $params = {
 };
 
 if ($interface) {
-    foreach my $i (@$config->{interfaces}) {
+    foreach my $i (@{$config->{interfaces}}) {
         if ($i->{name} eq $interface) {
             $params->{config} = $i;
             last;

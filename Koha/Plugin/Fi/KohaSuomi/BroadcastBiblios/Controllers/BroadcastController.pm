@@ -34,9 +34,9 @@ sub setToQueue {
     try {
         my $body = $c->req->json;
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{broadcast_interface}, type => $body->{type}, user_id => $body->{user_id}});
-        $queue->setToQueue($body->{active_biblio}, $body->{broadcast_biblio});
+        my $response = $queue->setToQueue($body->{active_biblio}, $body->{broadcast_biblio});
 
-        return $c->render(status => 201, openapi => {message => "Success"});
+        return $c->render(status => $response->{status}, openapi => {message => $response->{message}});
     } catch {
         my $error = $_;
         $logger->error($error);

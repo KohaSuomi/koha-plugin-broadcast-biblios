@@ -493,6 +493,14 @@
         description: Success
         schema:
           type: object
+      "200": 
+        description: Success
+        schema:
+          type: object
+      "204":
+        description: Success
+        schema:
+          type: object
       "400":
         description: An error occured
         schema:
@@ -500,6 +508,14 @@
           properties:
             error:
               description: Bad request
+              type: string
+      "409":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Conflict
               type: string
       "500":
         description: An error occured

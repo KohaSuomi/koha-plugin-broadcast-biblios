@@ -76,7 +76,7 @@ sub getEndpointType {
 }
 
 sub getInactivityTimeout {
-    return shift->{_params}->{inactivity_timeout};
+    return shift->{_params}->{inactivity_timeout} || 300;
 }
 
 sub getHeaders {
@@ -221,7 +221,7 @@ sub fetchBroadcastBiblios {
                 };
                 my $identifiers = $self->getIdentifiers->fetchIdentifiers($biblio->{metadata});
                 my $success;
-                foreach my $config (@$self->getConfig) {
+                foreach my $config (@{$self->getConfig->{interfaces}}) {
                     next unless $config->{type} eq 'import';
                     my $record_found = 0;
                     foreach my $identifier (@$identifiers) {
@@ -422,11 +422,10 @@ sub _restRequestCall {
 
 sub _getActiveRecord {
     my ($self, $config, $identifier, $identifier_field) = @_;
-    my $restConfig = $config->{rest};
-    my $path = $restConfig->{baseUrl}.'/'.$restConfig->{findActiveBiblios}->{path}.'?identifier='.$identifier.'&identifier_field='.$identifier_field;
+    my $path = $config->{restUrl}.'/api/v1/contrib/kohasuomi/broadcast/biblios/active'.'?identifier='.$identifier.'&identifier_field='.$identifier_field;
     my $ua = Mojo::UserAgent->new;
-    my $tx = $ua->inactivity_timeout($restConfig->{inactivityTimeout})->get($path);
-    unless ($tx->res->code eq '200' || $tx->res->code eq '201') {
+    my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->get($path);
+    unless ($tx->res->code eq '200' || $tx->res->code eq '201' || $tx->res->code eq '204') {
         print "_getActiveRecord failed with: ".$tx->res->json->{error}."\n" if $self->verbose;
         return;
     }

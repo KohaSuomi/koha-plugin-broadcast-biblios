@@ -124,12 +124,13 @@ sub pushToRest {
         type => $self->getType,
     });
 
-    if ($tx->res->code eq '200' || $tx->res->code eq '201') {
-        print "Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{interface_name}."\n";
+    if ($tx->res->code eq '200' || $tx->res->code eq '201' || $tx->res->code eq '204') {
+        my $response = $tx->res->json;
+        print "Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{name}.": ". $response->{message}."\n";
     } else {
         my $error = $tx->res->json || $tx->res->error;
         my $errormessage = $error->{message} ? $error->{message} : $error;
-        print "Failed to push record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{interface_name}.": ".$errormessage."\n";
+        print "Failed to push record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{name}.": ".$errormessage."\n";
     }
 }
 
@@ -139,9 +140,10 @@ sub setToQueue {
     my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblio}->{biblionumber});
     if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
         print "Broadcast record ".$broadcastrecord->{biblio}->{biblionumber}." is already in queue\n" if $self->verbose;
-        return;
+        return {status => 409, message => "Broadcast record ".$broadcastrecord->{biblio}->{biblionumber}." is already in queue"};
     };
     try {
+        my $return = {status => 201, message => "Success"};
         my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
         if ($encodingLevel eq 'lower') {
             $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
@@ -152,17 +154,22 @@ sub setToQueue {
             } elsif (!$timestamp && $broadcastrecord->{componentparts}) {
                 # If broadcast record has component parts, then we need to check if local record has component parts
                 $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
+                $return = {status => 200, message => "Equal encoding level and timestamp, checking component parts"};
             } else {
                 print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}};
             }
         } else {
             if ($broadcastrecord->{componentparts}) {
                 # If broadcast record has component parts, then we need to check if local record has component parts
                 $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
+                $return = {status => 200, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level, checking component parts"};
             } else {
                 print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}};
             }
         }
+        return $return;
     } catch {
         my $error = $_;
         print "Error while setting record ".$broadcastrecord->{biblio}->{biblionumber}." to queue: $error\n";
