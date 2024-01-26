@@ -1,13 +1,16 @@
 import { useErrorStore } from "../stores/error-store.js";
 import { useUserStore } from "../stores/user-store.js";
+import { useConfigStore } from "../stores/config-store.js";
 
 export default {
   setup() {
     const errorStore = useErrorStore();
     const userStore = useUserStore();
+    const config = useConfigStore();
     return {
       errors: errorStore,
       users: userStore,
+      config: config,
     };
   },
   data() {
@@ -22,12 +25,9 @@ export default {
     };
   },
   computed: {
-    errors() {
-        return this.errors;
-    },
-    users() {
-      return this.users;
-    },
+    interfaces() {
+        return this.config.interfaces;
+    }
   },
   created() {
     this.users.fetch();
@@ -76,11 +76,6 @@ export default {
         }
         if (!this.selectedUser.auth_type) {
             this.errors.setError("Autentikaatiotapa puuttuu");
-        }
-        if (this.selectedUser.auth_type === "basic") {
-            if (!this.selectedUser.password) {
-                this.errors.setError("Salasana puuttuu");
-            }
         }
         if (this.selectedUser.auth_type === "oauth") {
             if (!this.selectedUser.client_id) {
@@ -132,11 +127,15 @@ export default {
             </div>
             <div class="form-group">
                 <label for="broadcastInterface" class="col-form-label">Rajapinta</label>
-                <input type="text" class="form-control" id="broadcastInterface" v-model="selectedUser.broadcast_interface">
+                <select class="form-control" id="broadcastInterface" v-model="selectedUser.broadcast_interface">
+                    <option selected value="">Valitse</option>
+                    <option v-for="interface in interfaces" :value="interface.name">{{ interface.name }}</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="type" class="col-form-label">Autentikaatiotapa</label>
                 <select class="form-control" id="type" v-model="selectedUser.auth_type">
+                    <option selected value="">Valitse</option>
                     <option v-for="type in authTypes" :value="type.id">{{ type.name }}</option>
                 </select>
             </div>
