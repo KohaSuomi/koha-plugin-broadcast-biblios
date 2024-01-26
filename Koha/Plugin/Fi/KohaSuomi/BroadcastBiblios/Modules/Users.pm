@@ -65,6 +65,11 @@ sub getEndpoint {
     return shift->{_params}->{endpoint};
 }
 
+sub getPath {
+    my ($self) = @_;
+    return $self->getConfig->{restUrl}.$self->getEndpoint;
+}
+
 sub ua {
     my ($self) = @_;
     return Mojo::UserAgent->new;
@@ -143,19 +148,17 @@ sub getAuthentication {
 
 sub basicAuth {
     my ($self, $user) = @_;
-    my $endpoint = $self->getConfig->{baseUrl}.'/'.$self->getConfig->{$self->getEndpoint}->{path};
     my $password = Crypt::JWT::decode_jwt(token => $user->{password}, key => $self->getSecret)->{payload};
     my $authentication = $user->{username} . ":" . $password;
-    my $path = Mojo::URL->new($endpoint)->userinfo($authentication);
+    my $path = Mojo::URL->new($self->getPath)->userinfo($authentication);
     my $headers = {'Content-Type' => 'application/json'};
     return ($path, $headers);
 }
 
 sub OAUTH2 {
     my ($self, $user) = @_;
-    my $path = $self->getConfig->{baseUrl}.'/'.$self->getConfig->{$self->getEndpoint}->{path};
     my $headers = {'Content-Type' => 'application/json', 'Authorization' => 'Bearer ' . $self->getAccessToken($user)};
-    return ($path, $headers);
+    return ($self->getPath, $headers);
 }
 
 sub getAccessToken {

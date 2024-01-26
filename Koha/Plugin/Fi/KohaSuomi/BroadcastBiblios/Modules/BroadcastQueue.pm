@@ -114,7 +114,7 @@ sub ua {
 
 sub pushToRest {
     my ($self, $config, $activerecord, $broadcastrecord) = @_;
-    my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config->{rest}, endpoint => 'setToQueue'});
+    my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => '/api/v1/contrib/kohasuomi/broadcast/queue'});
     my ($path, $headers) = $users->getAuthentication($self->getUserId);
     my $tx = $self->ua->post($path => $headers => json => {
         active_biblio => $activerecord,
