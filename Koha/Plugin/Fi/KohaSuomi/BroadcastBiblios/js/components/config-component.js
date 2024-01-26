@@ -24,17 +24,6 @@ export default {
       ],
     };
   },
-  computed: {
-    config() {
-      return this.config;
-    },
-    users() {
-      return this.users;
-    },
-    errors() {
-      return this.errors;
-    },
-  },
   created() {
     this.config.fetch();
     this.users.fetch();
