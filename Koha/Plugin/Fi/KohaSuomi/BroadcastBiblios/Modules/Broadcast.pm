@@ -423,7 +423,7 @@ sub _getActiveIdentifierEndpointParameters {
 #Deprecating on 23.11
 sub _getBroadcastEndpointParameters {
     my ($self, $biblio) = @_;
-    my @fields = $self->getIdentifiers->fetchActiveFields($biblio->{metadata});
+    my @fields = $self->getIdentifiers->fetchIdentifiers($biblio->{metadata});
     return {marcxml => $biblio->{metadata}, source_id => $biblio->{biblionumber}, updated => $biblio->{timestamp}, activefields => @fields, componentparts_count => $biblio->{componentparts_count}};
 }
 
