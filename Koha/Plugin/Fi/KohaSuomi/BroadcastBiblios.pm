@@ -183,6 +183,8 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
         $dropdown .= '</ul></div>';
         if ($importinterface) {
             $dropdown .= '<div class="btn-group"><input type="hidden" id="importBroadcastInterface" value="'.$importinterface.'" /><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
+        } elsif ($importapi->{activation} eq "enabled") {
+            $dropdown .= '<div class="btn-group"><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="oldActivateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
         }
         $dropdown .= '<div><input type="hidden" id="biblioId" value="'.$biblionumber.'" /></div>';
         $dropdown .= '<recordmodal></recordmodal>';
