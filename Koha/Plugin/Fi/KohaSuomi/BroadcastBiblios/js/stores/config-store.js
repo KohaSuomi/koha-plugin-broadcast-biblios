@@ -10,6 +10,11 @@ export const useConfigStore = defineStore("config", {
       saved: ref(false),
     };
   },
+  getters: {
+    exportInterfaces() {
+      return this.interfaces.filter((i) => i.type === "export");
+    },
+  },
   actions: {
     async fetch() {
       try {
