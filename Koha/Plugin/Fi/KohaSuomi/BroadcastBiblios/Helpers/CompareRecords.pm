@@ -183,7 +183,7 @@ sub comparePrepare {
     my ($self, $record) = @_;
     my $fields;
     my $tags;
-
+    push @{$record->{fields}}, {tag => '000', value => $record->{leader}};
     foreach my $field (@{$record->{fields}}) {
         if (looks_like_number($field->{tag})) {
             push @{$tags}, $field->{tag};

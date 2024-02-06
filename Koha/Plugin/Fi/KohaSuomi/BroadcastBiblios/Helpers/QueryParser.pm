@@ -89,7 +89,7 @@ sub kohaElasticSearch {
     $identifier_field = "isbn" if $identifierField eq "020a";
     $identifier_field = "identifier-other" if $identifierField eq "024a";
     if ($identifierField eq "003|001") {
-        my @identifiers = split('|', $identifier);
+        my @identifiers = split(/\|/, $identifier);
         my $cn = $identifiers[1];
         my $cni = $identifiers[0];
         return "Control-number,ext:\"$cn\" AND cni,ext:\"$cni\"";

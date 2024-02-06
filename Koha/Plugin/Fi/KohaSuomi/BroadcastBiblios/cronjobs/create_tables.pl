@@ -36,3 +36,4 @@ $plugin->create_log_table();
 $plugin->create_active_records_table();
 $plugin->create_queue_table();
 $plugin->create_users_table();
+$plugin->upgrade_db();

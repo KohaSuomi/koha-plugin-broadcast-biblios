@@ -112,6 +112,11 @@ sub getRecord {
     return $biblios->getRecord($marcxml);
 }
 
+sub getBiblios {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+}
+
 sub broadcastLog {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog->new();
@@ -192,11 +197,11 @@ sub setActiveRecord {
     try {
         my $record = $self->getRecord($biblio->{metadata});
         return {status => 404, message => "Not found"} unless $record;
-        return {status => 403, message => "Not a host record"} if $self->checkComponentPart($record);
+        return {status => 403, message => "Not a host record"} if $self->getBiblios->checkComponentPart($record);
         my $activerecord = $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
         if ($activerecord) {
-            my $record_block = $self->checkBlock($record);
-            if ($record_block ne "" && $activerecord->{blocked} ne $record_block) {
+            my $record_block = $self->getBiblios()->checkBlock($record);
+            if ($record_block || $activerecord->{blocked} ne $record_block) {
                 $activerecord->{blocked} = $record_block;
                 $self->db->updateActiveRecordBlocked($activerecord->{id}, $activerecord->{blocked});
             }
@@ -208,7 +213,7 @@ sub setActiveRecord {
         my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
         return {status => 400, message => "No valid identifiers"} unless $identifier && $identifier_field;
         my $update_on = $params->{all} ? $biblio->{timestamp} : undef;
-        my $blocked = $self->checkBlock($record) ? 1 : 0;
+        my $blocked = $self->getBiblios->checkBlock($record);
         my $activerecord_id = $self->db->insertActiveRecord($biblio->{biblionumber}, $identifier, $identifier_field, $update_on, $blocked);
         if ($self->getConfig) {
             $self->processAddedActiveRecord($self->db->getActiveRecordById($activerecord_id));
@@ -261,7 +266,7 @@ sub getActiveRecordsByBiblionumber {
         my $count = 0;
         foreach my $biblio (@{$biblios}) {
             $count++;
-            next if $self->checkComponentPart(MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8'));
+            next if $self->getBiblios->checkComponentPart(MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8'));
             my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
@@ -315,24 +320,6 @@ sub getAllActiveRecords {
             $pageCount = 0;
         }
     }
-}
-
-sub checkBlock {
-    my ($self, $record) = @_;
-    return $record->subfield('942', "b");
-}
-
-sub checkEncodingLevel {
-    my ($self, $record) = @_;
-
-    my $encoding_level = substr( $record->leader(), 17 , 1 );
-    return $encoding_level;
-}
-
-sub checkComponentPart {
-    my ($self, $record) = @_;
-    return 1 if $record->subfield('773', "w");
-    return 0;
 }
 
 sub activated {

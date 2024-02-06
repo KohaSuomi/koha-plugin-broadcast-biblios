@@ -184,6 +184,8 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
         $dropdown .= '</ul></div>';
         if ($importinterface) {
             $dropdown .= '<div class="btn-group"><input type="hidden" id="importBroadcastInterface" value="'.$importinterface.'" /><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
+        } elsif ($importapi->{activation} eq "enabled") {
+            $dropdown .= '<div class="btn-group"><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="oldActivateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
         }
         $dropdown .= '<div><input type="hidden" id="biblioId" value="'.$biblionumber.'" /></div>';
         $dropdown .= '<recordmodal></recordmodal>';
@@ -479,6 +481,18 @@ sub create_users_table {
         CONSTRAINT `interface_username` UNIQUE (`broadcast_interface`, `username`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
+}
+
+sub upgrade_db {
+    my ( $self, $args ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $log_table = $self->get_qualified_table_name('log');
+    my $activerecords_table = $self->get_qualified_table_name('activerecords');
+    my $queue_table = $self->get_qualified_table_name('queue');
+    my $users_table = $self->get_qualified_table_name('users');
+
+    $dbh->do("ALTER TABLE `$log_table` ADD `type` ENUM('export','import') DEFAULT 'import' AFTER `biblionumber`");
 }
 
 1;

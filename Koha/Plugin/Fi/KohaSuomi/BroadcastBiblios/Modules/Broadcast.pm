@@ -122,6 +122,11 @@ sub broadcastLog {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog->new({table => $self->getLogTable});
 }
 
+sub getBiblios {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+}
+
 sub getTimestamp {
     return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
 }
@@ -142,7 +147,7 @@ sub blockByEncodingLevel {
     my $blockedLevel = shift->{_params}->{blocked_encoding_level};
     if ($blockedLevel) {
         my @levels = split('|', $blockedLevel);
-        my $encodingLevel = $self->activeRecords()->checkEncodingLevel($biblio);
+        my $encodingLevel = $self->getBiblios->checkEncodingLevel($biblio);
 
         foreach my $level (@levels) {
             if ($level eq $encodingLevel) {
@@ -164,7 +169,7 @@ sub blockComponentParts {
     my $block = shift->{_params}->{block_component_parts};
 
     if ($block) {
-        return $self->activeRecords()->checkComponentPart($biblio);
+        return $self->getBiblios()->checkComponentPart($biblio);
     }
 
     return 0;
@@ -255,11 +260,11 @@ sub fetchBroadcastBiblios {
     }
 }
 
-
+#Deprecating on 23.11
 sub broadcastBiblios {
     my ($self, $params) = @_;
     my $pageCount = 1;
-    my $latest = $self->broadcastLog()->getBroadcastLogLatest();
+    my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
     my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{timestamp} = $timestamp if !$self->getAll();
     while ($pageCount >= $params->{page}) {
@@ -279,6 +284,7 @@ sub broadcastBiblios {
                 return unless $record;
                 return if $self->blockComponentParts($record);
                 return if $self->blockByEncodingLevel($record);
+                $biblio->{blocked} = $self->getBiblios()->checkBlock($record);
                 my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
                 $biblio->{componentparts_count} = scalar @{$componentsArr} if $componentsArr && @{$componentsArr};
                 my $requestparams = $self->getEndpointParameters($biblio);
@@ -293,7 +299,7 @@ sub broadcastBiblios {
                     ($error, $response) = $self->_restRequestCall($requestparams, undef);
                     $success = $self->_verboseResponse($error, $response, $biblio->{biblionumber});
                 }
-                $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
+                $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import') if !$self->getAll();
                 $self->_loopComponentParts($biblio, $componentsArr, $success);
             } catch {
                 my $error = $_;
@@ -319,6 +325,7 @@ sub broadcastBiblios {
     }
 }
 
+#Deprecating on 23.11
 sub activateSingleBiblio {
     my ($self, $biblio) = @_;
 
@@ -339,6 +346,7 @@ sub activateSingleBiblio {
 
 }
 
+#Deprecating on 23.11
 sub getLastRecord {
     my ($self) = @_;
 
@@ -349,6 +357,7 @@ sub getLastRecord {
     return $response->{target_id};
 }
 
+#Deprecating on 23.11
 sub getEndpointParameters {
     my ($self, $biblio) = @_;
     if ($self->getEndpointType eq 'export') {
@@ -368,6 +377,7 @@ sub getEndpointParameters {
     }
 }
 
+#Deprecating on 23.11
 sub _getExportEndpointParameters {
     my ($self, $biblio, $target_id) = @_;
 
@@ -377,37 +387,38 @@ sub _getExportEndpointParameters {
     return $restParams;
 }
 
+#Deprecating on 23.11
 sub _getActiveEndpointParameters {
     my ($self, $biblio) = @_;
 
-    my $restParams = {marcxml => $biblio->{metadata}, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface};
-    my $blocked = $self->activeRecords()->checkBlock($biblio);    
-    $restParams->{blocked} = $blocked if length $blocked;
+    $biblio->{blocked} = $biblio->{blocked} ? $biblio->{blocked} : 0;
+    my $restParams = {marcxml => $biblio->{metadata}, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface, blocked => $biblio->{blocked}};
     $restParams->{updated} = $biblio->{timestamp} if $self->getAll;
     
     return $restParams;
 }
 
+#Deprecating on 23.11
 sub _getActiveIdentifierEndpointParameters {
     my ($self, $biblio) = @_;
 
-    my ($identifier, $identifier_field) = $self->activeRecords()->getActiveField($biblio);
+    my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
     return unless $identifier && $identifier_field;
-
-    my $restParams = {identifier => $identifier, identifier_field => $identifier_field, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface};
-    my $blocked = $self->activeRecords()->checkBlock($biblio);
-    $restParams->{blocked} = $blocked if length $blocked;
+    $biblio->{blocked} = $biblio->{blocked} ? $biblio->{blocked} : 0;
+    my $restParams = {identifier => $identifier, identifier_field => $identifier_field, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface, blocked => $biblio->{blocked}};
     $restParams->{updated} = $biblio->{timestamp} if $self->getAll;
 
     return $restParams;
 }
 
+#Deprecating on 23.11
 sub _getBroadcastEndpointParameters {
     my ($self, $biblio) = @_;
-    my @fields = $self->activeRecords()->fetchActiveFields($biblio);
+    my @fields = $self->getIdentifiers->fetchIdentifiers($biblio->{metadata});
     return {marcxml => $biblio->{metadata}, source_id => $biblio->{biblionumber}, updated => $biblio->{timestamp}, activefields => @fields, componentparts_count => $biblio->{componentparts_count}};
 }
 
+#Deprecating on 23.11
 sub _restRequestCall {
     my ($self, $params, @pusharray) = @_;
 
@@ -434,6 +445,7 @@ sub _getActiveRecord {
 
 }
 
+#Deprecating on 23.11
 sub _pushComponentParts {
     my ($self, $params) = @_;
 
@@ -446,6 +458,7 @@ sub _pushComponentParts {
 
 }
 
+#Deprecating on 23.11
 sub _loopComponentParts {
     my ($self, $biblio, $componentsArr, $success) = @_;
 
@@ -455,11 +468,12 @@ sub _loopComponentParts {
             $order++;
             my ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml}, part_order => $order});
             $self->_verboseResponse($error, $response, $componentpart->{biblionumber});
-            $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp});
+            $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp}, 'import');
         }
     }
 }
 
+#Deprecating on 23.11
 sub _verboseResponse {
     my ($self, $error, $response, $biblionumber) = @_;
 

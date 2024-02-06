@@ -291,7 +291,7 @@ sub getLastBiblioTransferedOn {
 
     Log database functions
             
-            $db->setBroadcastLog($biblionumber, $timestamp);
+            $db->setBroadcastLog($biblionumber, $timestamp, $type);
             my $log = $db->getBroadcastLogByBiblionumber($biblionumber);
             my $log = $db->getBroadcastLogByTimestamp($timestamp);
             my $log = $db->getBroadcastLogLatest();
@@ -299,12 +299,12 @@ sub getLastBiblioTransferedOn {
 =cut
 
 sub setBroadcastLog {
-    my ($self, $biblionumber, $timestamp) = @_;
+    my ($self, $biblionumber, $timestamp, $type) = @_;
 
     my $dbh = $self->dbh;
-    my $query = "INSERT INTO ".$self->logs." (biblionumber, updated) VALUES (?,?);";
+    my $query = "INSERT INTO ".$self->logs." (biblionumber, updated, type) VALUES (?,?,?);";
     my $sth = $dbh->prepare($query);
-    $sth->execute($biblionumber, $timestamp) or die $sth->errstr;
+    $sth->execute($biblionumber, $timestamp, $type) or die $sth->errstr;
     
 }
 

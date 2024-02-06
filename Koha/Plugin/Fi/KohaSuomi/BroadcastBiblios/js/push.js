@@ -289,13 +289,13 @@ const recordModal = Vue.component('recordmodal', {
       if (record) {
         var html = '<div>';
         html +=
-          '<li class="row" style="list-style:none;"> <div class="col-xs-3 mr-2">';
+          '<li class="row" style="list-style:none; overflow:hidden;"> <div class="col-xs-3 mr-2">';
         html +=
           '<b>000</b></div><div class="col-xs-9">' + record.leader + '</li>';
         record.fields.forEach(function (v, i, a) {
           if ($.isNumeric(v.tag)) {
             html +=
-              '<li class="row" style="list-style:none;"><div class="col-xs-3 mr-2">';
+              '<li class="row" style="list-style:none; overflow:hidden;"><div class="col-xs-3 mr-2">';
           } else {
             html += '<li class="row hidden"><div class="col-xs-3  mr-2">';
           }
@@ -382,6 +382,9 @@ new Vue({
       store.commit('setImportBroadcastInterface', document.getElementById('importBroadcastInterface').value);
     }
     this.getRecord();
+    if (this.importapi.activation == 'enabled') {
+      this.checkOldActivation();
+    }
     if (store.state.importBroadcastInterface) {
       this.checkActivation();
     }
@@ -453,6 +456,26 @@ new Vue({
           store.dispatch('errorMessage', error);
         });
     },
+    checkOldActivation() {
+      const headers = { Authorization: this.importapi.token };
+      axios
+        .get(
+          this.importapi.host + '/service/api/biblio/active/' + this.importapi.interface + '/' + this.biblionumber,
+          {
+            headers,
+          }
+        )
+        .then((response) => {
+          this.loader = false;
+          this.activated = "Aktivoitu valutukseen "+moment(response.data.created_on).locale('fi').format('D.M.Y H:mm:ss');
+        })
+        .catch((error) => {
+          if (error.response.status == '404') {
+            this.loader = false;
+            this.active = true;
+          }
+        });
+    },
     checkActivation() {
       axios
         .get('/api/v1/contrib/kohasuomi/broadcast/biblios/active/'+this.biblionumber)
@@ -465,6 +488,26 @@ new Vue({
             this.loader = false;
             this.active = true;
           }
+        });
+    },
+    oldActivateRecord() {
+      this.loader = true;
+      this.active = false;
+      const body = {
+        endpoint: this.importapi.host + '/service/api/biblio/active/identifier',
+        endpoint_type: 'identifier_activation',
+        interface: this.importapi.interface,
+        apiKey: this.importapi.token,
+      };
+      axios
+        .post('/api/v1/contrib/kohasuomi/biblios/' + this.biblionumber + '/activate', body)
+        .then(() => {
+          this.checkOldActivation();
+        })
+        .catch((error) => {
+          this.loader = false;
+          this.active = true;
+          alert(error.response.data.error);
         });
     },
     activateRecord() {
