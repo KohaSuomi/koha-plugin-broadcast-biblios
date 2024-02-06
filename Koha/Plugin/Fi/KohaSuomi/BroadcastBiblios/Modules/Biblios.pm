@@ -115,7 +115,8 @@ sub getRecord {
 
 sub checkBlock {
     my ($self, $record) = @_;
-    return $record->subfield('942', "b");
+    return 1 if $record->subfield('942', 'b');
+    return 0;
 }
 
 sub checkEncodingLevel {

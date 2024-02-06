@@ -200,8 +200,8 @@ sub setActiveRecord {
         return {status => 403, message => "Not a host record"} if $self->getBiblios->checkComponentPart($record);
         my $activerecord = $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
         if ($activerecord) {
-            my $record_block = $self->getBiblios->checkBlock($record);
-            if ($record_block ne "" && $activerecord->{blocked} ne $record_block) {
+            my $record_block = $self->getBiblios()->checkBlock($record);
+            if ($record_block || $activerecord->{blocked} ne $record_block) {
                 $activerecord->{blocked} = $record_block;
                 $self->db->updateActiveRecordBlocked($activerecord->{id}, $activerecord->{blocked});
             }
@@ -213,7 +213,7 @@ sub setActiveRecord {
         my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
         return {status => 400, message => "No valid identifiers"} unless $identifier && $identifier_field;
         my $update_on = $params->{all} ? $biblio->{timestamp} : undef;
-        my $blocked = $self->getBiblios->checkBlock($record) ? 1 : 0;
+        my $blocked = $self->getBiblios->checkBlock($record);
         my $activerecord_id = $self->db->insertActiveRecord($biblio->{biblionumber}, $identifier, $identifier_field, $update_on, $blocked);
         if ($self->getConfig) {
             $self->processAddedActiveRecord($self->db->getActiveRecordById($activerecord_id));
