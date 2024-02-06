@@ -475,5 +475,17 @@ sub create_users_table {
     ");
 }
 
+sub upgrade_db {
+    my ( $self, $args ) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $log_table = $self->get_qualified_table_name('log');
+    my $activerecords_table = $self->get_qualified_table_name('activerecords');
+    my $queue_table = $self->get_qualified_table_name('queue');
+    my $users_table = $self->get_qualified_table_name('users');
+
+    $dbh->do("ALTER TABLE `$log_table` ADD `type` ENUM('export','import') DEFAULT 'import' AFTER `biblionumber`");
+}
+
 1;
 
