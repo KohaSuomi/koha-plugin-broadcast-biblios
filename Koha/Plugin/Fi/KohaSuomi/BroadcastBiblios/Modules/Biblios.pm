@@ -113,4 +113,22 @@ sub getRecord {
     return $record;
 }
 
+sub checkBlock {
+    my ($self, $record) = @_;
+    return $record->subfield('942', "b");
+}
+
+sub checkEncodingLevel {
+    my ($self, $record) = @_;
+
+    my $encoding_level = substr( $record->leader(), 17 , 1 );
+    return $encoding_level;
+}
+
+sub checkComponentPart {
+    my ($self, $record) = @_;
+    return 1 if $record->subfield('773', "w");
+    return 0;
+}
+
 1;

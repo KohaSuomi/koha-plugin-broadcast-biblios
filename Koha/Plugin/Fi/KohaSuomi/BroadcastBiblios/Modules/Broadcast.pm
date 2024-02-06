@@ -122,6 +122,11 @@ sub broadcastLog {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog->new({table => $self->getLogTable});
 }
 
+sub getBiblios {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+}
+
 sub getTimestamp {
     return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
 }
@@ -142,7 +147,7 @@ sub blockByEncodingLevel {
     my $blockedLevel = shift->{_params}->{blocked_encoding_level};
     if ($blockedLevel) {
         my @levels = split('|', $blockedLevel);
-        my $encodingLevel = $self->activeRecords()->checkEncodingLevel($biblio);
+        my $encodingLevel = $self->getBiblios->checkEncodingLevel($biblio);
 
         foreach my $level (@levels) {
             if ($level eq $encodingLevel) {
@@ -164,7 +169,7 @@ sub blockComponentParts {
     my $block = shift->{_params}->{block_component_parts};
 
     if ($block) {
-        return $self->activeRecords()->checkComponentPart($biblio);
+        return $self->getBiblios()->checkComponentPart($biblio);
     }
 
     return 0;
@@ -293,7 +298,7 @@ sub broadcastBiblios {
                 return unless $record;
                 return if $self->blockComponentParts($record);
                 return if $self->blockByEncodingLevel($record);
-                $biblio->{blocked} = $self->activeRecords()->checkBlock($record);
+                $biblio->{blocked} = $self->getBiblios()->checkBlock($record);
                 my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
                 $biblio->{componentparts_count} = scalar @{$componentsArr} if $componentsArr && @{$componentsArr};
                 my $requestparams = $self->getEndpointParameters($biblio);
