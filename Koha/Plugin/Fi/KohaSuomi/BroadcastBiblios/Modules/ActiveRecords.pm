@@ -266,7 +266,7 @@ sub getActiveRecordsByBiblionumber {
         my $count = 0;
         foreach my $biblio (@{$biblios}) {
             $count++;
-            next if $self->->getBiblios->checkComponentPart(MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8'));
+            next if $self->getBiblios->checkComponentPart(MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8'));
             my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
             my $target_id = $biblio->{biblionumber};
             my $updated = $biblio->{timestamp};
