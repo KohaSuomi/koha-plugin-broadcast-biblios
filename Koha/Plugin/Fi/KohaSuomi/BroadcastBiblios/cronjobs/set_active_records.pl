@@ -83,6 +83,7 @@ my $params = {
     limit => $limit,
     page => 1,
     verbose => $verbose,
+    biblionumber => $biblionumber,
 };
 
 if ($interface) {
