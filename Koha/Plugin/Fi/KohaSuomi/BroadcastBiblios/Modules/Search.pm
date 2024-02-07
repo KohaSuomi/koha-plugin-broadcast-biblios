@@ -25,6 +25,7 @@ use JSON;
 use C4::Context;
 use Koha::SearchEngine::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::QueryParser;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU;
 
 =head new
 
@@ -39,6 +40,11 @@ sub new {
     bless($self, $class);
     return $self;
 
+}
+
+sub getConfig {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new;
 }
 
 sub getHostRecord {
@@ -104,6 +110,34 @@ sub findByIdentifier {
         die "findByIdentifier():> Searching ($query):> Returned more than one record?";
     }
     return undef;
+}
+
+sub searchFromInterface {
+    my ($self, $interface_name, $identifiers) = @_;
+
+    my $config = $self->getConfig->getInterfaceConfig($interface_name);
+    if ($config->{sruUrl} && $config->{sruUrl} ne "") {
+        foreach my $identifier (@$identifiers) {
+            my $queryparser = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::QueryParser->new({
+                interface => $interface_name,
+                interfaceType => "SRU",
+                identifier => $identifier->{identifier},
+                identifierField => $identifier->{identifier_field}
+            });
+            my $query = $queryparser->query;
+            my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new({
+                url => $config->{sruUrl},
+                query => $query
+            });
+            my $records = $sru->search();
+            if ($records) {
+                return {marcjson => $records->[0]};
+            }
+        }
+    }
+    
+    return undef;
+
 }
 
 1;

@@ -65,6 +65,16 @@ sub getPlugin() {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new();
 }
 
+sub getInterfaceConfig {
+    my ($self, $interface) = @_;
+    my $interfaces = $self->getConfig()->{interfaces};
+    foreach my $i (@$interfaces) {
+        if ($i->{name} eq $interface) {
+            return $i;
+        }
+    }
+}
+
 sub getConfig {
     my ($self) = @_;
     

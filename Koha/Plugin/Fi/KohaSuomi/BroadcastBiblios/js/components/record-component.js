@@ -1,23 +1,24 @@
 import { useConfigStore } from "../stores/config-store.js";
 import { useErrorStore } from "../stores/error-store.js";
-import { useUserStore } from "../stores/user-store.js";
+import { useRecordStore } from "../stores/record-store.js";
+import * as recordParser from '../recordParser.js';
 
 export default {
   props: ['biblio_id', 'patron_id'],
   setup() {
     const configStore = useConfigStore();
     const errorStore = useErrorStore();
-    const userStore = useUserStore();
+    const recordStore = useRecordStore();
     return {
       config: configStore,
       errors: errorStore,
-      users: userStore,
+      records: recordStore,
     };
   },
   data() {
     return {
       showRecord: true,
-      loader: false,
+      loader: true,
       username: '',
       reports: [],
       activeLinkStyle: {
@@ -25,18 +26,33 @@ export default {
         'color': '#fff',
       },
       selectedInterface: '',
+      localRecord: '',
+      remoteRecord: '',
     };
   },
   created() {
     this.config.fetch();
+    this.records.getLocal(this.biblio_id);
   },
   methods: {
+    search() {
+      this.loader = true;
+      this.records.search(this.biblio_id, this.selectedInterface).then((response) => {
+        this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
+        this.loader = false;
+      } ).catch((error) => {
+        this.errors.setError(error);
+        this.loader = false;
+      }).finally(() => {
+        this.localRecord = recordParser.recordAsHTML(this.records.marcjson);
+      });
+    },
     openModal(event) {
-      event.preventDefault();
       this.selectedInterface = event.target.text;
       const modal = $('#pushRecordOpModal');
       modal.modal('show');
-    }
+      this.search();
+    },
   },
   template: `
     <div class="btn-group" style="margin-left: 5px;">
@@ -48,7 +64,7 @@ export default {
       </ul>
     </div>
     <div id="pushRecordOpModal" class="modal fade" role="dialog">
-      <div class="modal-dialog">
+      <div class="modal-dialog" :class="{'modal-lg': remoteRecord}">
         <div class="modal-content">
           <div class="modal-header">
             <ul class="nav nav-pills">
@@ -69,6 +85,10 @@ export default {
               <ul class="text-danger">
                 <li v-for="error in errors">{{ error }}</li>
               </ul>
+            </div>
+            <div class="row">
+              <div v-html="localRecord" class="col-sm-6" :class="{ 'col-sm-8': !remoteRecord }"></div>
+              <div v-if="remoteRecord" v-html="remoteRecord" class="col-sm-6"></div>
             </div>
           </div>
           <div class="modal-footer">
