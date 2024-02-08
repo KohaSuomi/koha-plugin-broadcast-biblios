@@ -97,6 +97,22 @@ export const recordStatus = (record) => {
     return record.leader.charAt(5);
 }
 
+export const systemControlNumbers = (record) => {
+    let controlNumbers = [];
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '035') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                    if (v.code == 'a') {
+                        controlNumbers.push(v.value);
+                    }
+                });
+            }
+        }
+    });
+    return controlNumbers;
+}
+
 export const recordItemType = (record) => {
     let itemType = '';
     record.fields.forEach(function (v, i, a) {
@@ -224,3 +240,18 @@ export const parseDiff = (record) => {
     
     return html;
 };
+
+export const mergeRecords = (local, remote) => {
+    let tags = Object.keys(local);
+    let merged = {};
+    tags.forEach((element) => {
+        merged[element] = {};
+        if (local[element]) {
+        merged[element].old = local[element];
+        }
+        if (remote[element]) {
+        merged[element].new = remote[element];
+        }
+    });
+    return merged;
+}

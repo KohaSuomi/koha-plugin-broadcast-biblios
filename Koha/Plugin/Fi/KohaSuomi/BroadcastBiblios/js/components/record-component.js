@@ -54,8 +54,14 @@ export default {
         this.localRecord = recordParser.recordAsHTML(this.records.marcjson);
         this.localEncodingLevel = recordParser.recordEncodingLevel(this.records.marcjson);
         this.localStatus = recordParser.recordStatus(this.records.marcjson);
-        this.compareEncodingLevels();
+        this.compareRecords();
       });
+    },
+    importRecord() {
+      this.records.import(this.biblio_id);
+    },
+    exportRecord() {
+      this.records.export(this.biblio_id, this.patron_id, this.selectedInterface);
     },
     openModal(event) {
       this.selectedInterface = event.target.text;
@@ -63,7 +69,7 @@ export default {
       modal.modal('show');
       this.search();
     },
-    compareEncodingLevels() {
+    compareRecords() {
       // Compare encoding levels and statuses to determine if export button should be shown
       if (this.localEncodingLevel < this.remoteEncodingLevel && this.localEncodingLevel != 'u' && this.localEncodingLevel != 'z') {
         this.showExportButton = true;
@@ -75,10 +81,15 @@ export default {
           } else {
             this.showExportButton = true;
           }
-      } else if (this.localEncodingLevel == '4' && this.remoteEncodingLevel == '3') {
+      } else if (this.localEncodingLevel == 4 && this.remoteEncodingLevel == 3) {
         this.showExportButton = true;
       } else if (this.localEncodingLevel == '') {
         this.showExportButton = true;
+      }
+      const systemControlNumbers = recordParser.systemControlNumbers(this.records.marcjson);
+      var hasMelinda = systemControlNumbers.find(a =>a.includes("MELINDA"));
+      if (!hasMelinda && this.selectedInterface.includes('Melinda')) {
+        this.showExportButton = false;
       }
     }
   },
@@ -121,7 +132,7 @@ export default {
           </div>
           <div class="modal-footer">
             <button v-if="showExportButton" class="btn btn-secondary" style="float:none;">Vie</button>\
-            <button class="btn btn-primary" style="float:none;">Tuo</button>\
+            <button class="btn btn-primary" style="float:none;" @click="importRecord()">Tuo</button>\
             <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
           </div>
         </div>
