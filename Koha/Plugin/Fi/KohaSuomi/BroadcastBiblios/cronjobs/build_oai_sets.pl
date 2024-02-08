@@ -41,6 +41,8 @@ my $verbose = 0;
 my $date = '';
 my $set_spec = '';
 my $set_name = '';
+my $no_components = 0;
+my $hosts_with_components = 0;
 
 GetOptions(
     'h|help'                     => \$help,
@@ -48,18 +50,21 @@ GetOptions(
     'd|date:s'                   => \$date,
     'set_spec:s'                 => \$set_spec,
     'set_name:s'                 => \$set_name,
-
+    'no_components'              => \$no_components,
+    'hosts_with_components'       => \$hosts_with_components,
 
 );
 
 my $usage = <<USAGE;
     Broadcast biblios to REST endpoint
 
-    -h, --help              This message.
-    -v, --verbose           Verbose.
-    -d, --date              Find imported on a selected date, default is today.
-    --set_spec              Set spec for OAI set.
-    --set_name              Set name for OAI set.
+    -h, --help               This message.
+    -v, --verbose            Verbose.
+    -d, --date               Find imported on a selected date, default is today.
+    --set_spec               Set spec for OAI set.
+    --set_name               Set name for OAI set.
+    --no_components          Import only biblios which have no components.
+    --hosts_with_components  Import only host records and their components.
 
 USAGE
 
@@ -73,6 +78,8 @@ my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     date => $date,
     set_spec => $set_spec,
     set_name => $set_name,
+    no_components => $no_components,
+    hosts_with_components => $hosts_with_components,
 });
 
 $plugin->build_oai();

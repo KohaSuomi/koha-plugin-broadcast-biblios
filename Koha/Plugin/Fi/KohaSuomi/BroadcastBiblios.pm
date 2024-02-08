@@ -353,6 +353,8 @@ sub build_oai {
         date => $self->{date},
         set_spec => $self->{set_spec},
         set_name => $self->{set_name},
+        no_components => $self->{no_components},
+        hosts_with_components => $self->{hosts_with_components},
     };
 
     my $oai = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI->new($params);

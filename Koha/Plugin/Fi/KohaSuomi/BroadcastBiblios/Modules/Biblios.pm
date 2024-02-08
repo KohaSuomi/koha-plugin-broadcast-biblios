@@ -81,7 +81,7 @@ sub fetch {
 }
 
 sub importedRecords {
-    my ($self, $batchdate) = @_;
+    my ($self, $batchdate, $no_components, $hosts_with_components) = @_;
     print "Fetch imported records from $batchdate\n";
     my $marcflavour = C4::Context->preference('marcflavour');
     my $start = dt_from_string($batchdate.' 00:00:00');
@@ -98,7 +98,31 @@ sub importedRecords {
                 group_by => 'import_biblio.matched_biblionumber'
             })->get_column('biblionumber')->all;
 
-    return @biblios;
+    my $componentparts = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new();
+    if ($no_components) {
+        my @no_components;
+        foreach my $biblio_id (@biblios){
+            my $components = $componentparts->fetch($biblio_id);
+            unless($components){
+                push @no_components, $biblio_id;
+            }
+        }
+        return @no_components;
+    } elsif ($hosts_with_components) {
+        my @hosts_with_components;
+        foreach my $biblio_id (@biblios){
+            my $components = $componentparts->fetch($biblio_id);
+            if($components){
+                push @hosts_with_components, $biblio_id;
+                foreach my $components (@$components){
+                    push @hosts_with_components, $components->{biblionumber};
+                }
+            }
+        }
+        return @hosts_with_components;
+    } else {
+        return @biblios;
+    }
 }
 
 sub getRecord {

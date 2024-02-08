@@ -71,6 +71,16 @@ sub getDate {
     return $date;
 }
 
+sub getNoComponents {
+    my ($self) = @_;
+    return shift->{_params}->{no_components};
+}
+
+sub getHostsWithComponents {
+    my ($self) = @_;
+    return shift->{_params}->{hosts_with_components};
+}
+
 sub getBibliosClass {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($self->{_params});
@@ -87,7 +97,8 @@ sub buildOAI {
 
 sub processDuplicateFromBibliosArray {
     my ($self) = @_;
-    my @biblios = $self->getBibliosClass()->importedRecords($self->getDate());
+    my @biblios = $self->getBibliosClass()->importedRecords($self->getDate(), $self->getNoComponents(), $self->getHostsWithComponents);
+    warn Data::Dumper::Dumper \@biblios;
     my @results;
     foreach my $biblionumber (@biblios) {
         my $result = GetOAISetsBiblio($biblionumber);
