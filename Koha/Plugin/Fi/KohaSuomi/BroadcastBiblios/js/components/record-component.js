@@ -28,6 +28,11 @@ export default {
       selectedInterface: '',
       localRecord: '',
       remoteRecord: '',
+      localEncodingLevel: '',
+      remoteEncodingLevel: '',
+      localStatus: '',
+      remoteStatus: '',
+      showExportButton: false,
     };
   },
   created() {
@@ -39,12 +44,17 @@ export default {
       this.loader = true;
       this.records.search(this.biblio_id, this.selectedInterface).then((response) => {
         this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
+        this.remoteEncodingLevel = recordParser.recordEncodingLevel(response.data.marcjson);
+        this.remoteStatus = recordParser.recordStatus(response.data.marcjson);
         this.loader = false;
       } ).catch((error) => {
         this.errors.setError(error);
         this.loader = false;
       }).finally(() => {
         this.localRecord = recordParser.recordAsHTML(this.records.marcjson);
+        this.localEncodingLevel = recordParser.recordEncodingLevel(this.records.marcjson);
+        this.localStatus = recordParser.recordStatus(this.records.marcjson);
+        this.compareEncodingLevels();
       });
     },
     openModal(event) {
@@ -53,6 +63,24 @@ export default {
       modal.modal('show');
       this.search();
     },
+    compareEncodingLevels() {
+      // Compare encoding levels and statuses to determine if export button should be shown
+      if (this.localEncodingLevel < this.remoteEncodingLevel && this.localEncodingLevel != 'u' && this.localEncodingLevel != 'z') {
+        this.showExportButton = true;
+      } else if (this.localEncodingLevel == this.remoteEncodingLevel) {
+          if (this.localStatus == 'c' && this.remoteStatus == 'n') {
+            this.showExportButton = true;
+          } else if (this.localStatus == 'n' && this.remoteStatus == 'c') {
+            this.showExportButton = false;
+          } else {
+            this.showExportButton = true;
+          }
+      } else if (this.localEncodingLevel == '4' && this.remoteEncodingLevel == '3') {
+        this.showExportButton = true;
+      } else if (this.localEncodingLevel == '') {
+        this.showExportButton = true;
+      }
+    }
   },
   template: `
     <div class="btn-group" style="margin-left: 5px;">
@@ -92,7 +120,7 @@ export default {
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" style="float:none;">Vie</button>\
+            <button v-if="showExportButton" class="btn btn-secondary" style="float:none;">Vie</button>\
             <button class="btn btn-primary" style="float:none;">Tuo</button>\
             <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
           </div>

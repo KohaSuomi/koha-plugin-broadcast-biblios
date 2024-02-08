@@ -89,6 +89,14 @@ export const recordAuthor = (record) => {
     return author;
 }
 
+export const recordEncodingLevel = (record) => {
+    return record.leader.charAt(17);
+}
+
+export const recordStatus = (record) => {
+    return record.leader.charAt(5);
+}
+
 export const recordItemType = (record) => {
     let itemType = '';
     record.fields.forEach(function (v, i, a) {
