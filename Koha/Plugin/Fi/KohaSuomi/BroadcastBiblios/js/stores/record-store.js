@@ -32,5 +32,25 @@ export const useRecordStore = defineStore("record", {
         errorStore.setError(error);
       }
     },
+    async import(biblio_id) {
+      try {
+        const marcjson = this.remotemarcjson;
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/import`, { marcjson: marcjson });
+        this.saved = true;
+      } catch (error) {
+        const errorStore = useErrorStore();
+        errorStore.setError(error);
+      }
+    },
+    async export(biblio_id, patron_id, interface_name) {
+      try {
+        const marcjson = this.marcjson;
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/export`, { marcjson: marcjson, patron_id: patron_id, interface_name: interface_name});
+        this.saved = true;
+      } catch (error) {
+        const errorStore = useErrorStore();
+        errorStore.setError(error);
+      }
+    }
   },
 });
