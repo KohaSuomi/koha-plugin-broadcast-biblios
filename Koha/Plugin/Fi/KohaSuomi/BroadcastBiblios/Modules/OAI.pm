@@ -113,8 +113,8 @@ sub findOAISet {
 
 sub getOAISet {
     my ($self) = @_;
-    my $set = GetOAISetBySpec($self->getSetSpec());
-    return $set if $set;
+    my $set = GetOAISetBySpec($self->getSetSpec()) || {};
+    return $set;
 }
 
 1;
