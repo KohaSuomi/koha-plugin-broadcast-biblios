@@ -72,7 +72,7 @@
         editcatalogue: edit_catalogue
 "/biblios/{biblio_id}/componentparts":
   get:
-    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#getBroadcastBiblio"
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#getcomponentparts"
     description: DEPRECATED. Use /broadcast/biblios/{biblio_id} instead.
     operationId: GetComponentParts
     tags:
@@ -475,6 +475,137 @@
     responses:
       "200":
         description: Activated record
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+/broadcast/biblios/{biblio_id}/import:
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#import"
+    operationId: importBroadcastBiblio
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: Internal biblio identifier
+        required: true
+        type: integer
+      - name: body
+        in: body
+        description: Record search parameters
+        required: true
+        schema:
+          type: object
+          properties:
+            marcjson:
+              type: object
+              description: "Record's marc-in-json"
+            interface_name:
+              type: string
+              description: "Interface name"
+            patron_id:
+              type: integer
+              description: "Patron's id"
+            remote_id:
+              type: 
+                - integer
+                - "null"
+              description: "Remote id"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Import record
+        schema:
+          type: object
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "409":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Conflict
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+/broadcast/biblios/export:
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#export"
+    operationId: exportBroadcastBiblio
+    tags:
+      - biblios
+    parameters:
+      - name: body
+        in: body
+        description: Record search parameters
+        required: true
+        schema:
+          type: object
+          properties:
+            marcjson:
+              type: object
+              description: "Record's marc-in-json"
+            interface_name:
+              type: string
+              description: "Interface name"
+            patron_id:
+              type: integer
+              description: "Patron's id"
+            remote_id:
+              type: 
+                - integer
+                - "null"
+              description: "Remote id"      
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Import record
         schema:
           type: object
       "400":
