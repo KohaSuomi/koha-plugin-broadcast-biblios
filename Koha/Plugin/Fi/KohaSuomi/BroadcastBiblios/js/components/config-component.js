@@ -91,10 +91,8 @@ export default {
         valid = false;
       }
       if (
-        ((this.selectedInterface.restUrl === undefined ||
-          this.selectedInterface.restUrl === "") &&
-          this.selectedInterface.sruUrl === undefined) ||
-        this.selectedInterface.sruUrl === ""
+        (this.selectedInterface.restUrl === undefined && this.selectedInterface.restUrl === "") ||
+        (this.selectedInterface.sruUrl === undefined && this.selectedInterface.sruUrl === "")
       ) {
         this.errors.setError("REST URL tai SRU URL on pakollinen");
         valid = false;
@@ -191,9 +189,21 @@ export default {
             </div>
             <div v-if="selectedInterface.type === 'export'">
               <div class="form-group">
-                  <label for="restGet" class="col-form-label">Get-endpoint</label>
-                  <input type="text" class="form-control" id="restGet" v-model="selectedInterface.restGet">
-                  <small id="restGetHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
+                  <div class="row">
+                      <div class="col-9">
+                        <label for="restGet" class="col-form-label">Get-endpoint</label>
+                        <input type="text" class="form-control" id="restGet" v-model="selectedInterface.restGet">
+                        <small id="restGetHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
+                      </div>
+                      <div class="col-3">
+                        <label for="restGetMethod" class="col-form-label">Method</label>
+                        <select class="form-control" id="restGetMethod" v-model="selectedInterface.restGetMethod">
+                            <option selected value="">Valitse</option>
+                            <option value="get">GET</option>
+                            <option value="post">POST</option>
+                        </select>
+                      </div>
+                    </div>
               </div>
               <div class="form-group">
                   <div class="row">
@@ -206,8 +216,8 @@ export default {
                         <label for="restAddMethod" class="col-form-label">Method</label>
                         <select class="form-control" id="restAddMethod" v-model="selectedInterface.restAddMethod">
                             <option selected value="">Valitse</option>
-                            <option value="POST">POST</option>
-                            <option value="PUT">PUT</option>
+                            <option value="post">POST</option>
+                            <option value="put">PUT</option>
                         </select>
                       </div>
                     </div>
@@ -223,8 +233,8 @@ export default {
                         <label for="restAddMethod" class="col-form-label">Method</label>
                         <select class="form-control" id="restUpdateMethod" v-model="selectedInterface.restUpdateMethod">
                             <option selected value="">Valitse</option>
-                            <option value="POST">POST</option>
-                            <option value="PUT">PUT</option>
+                            <option value="post">POST</option>
+                            <option value="put">PUT</option>
                         </select>
                       </div>
                   </div>

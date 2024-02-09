@@ -26,6 +26,7 @@ use C4::Context;
 use Koha::SearchEngine::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::QueryParser;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU;
+use Mojo::UserAgent;
 
 =head new
 
@@ -45,6 +46,11 @@ sub new {
 sub getConfig {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new;
+}
+
+sub ua {
+    my ($self) = @_;
+    return Mojo::UserAgent->new;
 }
 
 sub getHostRecord {
@@ -134,6 +140,19 @@ sub searchFromInterface {
                 return {marcjson => $records->[0]};
             }
         }
+    } else {
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => $config->{restGet}});
+        my ($path, $headers) = $users->getAuthentication($config->{defaultUser});
+        $headers->{"Accept"} = "application/marc-in-json";
+        my $ua = $self->ua;
+        my $method = $config->{restGetMethod};
+        my $response = $ua->$method($path => $headers => json => {identifiers => $identifiers})->result;
+        if ($response->is_success) {
+            return $response->json;
+        } else {
+            die {status => $response->code, message => $response->message};
+        }
+
     }
     
     return undef;
