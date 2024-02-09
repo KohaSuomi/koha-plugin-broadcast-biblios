@@ -94,6 +94,15 @@ sub getUser {
     return {id => $user->{id}, username => $user->{username}, auth_type => $user->{auth_type}, client_id => $user->{client_id}, client_secret => $user->{client_secret}, access_token_url => $user->{access_token_url}, broadcast_interface => $user->{broadcast_interface}, linked_borrowernumber => $user->{linked_borrowernumber}};
 }
 
+sub getInterfaceUserByPatronId {
+    my ($self, $interface_name, $patron_id) = @_;
+    my $user = $self->db->getBroadcastInterfaceUser($interface_name, $patron_id);
+    if (!$user) {
+        die {message => "User not found", status => 404};
+    }
+    return $user->{id};
+}
+
 sub addUser {
     my ($self, $params) = @_;
     my $user = $self->db->getUserByUsername($params->{username});
