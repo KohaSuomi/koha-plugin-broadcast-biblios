@@ -113,6 +113,35 @@ export const systemControlNumbers = (record) => {
     return controlNumbers;
 }
 
+export const recordId = (record) => {
+    let recordId = '';
+    let controlNumber = '';
+    let controlNumberIdentifier = '';
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '999') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                if (v.code == 'c') {
+                    recordId = v.value;
+                }
+                });
+            }
+        }
+        if (v.tag == '001') {
+            controlNumber = v.value;
+        }
+        if (v.tag == '003') {
+            controlNumberIdentifier = v.value;
+        }
+    });
+
+    if (controlNumberIdentifier == 'FI-MELINDA' && !recordId) {
+        recordId = controlNumber;
+    }
+
+    return recordId;
+}
+
 export const recordItemType = (record) => {
     let itemType = '';
     record.fields.forEach(function (v, i, a) {

@@ -15,8 +15,8 @@ export const useRecordStore = defineStore("record", {
     async getLocal(biblio_id) {
       try {
         const response = await axios.get(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}`, { headers: { 'Accept': 'application/marc-in-json' } });
-        this.marcjson = response.data.biblio.marcjson;
-        this.identifiers = response.data.biblio.identifiers;
+        this.marcjson = response.data.marcjson;
+        this.identifiers = response.data.identifiers;
       } catch (error) {
         const errorStore = useErrorStore();
         errorStore.setError(error);
@@ -32,20 +32,20 @@ export const useRecordStore = defineStore("record", {
         errorStore.setError(error);
       }
     },
-    async import(biblio_id) {
+    async import(biblio_id, patron_id, interface_name, remote_id) {
       try {
         const marcjson = this.remotemarcjson;
-        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/import`, { marcjson: marcjson });
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/import`, { marcjson: marcjson, interface_name: interface_name, patron_id: patron_id, remote_id: remote_id});
         this.saved = true;
       } catch (error) {
         const errorStore = useErrorStore();
         errorStore.setError(error);
       }
     },
-    async export(biblio_id, patron_id, interface_name) {
+    async export(remote_id, patron_id, interface_name) {
       try {
         const marcjson = this.marcjson;
-        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/export`, { marcjson: marcjson, patron_id: patron_id, interface_name: interface_name});
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/export`, { marcjson: marcjson, patron_id: patron_id, interface_name: interface_name, remote_id: remote_id});
         this.saved = true;
       } catch (error) {
         const errorStore = useErrorStore();

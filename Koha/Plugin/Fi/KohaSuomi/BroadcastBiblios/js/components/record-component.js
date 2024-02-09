@@ -19,7 +19,6 @@ export default {
     return {
       showRecord: true,
       loader: true,
-      username: '',
       reports: [],
       activeLinkStyle: {
         'background-color': '#007bff',
@@ -33,6 +32,7 @@ export default {
       localStatus: '',
       remoteStatus: '',
       showExportButton: false,
+      remoteRecordId: '',
     };
   },
   created() {
@@ -46,6 +46,7 @@ export default {
         this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
         this.remoteEncodingLevel = recordParser.recordEncodingLevel(response.data.marcjson);
         this.remoteStatus = recordParser.recordStatus(response.data.marcjson);
+        this.remoteRecordId = recordParser.recordId(response.data.marcjson);
         this.loader = false;
       } ).catch((error) => {
         this.errors.setError(error);
@@ -58,10 +59,10 @@ export default {
       });
     },
     importRecord() {
-      this.records.import(this.biblio_id);
+      this.records.import(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId);
     },
     exportRecord() {
-      this.records.export(this.biblio_id, this.patron_id, this.selectedInterface);
+      this.records.export(this.remoteRecordId, this.patron_id, this.selectedInterface);
     },
     openModal(event) {
       this.selectedInterface = event.target.text;
@@ -119,10 +120,10 @@ export default {
             <div v-if="loader" id="spinner-wrapper" class="text-center">
               <i class="fa fa-spinner fa-spin" style="font-size:36px"></i>
             </div>
-            <div class="alert alert-danger" role="alert" v-if="errors.length">
+            <div class="alert alert-danger" role="alert" v-if="errors.errors.length > 0">
               <b>Tapahtui virhe:</b>
               <ul class="text-danger">
-                <li v-for="error in errors">{{ error }}</li>
+                <li v-for="error in errors.errors">{{ error }}</li>
               </ul>
             </div>
             <div class="row">

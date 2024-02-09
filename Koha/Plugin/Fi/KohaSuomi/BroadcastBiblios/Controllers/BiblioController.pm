@@ -60,8 +60,9 @@ sub find {
     my $c = shift->openapi->valid_input or return;
 
     my $logger = Koha::Logger->get({ interface => 'api' });
-
+    $c->req->headers->accept =~ m/application\/marc-in-json/ ? $c->stash('format', 'marcjson') : $c->stash('format', 'marcxml');
     try {
+        my $format = $c->stash('format');
         my $body = $c->req->json;
         my $identifiers = $body->{identifiers};
         my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
@@ -79,17 +80,9 @@ sub find {
         unless ($biblio) {
             return $c->render(status => 404, openapi => {error => "Biblio not found"});
         }
-
-        my $bibliowrapper = {
-            marcxml => $biblio->metadata->metadata,
-            biblionumber => $biblio->biblionumber,
-
-        };
-
-        my $componentparts = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new();
-        my $components = $componentparts->fetch($biblio_id);
+        my $response = _biblio_wrapper($format, $biblio, $identifiers);
         
-        return $c->render(status => 200, openapi => { biblio => $bibliowrapper, componentparts => $components });
+        return $c->render(status => 200, openapi => $response);
     } catch {
         my $error = $_;
         $logger->error($error);
@@ -221,10 +214,32 @@ sub getBroadcastBiblio {
         }
         my $identifierHelper = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers->new;
         my @identifiers = $identifierHelper->fetchIdentifiers($biblio->metadata->metadata);
+        my $response = _biblio_wrapper($format, $biblio, @identifiers);
+        
+        return $c->render(status => 200, openapi => $response);
+    } catch {
+        my $error = $_;
+        $logger->error($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+    }
+}
+
+sub getcomponentparts {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'api' });
+
+    try {
+
+        my $biblio = Koha::Biblios->find($c->validation->param('biblio_id'));
+
+        unless ($biblio) {
+            return $c->render(status => 404, openapi => {error => "Biblio not found"});
+        }
+
         my $bibliowrapper = {
-            $format => $format eq 'marcjson' ? $convert->toJSON($biblio->metadata->metadata) : $biblio->metadata->metadata,
+            marcxml => $biblio->metadata->metadata,
             biblionumber => $biblio->biblionumber,
-            identifiers => @identifiers
 
         };
 
@@ -232,7 +247,7 @@ sub getBroadcastBiblio {
         my $components;
         foreach my $componentpart (@{$componentparts}) {
             my $biblionumber = $componentpart->subfield('999', 'c')+0;
-            push @$components, {biblionumber => $biblionumber, $format => $format eq 'marcjson' ? $convert->toJSON($componentpart->as_xml_record()) : $componentpart->as_xml_record()};
+            push @$components, {biblionumber => $biblionumber, marcxml => $componentpart->as_xml_record()};
         }
         
         return $c->render(status => 200, openapi => { biblio => $bibliowrapper, componentparts => $components });
@@ -279,6 +294,29 @@ sub activate {
         $logger->error($error);
         return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
     }
+}
+
+sub _biblio_wrapper {
+    my ($format, $biblio, $identifiers) = @_;
+
+    my $convert = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new();
+
+    my $componentparts = $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
+    my $components;
+    foreach my $componentpart (@{$componentparts}) {
+        my $biblionumber = $componentpart->subfield('999', 'c')+0;
+        push @$components, {biblionumber => $biblionumber, $format => $format eq 'marcjson' ? $convert->toJSON($componentpart->as_xml_record()) : $componentpart->as_xml_record()};
+    }
+
+    my $bibliowrapper = {
+        $format => $format eq 'marcjson' ? $convert->toJSON($biblio->metadata->metadata) : $biblio->metadata->metadata,
+        biblionumber => $biblio->biblionumber,
+        componentparts => $components
+    };
+
+    $bibliowrapper->{identifiers} = $identifiers if $identifiers;
+
+    return $bibliowrapper;
 }
 
 1;
