@@ -276,7 +276,7 @@ sub fetchBroadcastBiblios {
 sub broadcastBiblios {
     my ($self, $params) = @_;
     my $pageCount = 1;
-    my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
+    my $latest = $self->broadcastLog()->getBroadcastLogLatestOld();
     my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{timestamp} = $timestamp if !$self->getAll();
     while ($pageCount >= $params->{page}) {
@@ -311,7 +311,7 @@ sub broadcastBiblios {
                     ($error, $response) = $self->_restRequestCall($requestparams, undef);
                     $success = $self->_verboseResponse($error, $response, $biblio->{biblionumber});
                 }
-                $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import') if !$self->getAll();
+                $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'old') if !$self->getAll();
                 $self->_loopComponentParts($biblio, $componentsArr, $success);
             } catch {
                 my $error = $_;
@@ -481,7 +481,7 @@ sub _loopComponentParts {
             $order++;
             my ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml}, part_order => $order});
             $self->_verboseResponse($error, $response, $componentpart->{biblionumber});
-            $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp}, 'import');
+            $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp}, 'old');
         }
     }
 }

@@ -486,7 +486,7 @@ sub upgrade_db {
     my $queue_table = $self->get_qualified_table_name('queue');
     my $users_table = $self->get_qualified_table_name('users');
 
-    $dbh->do("ALTER TABLE `$log_table` ADD `type` ENUM('export','import') DEFAULT 'import' AFTER `biblionumber`");
+    $dbh->do("ALTER TABLE `$log_table` ADD `type` ENUM('export','import', 'old') DEFAULT 'import' AFTER `biblionumber`");
 }
 
 1;

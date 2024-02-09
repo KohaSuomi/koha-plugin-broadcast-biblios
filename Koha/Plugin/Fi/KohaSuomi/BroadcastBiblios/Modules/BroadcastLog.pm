@@ -72,4 +72,9 @@ sub getBroadcastLogLatestImport {
     return $self->db->getBroadcastLogLatest('import');  
 }
 
+sub getBroadcastLogLatestOld {
+    my ($self) = @_;
+    return $self->db->getBroadcastLogLatest('old');  
+}
+
 1;
