@@ -136,8 +136,13 @@ sub searchFromInterface {
                 query => $query
             });
             my $records = $sru->search();
+            my $componentparts;
             if ($records) {
-                return {marcjson => $records->[0]};
+                if ($interface_name =~ /Melinda/) {
+                    my $record = Marc::Record::new_from_xml($records->[0], 'UTF-8');
+                    $componentparts = $self->searchSRUComponentParts($record);
+                }
+                return {marcjson => $records->[0], componentparts => $componentparts};
             }
         }
     } else {
@@ -157,6 +162,36 @@ sub searchFromInterface {
     
     return undef;
 
+}
+
+sub searchSRUComponentParts {
+    my ($self, $record) = @_;
+
+    my $startRecord = 1;
+    my $maximumRecords = 25;
+    my @records;
+    while ($startRecord > 0) {
+        my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new({
+            startRecord => $startRecord,
+            maximumRecords => $maximumRecords,
+            url => $config->{sruUrl},
+            query => "melinda.partsofhost=".$record->field('001')->data()
+        });
+        my $records = $sru->search();
+
+        if ($records) {
+            push @records, $records;
+        }
+
+        if (scalar @$records < $maximumRecords) {
+            $startRecord = 0;
+            last;
+        } else {
+            $startRecord += $maximumRecords;
+        }
+    }
+
+    return \@records;
 }
 
 1;
