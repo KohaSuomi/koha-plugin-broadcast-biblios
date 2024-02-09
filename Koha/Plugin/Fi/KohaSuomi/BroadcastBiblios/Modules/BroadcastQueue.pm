@@ -112,6 +112,36 @@ sub ua {
     return Mojo::UserAgent->new;
 }
 
+sub importRecord {
+    my ($self, $biblio_id, $broadcast_biblio_id, $marcxml) = @_;
+    my $queueStatus = $self->checkBiblionumberQueueStatus($broadcast_biblio_id);
+    if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
+        print "Broadcast record ".$broadcast_biblio_id." is already in queue\n" if $self->verbose;
+        die {status => 409, message => "Broadcast record ".$broadcast_biblio_id." is already in queue"};
+    }
+    try {
+        my $record = $self->getRecord($marcxml);
+        if ($record) {
+            $self->db->insertToQueue({
+                broadcast_interface => $self->getBroadcastInterface,
+                user_id => $self->getUserId,
+                type => $self->getType,
+                broadcast_biblio_id => $broadcast_biblio_id,
+                biblio_id => $biblio_id,
+                marc => $marcxml,
+                componentparts => undef,
+                diff => undef,
+                hostrecord => 0,
+            });
+        } else {
+            die "Failed to update record $biblio_id\n";
+        }
+    } catch {
+        my $error = $_;
+        print "Error while importing record $biblio_id: $error\n";
+    }
+}
+
 sub pushToRest {
     my ($self, $config, $activerecord, $broadcastrecord) = @_;
     my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => '/api/v1/contrib/kohasuomi/broadcast/queue'});
