@@ -384,6 +384,7 @@
               description: "Record's internal identifier"
     produces:
       - application/json
+      - application/marc-in-json
     responses:
       "200":
         description: A biblio record with componentparts

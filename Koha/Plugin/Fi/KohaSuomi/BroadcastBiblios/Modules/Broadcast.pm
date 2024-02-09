@@ -231,10 +231,8 @@ sub fetchBroadcastBiblios {
                 return if $self->blockByEncodingLevel($record);
                 my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
                 my $bibliowrapper = {
-                    biblio => {
-                        marcxml => $biblio->{metadata},
-                        biblionumber => $biblio->{biblionumber},
-                    },
+                    marcxml => $biblio->{metadata},
+                    biblionumber => $biblio->{biblionumber},
                     componentparts => $componentsArr || undef
                 };
                 my $identifiers = $self->getIdentifiers->fetchIdentifiers($biblio->{metadata});

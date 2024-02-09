@@ -125,47 +125,47 @@ sub pushToRest {
     });
 
     if ($tx->res->code eq '200' || $tx->res->code eq '201') {
-        print "Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{interface_name}."\n";
+        print "Pushed record ".$broadcastrecord->{biblionumber}." to ".$config->{interface_name}."\n";
     } else {
         my $error = $tx->res->json || $tx->res->error;
         my $errormessage = $error->{message} ? $error->{message} : $error;
-        print "Failed to push record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{interface_name}.": ".$errormessage."\n";
+        print "Failed to push record ".$broadcastrecord->{biblionumber}." to ".$config->{interface_name}.": ".$errormessage."\n";
     }
 }
 
 sub setToQueue {
     my ($self, $activerecord, $broadcastrecord) = @_;
 
-    my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblio}->{biblionumber});
+    my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblionumber});
     if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
-        print "Broadcast record ".$broadcastrecord->{biblio}->{biblionumber}." is already in queue\n" if $self->verbose;
+        print "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue\n" if $self->verbose;
         return;
     };
     try {
-        my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
+        my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{marcxml});
         if ($encodingLevel eq 'lower') {
             $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
         } elsif ($encodingLevel eq 'equal') {
-            my $timestamp = $self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
+            my $timestamp = $self->compareTimestamps($activerecord->{metadata}, $broadcastrecord->{marcxml});
             if ($timestamp) {
                 $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
             } elsif (!$timestamp && $broadcastrecord->{componentparts}) {
                 # If broadcast record has component parts, then we need to check if local record has component parts
                 $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
             } else {
-                print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+                print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblionumber}."\n" if $self->verbose;
             }
         } else {
             if ($broadcastrecord->{componentparts}) {
                 # If broadcast record has component parts, then we need to check if local record has component parts
                 $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
             } else {
-                print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+                print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblionumber}."\n" if $self->verbose;
             }
         }
     } catch {
         my $error = $_;
-        print "Error while setting record ".$broadcastrecord->{biblio}->{biblionumber}." to queue: $error\n";
+        print "Error while setting record ".$broadcastrecord->{biblionumber}." to queue: $error\n";
     }
 }
 
@@ -368,10 +368,10 @@ sub processParams {
         type => $self->getType,
     };
 
-    $params->{broadcast_biblio_id} = $broadcastrecord->{biblio}->{biblionumber} ? $broadcastrecord->{biblio}->{biblionumber} : $broadcastrecord->{biblionumber};
+    $params->{broadcast_biblio_id} = $broadcastrecord->{biblionumber};
     $params->{biblio_id} = $activerecord->{biblionumber} if $activerecord->{biblionumber};
-    $params->{marc} = $broadcastrecord->{biblio}->{marcxml} ? $broadcastrecord->{biblio}->{marcxml} : $broadcastrecord->{marcxml};
-    my $diff = $self->getDiff($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml}) if $activerecord->{metadata};
+    $params->{marc} = $broadcastrecord->{marcxml};
+    my $diff = $self->getDiff($activerecord->{metadata}, $broadcastrecord->{marcxml}) if $activerecord->{metadata};
     $params->{diff} = $diff ne "{}" ? $diff : undef if $diff;
     $params->{hostrecord} = $params->{componentparts} ? 1 : 0;
     $params->{componentparts} = $broadcastrecord->{componentparts} ? to_json($broadcastrecord->{componentparts}) : undef;
