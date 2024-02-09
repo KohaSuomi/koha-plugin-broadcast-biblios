@@ -6,8 +6,10 @@ export const useRecordStore = defineStore("record", {
   state: () => {
     return {
       marcjson: ref({}),
+      componentparts: ref([]),
       identifiers: ref([]),
       remotemarcjson: ref({}),
+      remotecomponentparts: ref([]),
       saved: ref(false),
     };
   },
@@ -16,6 +18,7 @@ export const useRecordStore = defineStore("record", {
       try {
         const response = await axios.get(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}`, { headers: { 'Accept': 'application/marc-in-json' } });
         this.marcjson = response.data.marcjson;
+        this.componentparts = response.data.componentparts;
         this.identifiers = response.data.identifiers;
       } catch (error) {
         const errorStore = useErrorStore();
@@ -26,6 +29,7 @@ export const useRecordStore = defineStore("record", {
       try {
         const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/search`, { interface_name: interface_name, identifiers: this.identifiers });
         this.remotemarcjson = response.data.marcjson;
+        this.remotecomponentparts = response.data.componentparts;
         return response;
       } catch (error) {
         const errorStore = useErrorStore();
@@ -34,8 +38,7 @@ export const useRecordStore = defineStore("record", {
     },
     async import(biblio_id, patron_id, interface_name, remote_id) {
       try {
-        const marcjson = this.remotemarcjson;
-        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/import`, { marcjson: marcjson, interface_name: interface_name, patron_id: patron_id, remote_id: remote_id});
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/import`, { marcjson: this.remotemarcjson, componentparts: this.remotecomponentparts, interface_name: interface_name, patron_id: patron_id, remote_id: remote_id});
         this.saved = true;
       } catch (error) {
         const errorStore = useErrorStore();

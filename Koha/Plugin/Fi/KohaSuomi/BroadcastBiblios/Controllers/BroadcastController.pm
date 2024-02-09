@@ -79,7 +79,7 @@ sub import {
         my $user_id = $users->getInterfaceUserByPatronId($body->{interface_name}, $body->{patron_id});
         my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $body->{marcjson}});
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{interface_name}, type => 'import', user_id => $user_id});
-        $queue->importRecord($biblio_id, $body->{remote_id}, $marc->toXML());
+        $queue->importRecord($biblio_id, $body->{remote_id}, $marc->toXML(), $body->{componentparts});
 
         return $c->render(status => 200, openapi => {message => "Success"});
     } catch {

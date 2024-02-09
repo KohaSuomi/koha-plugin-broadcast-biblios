@@ -113,7 +113,7 @@ sub ua {
 }
 
 sub importRecord {
-    my ($self, $biblio_id, $broadcast_biblio_id, $marcxml) = @_;
+    my ($self, $biblio_id, $broadcast_biblio_id, $marcxml, $componentparts) = @_;
     my $queueStatus = $self->checkBiblionumberQueueStatus($broadcast_biblio_id);
     if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
         print "Broadcast record ".$broadcast_biblio_id." is already in queue\n" if $self->verbose;
@@ -122,6 +122,16 @@ sub importRecord {
     try {
         my $record = $self->getRecord($marcxml);
         if ($record) {
+            my $parts;
+            if ($componentparts) {
+                foreach my $part (@$componentparts) {
+                    my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $part->{marcjson}});
+                    push @$parts, {
+                        biblionumber => $part->{biblionumber},
+                        marcxml => $marc->toXML()
+                    };
+                }
+            }
             $self->db->insertToQueue({
                 broadcast_interface => $self->getBroadcastInterface,
                 user_id => $self->getUserId,
@@ -129,9 +139,9 @@ sub importRecord {
                 broadcast_biblio_id => $broadcast_biblio_id,
                 biblio_id => $biblio_id,
                 marc => $marcxml,
-                componentparts => undef,
+                componentparts => $parts ? to_json($parts) : undef,
                 diff => undef,
-                hostrecord => 0,
+                hostrecord => $parts ? 1 : 0,
             });
         } else {
             die "Failed to update record $biblio_id\n";
