@@ -20,14 +20,14 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 
 ## Here we set our plugin version
-our $VERSION = "2.5.0";
+our $VERSION = "2.5.1";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
     name            => 'Tietuesiirtäjä',
     author          => 'Johanna Räisä',
     date_authored   => '2021-09-09',
-    date_updated    => '2023-10-20',
+    date_updated    => '2024-02-12',
     minimum_version => '21.11.00.0000',
     maximum_version => '',
     version         => $VERSION,
@@ -486,7 +486,13 @@ sub upgrade_db {
     my $queue_table = $self->get_qualified_table_name('queue');
     my $users_table = $self->get_qualified_table_name('users');
 
-    $dbh->do("ALTER TABLE `$log_table` ADD `type` ENUM('export','import', 'old') DEFAULT 'import' AFTER `biblionumber`");
+    if ($VERSION eq "2.5.0") {
+        $dbh->do("ALTER TABLE `$log_table` ADD `type` ENUM('export','import') DEFAULT 'import' AFTER `biblionumber`");
+    }
+
+    if ($VERSION eq "2.5.1") {
+        $dbh->do("ALTER TABLE `$log_table` MODIFY `type` ENUM('export','import','old') DEFAULT 'import'");
+    }
 }
 
 1;
