@@ -138,11 +138,11 @@ sub searchFromInterface {
             my $records = $sru->search();
             my $componentparts;
             if ($records) {
+                my $record = $records->[0];
                 if ($interface_name =~ /Melinda/) {
-                    my $record = Marc::Record::new_from_xml($records->[0], 'UTF-8');
-                    $componentparts = $self->searchSRUComponentParts($record);
+                    $componentparts = $self->searchSRUComponentParts($config->{sruUrl}, $record);
                 }
-                return {marcjson => $records->[0], componentparts => $componentparts};
+                return {marcjson => $record, componentparts => $componentparts};
             }
         }
     } else {
@@ -165,17 +165,24 @@ sub searchFromInterface {
 }
 
 sub searchSRUComponentParts {
-    my ($self, $record) = @_;
+    my ($self, $url, $record) = @_;
 
     my $startRecord = 1;
     my $maximumRecords = 25;
     my @records;
+    my $f001;
+    foreach my $field ($record->{fields}) {
+        if ($field->{tag} eq "001") {
+            $f001 = $field->{value};
+            last;
+        }
+    }
     while ($startRecord > 0) {
         my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new({
             startRecord => $startRecord,
             maximumRecords => $maximumRecords,
-            url => $config->{sruUrl},
-            query => "melinda.partsofhost=".$record->field('001')->data()
+            url => $url,
+            query => "melinda.partsofhost=".$f001
         });
         my $records = $sru->search();
 
@@ -183,7 +190,7 @@ sub searchSRUComponentParts {
             push @records, $records;
         }
 
-        if (scalar @$records < $maximumRecords) {
+        if (scalar(@$records) < $maximumRecords) {
             $startRecord = 0;
             last;
         } else {
