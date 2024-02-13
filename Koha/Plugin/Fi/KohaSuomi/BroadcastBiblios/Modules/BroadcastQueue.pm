@@ -437,7 +437,8 @@ sub add942ToBiblio {
     my ($self, $record, $f942) = @_;
     
     if ($f942 && $f942->subfield('c')) {
-        $record->delete_field('942') if $record->field('942');
+        my @f942 = $record->field('942');
+        $record->delete_fields(@f942) if @f942;
         $record->insert_fields_ordered($f942);
     }
     
