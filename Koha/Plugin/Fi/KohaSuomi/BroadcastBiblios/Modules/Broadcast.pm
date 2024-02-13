@@ -219,7 +219,7 @@ sub fetchBroadcastBiblios {
         my $lastnumber;
         my ($error, $response);
         foreach my $biblio (@{$biblios}) {
-            if ($self->verbose > 1) {
+            if ($self->verbose) {
                 print "Processing: $biblio->{biblionumber}\n";
             }
             $count++;
