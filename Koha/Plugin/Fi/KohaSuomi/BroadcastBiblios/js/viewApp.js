@@ -292,7 +292,17 @@ Vue.component('result-list', {
                 });
               }
             } else {
-              this.notifyfields += element + '! ';
+              if (element == '000') {
+                if (
+                  obj.old &&
+                  obj.new &&
+                  obj.old[0].value.charAt(17) != obj.new[0].value.charAt(17)
+                ) {
+                  this.notifyfields += element + '/17! ';
+                }
+              } else {
+                this.notifyfields += element + '! ';
+              }
             }
           }
         });
