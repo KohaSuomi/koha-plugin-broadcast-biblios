@@ -211,6 +211,7 @@ sub fetchBroadcastBiblios {
     my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
     my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{timestamp} = $timestamp if !$self->getAll();
+    $params->{skipRecords} = 0;
     my $configKeys = $self->configKeys;
     while ($pageCount >= $params->{page}) {
         my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
@@ -278,6 +279,7 @@ sub broadcastBiblios {
     my $latest = $self->broadcastLog()->getBroadcastLogLatestOld();
     my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{timestamp} = $timestamp if !$self->getAll();
+    $params->{skipRecords} = 0;
     while ($pageCount >= $params->{page}) {
         my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
         my $biblios = $newbiblios->fetch();
