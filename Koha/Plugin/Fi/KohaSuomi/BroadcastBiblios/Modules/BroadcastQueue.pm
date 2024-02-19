@@ -290,9 +290,8 @@ sub processImportComponentParts {
             my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
             my $frameworkcode = GetFrameworkCode( $biblionumber );
             my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
-            my $localrecord = $self->getRecord($localcomponentpart->{marcxml});
             if ($record) {
-                $record = $self->add942ToBiblio($record, $f942) if !$localrecord->field('942');
+                $record = $self->add942ToBiblio($record, $f942);
                 my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
                             overlay_context => {
                                 source       => 'z3950'
@@ -438,7 +437,11 @@ sub add942ToBiblio {
     
     if ($f942 && $f942->subfield('c')) {
         my @f942 = $record->field('942');
+        foreach my $f (@f942) {
+            print "Found 942 field ".$f->as_formatted().", removing it\n" if $self->verbose;
+        }
         $record->delete_fields(@f942) if @f942;
+        print "Adding ".$f942->as_formatted()." field to record\n" if $self->verbose;
         $record->insert_fields_ordered($f942);
     }
     
