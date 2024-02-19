@@ -63,6 +63,10 @@ sub getTimestamp {
     return shift->{_params}->{timestamp};
 }
 
+sub skipRecords {
+    return shift->{_params}->{skipRecords};
+}
+
 sub fetch {
     my ($self) = @_;
     print "Starting offset ". $self->getPage() ." as from ". $self->getTimestamp() . "!\n";
@@ -76,6 +80,14 @@ sub fetch {
     $fetch = {rows => $self->getLimit()} if defined $self->getLimit() && $self->getLimit();
 
     my $biblios = Koha::Biblio::Metadatas->search($terms, $fetch)->unblessed;
+
+    if ($self->skipRecords) {
+        for (my $i = 0; $i < scalar(@$biblios); $i++) {
+            if (!$self->checkActionLog($biblios->[$i]->{biblionumber}, $biblios->[$i]->{timestamp})) {
+                $biblios->[$i]->{skip} = 1;
+            }
+        }
+    }
 
     return $biblios;
 }
@@ -154,6 +166,26 @@ sub checkComponentPart {
     my ($self, $record) = @_;
     return 1 if $record->subfield('773', "w");
     return 0;
+}
+
+sub checkActionLog {
+    my ($self, $biblionumber, $timestamp) = @_;
+
+    my $updatelog = Koha::ActionLogs->search(
+        {
+            module => 'CATALOGUING',
+            action => 'MODIFY',
+            object => $biblionumber,
+            timestamp => { '>=', $timestamp },
+            script => 'update_totalissues.pl'
+        },
+    )->unblessed;
+    
+    if (scalar(@$updatelog) > 0 ){
+        return 0;
+    }
+
+    return 1;
 }
 
 1;

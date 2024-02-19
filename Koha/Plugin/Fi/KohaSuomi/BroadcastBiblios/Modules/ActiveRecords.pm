@@ -161,7 +161,8 @@ sub setActiveRecords {
     my $params = $self->getParams();
     my $pageCount = 1;
     my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
-    my $timestamp = $self->getUpdateTime($latest->{updated});
+    my $timestamp = $latest->{updated};
+    $params->{skipRecords} = $params->{all} ? 0 : 1;
     $params->{timestamp} = $timestamp if !$params->{all};
     while ($pageCount >= $params->{page}) {
         my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
@@ -173,6 +174,10 @@ sub setActiveRecords {
             }
             $count++;
             $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
+            if ($biblio->{skip}) {
+                print "Biblio ".$biblio->{biblionumber}." skipped!\n" if $self->verbose;
+                next;
+            }
             my $response = $self->setActiveRecord($biblio);
             unless ($response->{status} eq '201' || $response->{status} eq '200') {
                 print "Error while processing biblio ".$biblio->{biblionumber}." with message: ".$response->{message}."\n";
