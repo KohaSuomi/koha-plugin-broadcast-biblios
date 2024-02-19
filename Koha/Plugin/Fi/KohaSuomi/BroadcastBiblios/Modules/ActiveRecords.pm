@@ -61,7 +61,7 @@ sub getTimestamp {
 
 sub getStartTime {
     my ($self) = @_;
-    return 9;
+    return 8;
 }
 
 sub getUpdateTime {
