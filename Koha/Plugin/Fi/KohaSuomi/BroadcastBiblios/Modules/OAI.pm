@@ -98,7 +98,7 @@ sub buildOAI {
 sub processDuplicateFromBibliosArray {
     my ($self) = @_;
     my @biblios = $self->getBibliosClass()->importedRecords($self->getDate(), $self->getNoComponents(), $self->getHostsWithComponents);
-    warn Data::Dumper::Dumper \@biblios;
+
     my @results;
     foreach my $biblionumber (@biblios) {
         my $result = GetOAISetsBiblio($biblionumber);
