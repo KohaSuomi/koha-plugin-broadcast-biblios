@@ -1,0 +1,1 @@
+INSERT INTO koha_plugin_fi_kohasuomi_broadcastbiblios_users (auth_type, broadcast_interface, username, client_id, client_secret, access_token_url) VALUES ('oauth', 'Koha', 'koha', 'koha', 'koha', 'http://localhost:8080/oauth/token');

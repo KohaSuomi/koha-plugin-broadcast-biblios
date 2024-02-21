@@ -28,11 +28,13 @@ use Mojo::JSON qw(decode_json encode_json);
 use Koha::DateUtils qw( dt_from_string );
 use MARC::Record;
 use Data::Dumper;
+use Koha::Logger;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers;
 
 =head new
 
@@ -41,7 +43,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 =cut
 
 sub new {
-    my ($class, $params) = _validateNew(@_);
+    my ($class, $params) = @_;
     my $self = {};
     $self->{_params} = $params;
     bless($self, $class);
@@ -120,6 +122,11 @@ sub broadcastLog {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastLog->new({table => $self->getLogTable});
 }
 
+sub getBiblios {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+}
+
 sub getTimestamp {
     return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
 }
@@ -140,7 +147,7 @@ sub blockByEncodingLevel {
     my $blockedLevel = shift->{_params}->{blocked_encoding_level};
     if ($blockedLevel) {
         my @levels = split('|', $blockedLevel);
-        my $encodingLevel = $self->activeRecords()->checkEncodingLevel($biblio);
+        my $encodingLevel = $self->getBiblios->checkEncodingLevel($biblio);
 
         foreach my $level (@levels) {
             if ($level eq $encodingLevel) {
@@ -162,7 +169,7 @@ sub blockComponentParts {
     my $block = shift->{_params}->{block_component_parts};
 
     if ($block) {
-        return $self->activeRecords()->checkComponentPart($biblio);
+        return $self->getBiblios()->checkComponentPart($biblio);
     }
 
     return 0;
@@ -170,23 +177,109 @@ sub blockComponentParts {
 
 sub getRecord {
     my ($self, $biblio) = @_;
-    
-    my $record = eval {MARC::Record::new_from_xml($biblio->{metadata}, 'UTF-8')};
-    if ($@) {
-        print $biblio->{biblionumber}." record is broken\n";
-        return 0;
-    }
 
-    return $record;
+    my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+    return $biblios->getRecord($biblio->{metadata});
 }
 
+sub getIdentifiers {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers->new();
+}
 
+sub getConfig {
+    my ($self) = @_;
+    my $config = shift->{_params}->{config};
+    return $config;
+}
+
+sub configKeys {
+    my ($self) = @_;
+    
+    my $config = shift->{_params}->{config};
+    my @keys;
+    foreach my $key (keys %{$config}) {
+        push @keys, $key;
+    }
+
+    return \@keys;
+}
+
+sub fetchBroadcastBiblios {
+    my ($self, $params) = @_;
+    my $pageCount = 1;
+    my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
+    my $timestamp = $self->getUpdateTime($latest->{updated});
+    $params->{timestamp} = $timestamp if !$self->getAll();
+    $params->{skipRecords} = 0;
+    my $configKeys = $self->configKeys;
+    while ($pageCount >= $params->{page}) {
+        my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
+        my $biblios = $newbiblios->fetch();
+        my $count = 0;
+        my $lastnumber;
+        my ($error, $response);
+        foreach my $biblio (@{$biblios}) {
+            if ($self->verbose) {
+                print "Processing: $biblio->{biblionumber}\n";
+            }
+            $count++;
+            try {
+                my $record = $self->getRecord($biblio);
+                return unless $record;
+                return if $self->blockComponentParts($record);
+                return if $self->blockByEncodingLevel($record);
+                my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
+                my $bibliowrapper = {
+                    marcxml => $biblio->{metadata},
+                    biblionumber => $biblio->{biblionumber},
+                    componentparts => $componentsArr || undef
+                };
+                my $identifiers = $self->getIdentifiers->fetchIdentifiers($biblio->{metadata});
+                my $success;
+                foreach my $configKey (@$configKeys) {
+                    my $config = $self->getConfig->{$configKey};
+                    next unless $config->{type} eq 'import';
+                    my $record_found = 0;
+                    foreach my $identifier (@$identifiers) {
+                        my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
+                        if ($activeBiblio) {
+                            my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{interface_name}, user_id => $config->{user_id}, type => 'import'});
+                            $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
+                            $record_found = 1;
+                            last;
+                        }
+                    }
+                    unless ($record_found) {
+                        print "No record found for $biblio->{biblionumber} with $config->{interface_name}\n" if $self->verbose;
+                    }
+                }
+            } catch {
+                my $error = $_;
+                print "Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $error\n";
+            };
+            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
+            $lastnumber = $biblio->{biblionumber};
+        }
+        print "last processed biblio $lastnumber\n" if $lastnumber;
+        print "$count biblios processed!\n";
+        if ($count eq $params->{chunks}) {
+            $pageCount++;
+            $params->{page} = $pageCount;
+        } else {
+            $pageCount = 0;
+        }
+    }
+}
+
+#Deprecating on 23.11
 sub broadcastBiblios {
     my ($self, $params) = @_;
     my $pageCount = 1;
-    my $latest = $self->broadcastLog()->getBroadcastLogLatest();
+    my $latest = $self->broadcastLog()->getBroadcastLogLatestOld();
     my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{timestamp} = $timestamp if !$self->getAll();
+    $params->{skipRecords} = 0;
     while ($pageCount >= $params->{page}) {
         my $newbiblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new($params);
         my $biblios = $newbiblios->fetch();
@@ -198,27 +291,33 @@ sub broadcastBiblios {
             if ($self->verbose > 1) {
                 print "Processing: $biblio->{biblionumber}\n";
             }
-            my $record = $self->getRecord($biblio);
             $count++;
-            next unless $record;
-            next if $self->blockComponentParts($record);
-            next if $self->blockByEncodingLevel($record);
-            my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
-            $biblio->{componentparts_count} = scalar @{$componentsArr} if $componentsArr && @{$componentsArr};
-            my $requestparams = $self->getEndpointParameters($biblio);
-            my $success;
-            if ($self->getEndpointType eq 'identifier_activation') { 
-                if ($requestparams) {
-                    push @pusharray, $requestparams;
+            try {
+                my $record = $self->getRecord($biblio);
+                return unless $record;
+                return if $self->blockComponentParts($record);
+                return if $self->blockByEncodingLevel($record);
+                $biblio->{blocked} = $self->getBiblios()->checkBlock($record);
+                my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
+                $biblio->{componentparts_count} = scalar @{$componentsArr} if $componentsArr && @{$componentsArr};
+                my $requestparams = $self->getEndpointParameters($biblio);
+                my $success;
+                if ($self->getEndpointType eq 'identifier_activation') { 
+                    if ($requestparams) {
+                        push @pusharray, $requestparams;
+                    } else {
+                        $self->_verboseResponse('No valid identifier!', undef, $biblio->{biblionumber});
+                    }
                 } else {
-                    $self->_verboseResponse('No valid identifier!', undef, $biblio->{biblionumber});
+                    ($error, $response) = $self->_restRequestCall($requestparams, undef);
+                    $success = $self->_verboseResponse($error, $response, $biblio->{biblionumber});
                 }
-            } else {
-                ($error, $response) = $self->_restRequestCall($requestparams, undef);
-                $success = $self->_verboseResponse($error, $response, $biblio->{biblionumber});
-            }
-            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}) if !$self->getAll();
-            $self->_loopComponentParts($biblio, $componentsArr, $success);
+                $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'old') if !$self->getAll();
+                $self->_loopComponentParts($biblio, $componentsArr, $success);
+            } catch {
+                my $error = $_;
+                print "Broadcast for biblionumber ".$biblio->{biblionumber}." failed with: $error\n";
+            };
 
             $lastnumber = $biblio->{biblionumber};
         }
@@ -239,6 +338,7 @@ sub broadcastBiblios {
     }
 }
 
+#Deprecating on 23.11
 sub activateSingleBiblio {
     my ($self, $biblio) = @_;
 
@@ -259,42 +359,7 @@ sub activateSingleBiblio {
 
 }
 
-# sub broadcastStaged {
-#     my ($self) = @_;
-#     my @biblios = import_records();
-#     my $count = 0;
-#     foreach my $biblio (@biblios) {
-#         my $parameters;
-#         if ($stage_type eq "update") {
-#             my $record = MARC::Record::new_from_xml($biblio->{marcxml}, 'UTF-8');
-#             if($record->field($target_field)) {
-#                 my $target_id = $record->field($target_field)->subfield($target_subfield);
-#                 if ($target_id =~ /$field_check/) {
-#                     print "Target id ($target_id) found from $biblio->{biblionumber}!\n";
-#                     $target_id =~ s/\D//g;
-#                     $parameters = {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, target_id => $target_id, interface => $self->getInterface, check => Mojo::JSON->true};
-#                 }
-#             }
-#         } else {
-#             $parameters = $biblio->{parent_id} ? {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, interface => $self->getInterface, parent_id => $biblio->{parent_id}, force => 1} : {marc => $biblio->{marcxml}, source_id => $biblio->{biblionumber}, interface => $self->getInterface};
-#         }
-#         if ($parameters) {
-#             my $tx = $ua->inactivity_timeout($inactivity_timeout)->post($endpoint => $headers => json => $parameters);
-#             my $response = decode_json($tx->res->body);
-#             my $error = $response->{error} || $tx->res->error->{message} if $response->{error} || $tx->res->error;
-#             if ($error) {
-#                 print "$biblio->{biblionumber} biblio failed with: $error!\n";
-#             }
-#             if ($verbose && defined $response->{message} && $response->{message} eq "Success") {
-#                 print "$biblio->{biblionumber} biblio added succesfully\n";
-#             }
-#             $count++;
-#         }
-#     }
-
-#     print "$count biblios processed!\n";
-# }
-
+#Deprecating on 23.11
 sub getLastRecord {
     my ($self) = @_;
 
@@ -305,6 +370,7 @@ sub getLastRecord {
     return $response->{target_id};
 }
 
+#Deprecating on 23.11
 sub getEndpointParameters {
     my ($self, $biblio) = @_;
     if ($self->getEndpointType eq 'export') {
@@ -324,6 +390,7 @@ sub getEndpointParameters {
     }
 }
 
+#Deprecating on 23.11
 sub _getExportEndpointParameters {
     my ($self, $biblio, $target_id) = @_;
 
@@ -333,37 +400,38 @@ sub _getExportEndpointParameters {
     return $restParams;
 }
 
+#Deprecating on 23.11
 sub _getActiveEndpointParameters {
     my ($self, $biblio) = @_;
 
-    my $restParams = {marcxml => $biblio->{metadata}, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface};
-    my $blocked = $self->activeRecords()->checkBlock($biblio);    
-    $restParams->{blocked} = $blocked if length $blocked;
+    $biblio->{blocked} = $biblio->{blocked} ? $biblio->{blocked} : 0;
+    my $restParams = {marcxml => $biblio->{metadata}, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface, blocked => $biblio->{blocked}};
     $restParams->{updated} = $biblio->{timestamp} if $self->getAll;
     
     return $restParams;
 }
 
+#Deprecating on 23.11
 sub _getActiveIdentifierEndpointParameters {
     my ($self, $biblio) = @_;
 
-    my ($identifier, $identifier_field) = $self->activeRecords()->getActiveField($biblio);
+    my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
     return unless $identifier && $identifier_field;
-
-    my $restParams = {identifier => $identifier, identifier_field => $identifier_field, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface};
-    my $blocked = $self->activeRecords()->checkBlock($biblio);
-    $restParams->{blocked} = $blocked if length $blocked;
+    $biblio->{blocked} = $biblio->{blocked} ? $biblio->{blocked} : 0;
+    my $restParams = {identifier => $identifier, identifier_field => $identifier_field, target_id => $biblio->{biblionumber}, interface_name => $self->getInterface, blocked => $biblio->{blocked}};
     $restParams->{updated} = $biblio->{timestamp} if $self->getAll;
 
     return $restParams;
 }
 
+#Deprecating on 23.11
 sub _getBroadcastEndpointParameters {
     my ($self, $biblio) = @_;
-    my @fields = $self->activeRecords()->fetchActiveFields($biblio);
+    my @fields = $self->getIdentifiers->fetchIdentifiers($biblio->{metadata});
     return {marcxml => $biblio->{metadata}, source_id => $biblio->{biblionumber}, updated => $biblio->{timestamp}, activefields => @fields, componentparts_count => $biblio->{componentparts_count}};
 }
 
+#Deprecating on 23.11
 sub _restRequestCall {
     my ($self, $params, @pusharray) = @_;
 
@@ -376,6 +444,22 @@ sub _restRequestCall {
 
 }
 
+sub _getActiveRecord {
+    my ($self, $config, $identifier, $identifier_field) = @_;
+    my $restConfig = $config->{rest};
+    my $path = $restConfig->{baseUrl}.'/'.$restConfig->{findActiveBiblios}->{path}.'?identifier='.$identifier.'&identifier_field='.$identifier_field;
+    my $ua = Mojo::UserAgent->new;
+    my $tx = $ua->inactivity_timeout($restConfig->{inactivityTimeout})->get($path);
+    unless ($tx->res->code eq '200' || $tx->res->code eq '201') {
+        print "_getActiveRecord failed with: ".$tx->res->json->{error}."\n" if $self->verbose;
+        return;
+    }
+    my $response = $tx->res->json;
+    return $response;
+
+}
+
+#Deprecating on 23.11
 sub _pushComponentParts {
     my ($self, $params) = @_;
 
@@ -388,6 +472,7 @@ sub _pushComponentParts {
 
 }
 
+#Deprecating on 23.11
 sub _loopComponentParts {
     my ($self, $biblio, $componentsArr, $success) = @_;
 
@@ -397,11 +482,12 @@ sub _loopComponentParts {
             $order++;
             my ($error, $response) = $self->_pushComponentParts({source_id => $componentpart->{biblionumber}, parent_id => $biblio->{biblionumber}, marcxml => $componentpart->{marcxml}, part_order => $order});
             $self->_verboseResponse($error, $response, $componentpart->{biblionumber});
-            $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp});
+            $self->broadcastLog()->setBroadcastLog($componentpart->{biblionumber}, $biblio->{timestamp}, 'old');
         }
     }
 }
 
+#Deprecating on 23.11
 sub _verboseResponse {
     my ($self, $error, $response, $biblionumber) = @_;
 

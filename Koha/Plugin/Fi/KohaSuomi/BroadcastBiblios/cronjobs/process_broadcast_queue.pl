@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright 2021 KohaSuomi
+# Copyright 2023 Koha-Suomi Oy
 #
 # This file is part of Koha.
 #
@@ -28,12 +28,56 @@ use
 use C4::Context;
 use Modern::Perl;
 use Getopt::Long;
+use Carp;
+use File::Basename;
+use Fcntl qw( :DEFAULT :flock :seek );
 use Koha::Plugins;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
+use YAML::XS;
 
-my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new();
-$plugin->create_log_table();
-$plugin->create_active_records_table();
-$plugin->create_queue_table();
-$plugin->create_users_table();
-$plugin->upgrade_db();
+
+my $help = 0;
+my $chunks = 200;
+my $all = 0;
+my $verbose = 0;
+my $limit = 0;
+my $interface;
+my $type;
+
+GetOptions(
+    'h|help'                     => \$help,
+    'v|verbose'                  => \$verbose,
+    'c|chunks:i'                 => \$chunks,
+    'l|limit:i'                  => \$limit,
+    't|type:s'                   => \$type,
+
+);
+
+my $usage = <<USAGE;
+    Broadcast biblios to REST endpoint
+
+    -h, --help              This message.
+    -v, --verbose           Verbose.
+    -c, --chunks            Process biblios in chunks, default is 200.
+    -l, --limit             Limiting the results of biblios.
+    -t, --type              Type of the broadcast, can be 'import' or 'export'.
+
+USAGE
+
+if ($help) {
+    print $usage;
+    exit 0;
+}
+
+unless ($type) {
+    print "Type is required\n";
+    print $usage;
+    exit 1;
+}
+
+my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
+    verbose => $verbose,
+    type => $type,
+});
+
+$plugin->process_queue();

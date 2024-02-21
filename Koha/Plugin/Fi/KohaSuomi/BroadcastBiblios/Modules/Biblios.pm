@@ -22,6 +22,11 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Try::Tiny;
 use Koha::Biblio::Metadatas;
+use Koha::Database;
+use Koha::DateUtils qw(dt_from_string);
+use MARC::Record;
+use Koha::Logger;
+use XML::LibXML;
 
 =head new
 
@@ -58,9 +63,13 @@ sub getTimestamp {
     return shift->{_params}->{timestamp};
 }
 
+sub skipRecords {
+    return shift->{_params}->{skipRecords};
+}
+
 sub fetch {
     my ($self) = @_;
-    print "Starting broadcasting offset ". $self->getPage() ." as from ". $self->getTimestamp() . "!\n";
+    print "Starting offset ". $self->getPage() ." as from ". $self->getTimestamp() . "!\n";
     my $terms;
     $terms = {timestamp => { '>' => $self->getTimestamp() }} if $self->getTimestamp();
     $terms = {biblionumber => {'>=' => $self->getBiblionumber()}} if $self->getBiblionumber();
@@ -72,84 +81,111 @@ sub fetch {
 
     my $biblios = Koha::Biblio::Metadatas->search($terms, $fetch)->unblessed;
 
+    if ($self->skipRecords) {
+        for (my $i = 0; $i < scalar(@$biblios); $i++) {
+            if (!$self->checkActionLog($biblios->[$i]->{biblionumber}, $biblios->[$i]->{timestamp})) {
+                $biblios->[$i]->{skip} = 1;
+            }
+        }
+    }
+
     return $biblios;
 }
 
-sub getHostRecord {
-    my ($self, $r) = @_;
-
-    my $f773w = $r->subfield('773', 'w');
-    my $f003;
-    if ($f773w =~ /\((.*)\)/ ) { 
-        $f003 = $1; 
-        $f773w =~ s/\D//g;
-    }
-    my $cn = $f773w;
-    my $cni = $r->field('003')->data();
-
-    return undef unless $cn && $cni;
-
-    my $query = "Control-number,ext:\"$cn\" AND cni,ext:\"$cni\"";
-    require Koha::SearchEngine::Search;
-
-    my $searcher = Koha::SearchEngine::Search->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
-
-    my ( $error, $results, $total_hits ) = $searcher->simple_search_compat( $query, 0, 10 );
-    if ($error) {
-        die "getHostRecord():> Searching ($query):> Returned an error:\n$error";
-    }
-
+sub importedRecords {
+    my ($self, $batchdate, $no_components, $hosts_with_components) = @_;
+    print "Fetch imported records from $batchdate\n";
     my $marcflavour = C4::Context->preference('marcflavour');
+    my $start = dt_from_string($batchdate.' 00:00:00');
+    my $end = dt_from_string($batchdate.' 23:59:00');
+    my $schema = Koha::Database->new->schema;
+    my @biblios = $schema->resultset('ImportRecord')->search({status => 'imported', upload_timestamp => {-between => [
+                Koha::Database->new->schema->storage->datetime_parser->format_datetime( $start ),
+                Koha::Database->new->schema->storage->datetime_parser->format_datetime( $end ),
+            ]}
+            },{
+                join => 'import_biblio',
+                '+select' => ['import_biblio.matched_biblionumber'],
+                '+as' => ['biblionumber'],
+                group_by => 'import_biblio.matched_biblionumber'
+            })->get_column('biblionumber')->all;
 
-    if ($total_hits == 1) {
-        my $record = $results->[0];
-        return ref($record) ne 'MARC::Record' ? MARC::Record::new_from_xml($record, 'UTF-8', $marcflavour) : $record;
+    my $componentparts = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new();
+    if ($no_components) {
+        my @no_components;
+        foreach my $biblio_id (@biblios){
+            my $components = $componentparts->fetch($biblio_id);
+            unless($components){
+                push @no_components, $biblio_id;
+            }
+        }
+        return @no_components;
+    } elsif ($hosts_with_components) {
+        my @hosts_with_components;
+        foreach my $biblio_id (@biblios){
+            my $components = $componentparts->fetch($biblio_id);
+            if($components){
+                push @hosts_with_components, $biblio_id;
+                foreach my $components (@$components){
+                    push @hosts_with_components, $components->{biblionumber};
+                }
+            }
+        }
+        return @hosts_with_components;
+    } else {
+        return @biblios;
     }
-    elsif ($total_hits > 1) {
-        die "getHostRecord():> Searching ($query):> Returned more than one record?";
-    }
-    return undef;
 }
 
-# sub importedRecords {
-#     print "Fetch imported records from $batchdate\n";
-#     my $marcflavour = C4::Context->preference('marcflavour');
-#     my $start = dt_from_string($batchdate.' 00:00:00');
-#     my $end = dt_from_string($batchdate.' 23:59:00');
-#     my $schema = Koha::Database->new->schema;
-#     my $type = $stage_type eq "update" ? 'match_applied' : 'no_match';
-#     my $dtf = Koha::Database->new->schema->storage->datetime_parser;
-#     my @biblios = $schema->resultset('ImportRecord')->search({status => 'imported', overlay_status => $type, upload_timestamp => {-between => [
-#                 $dtf->format_datetime( $start ),
-#                 $dtf->format_datetime( $end ),
-#             ]}});
+sub getRecord {
+    my ($self, $marcxml) = @_;
+
+    my $record = eval {MARC::Record::new_from_xml($marcxml, 'UTF-8')};
+    if ($@) {
+        die "Error while parsing MARC RECORD: $@";
+        return;
+    }
+
+    return $record;
+}
+
+sub checkBlock {
+    my ($self, $record) = @_;
+    return 1 if $record->subfield('942', 'b');
+    return 0;
+}
+
+sub checkEncodingLevel {
+    my ($self, $record) = @_;
+
+    my $encoding_level = substr( $record->leader(), 17 , 1 );
+    return $encoding_level;
+}
+
+sub checkComponentPart {
+    my ($self, $record) = @_;
+    return 1 if $record->subfield('773', "w");
+    return 0;
+}
+
+sub checkActionLog {
+    my ($self, $biblionumber, $timestamp) = @_;
+
+    my $updatelog = Koha::ActionLogs->search(
+        {
+            module => 'CATALOGUING',
+            action => 'MODIFY',
+            object => $biblionumber,
+            timestamp => { '>=', $timestamp },
+            script => 'update_totalissues.pl'
+        },
+    )->unblessed;
     
-#     my @data;
-#     my @components;
-#     foreach my $rs (@biblios) {
-#         my $cols = { $rs->get_columns };
-#         $cols->{biblionumber} = $schema->resultset('ImportBiblio')->search({import_record_id => $cols->{import_record_id}})->get_column("matched_biblionumber")->next;
-#         if ($cols->{biblionumber}) {
-#             $cols->{marcxml} = Koha::Biblio::Metadatas->find({biblionumber => $cols->{biblionumber}})->metadata;
-#             my $componentparts = Koha::Biblios->find( {biblionumber => $cols->{biblionumber}} )->componentparts;
-#             if ($componentparts) {
-#                 foreach my $componentpart (@{$componentparts}) {
-#                     push @components, {biblionumber => $componentpart->{biblionumber}, parent_id => $cols->{biblionumber}};
-#                 }
-#             }
-#             push @data, {marcxml => $cols->{marcxml}, biblionumber => $cols->{biblionumber}};
-#         }
-#     }
-#     foreach my $componentpart (@components) {
-#         my $index;
-#         foreach my $d (@data) {
-#             if ($componentpart->{biblionumber} eq $d->{biblionumber}) {
-#                 $data[$index]->{parent_id} = $componentpart->{parent_id};
-#             }
-#             $index++;
-#         }
-#     }
-#     return @data;
-# }
+    if (scalar(@$updatelog) > 0 ){
+        return 0;
+    }
+
+    return 1;
+}
 
 1;

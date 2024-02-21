@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<title>Koha-Suomi - Tietuesiirtäjä</title>
+	<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<meta name="description" content="">
+		<meta name="author" content="">
+
+		<!-- Bootstrap core CSS -->
+		<link rel="stylesheet" href="[% PLUGIN_PATH %]/includes/bootstrap.min.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+		<!-- Custom styles for this template-->
+	</head>
+	<body>
+
+		<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Etusivu</a> &rsaquo; <a href="/cgi-bin/koha/plugins/plugins-home.pl">Liitännäiset</a> &rsaquo; Koha-Suomi &rsaquo; Tietuesiirtäjä</div>
+		<div id="content-wrapper">
+			<div class="container-fluid">
+				<main role="main" class="ml-sm-auto pt-3 px-4">
+				<div id="viewApp">
+					<h2>Tietuesiirtäjä</h2>
+					<div v-if="errors.length" class="alert alert-danger" role="alert">
+						<ul class="list-unstyled mb-0">
+							<li class="text-danger" v-for="error in errors">{{ error }}</li>
+						</ul>
+					</div>
+					<div v-if="success" class="alert alert-success" role="alert">
+						{{success}}
+					</div>
+					<ul class="nav nav-pills mb-3 mt-3">
+						<li class="nav-item">
+						<a class="nav-link active" href="#" v-on:click="changeStatus('pending', $event)">Odottavat</a>
+						</li>
+						<li class="nav-item">
+						<a class="nav-link" href="#" v-on:click="changeStatus('processing', $event)">Käsittelyssä</a>
+						</li>
+						<li class="nav-item">
+						<a class="nav-link" href="#" v-on:click="changeStatus('completed', $event)">Onnistuneet</a>
+						</li>
+						<li class="nav-item">
+						<a class="nav-link" href="#" v-on:click="changeStatus('failed', $event)">Keskeytyneet</a>
+						</li>
+						<li class="nav-item">
+						<a class="nav-link" href="#" v-on:click="checkActivation($event)">Tarkista aktivointi</a>
+						</li>
+					</ul>
+					<div v-if="!showCheckActive">
+						<div class="w-25">
+							<div class="input-group mb-3"><input class="form-control" v-model="biblioId" placeholder="Tietuenumero"/><div class="input-group-append"><button type="submit" class="btn btn-success" @click="getQueue($event)">Etsi</button></div></div>
+						</div>
+						<nav v-bind:class="{'d-none': pages == 1 }" aria-label="Page navigation example">
+							<ul class="pagination">
+							<li class="page-item">
+								<a class="page-link" v-bind:class="{'text-muted bg-muted cursor-default': page == 1 }" href="#" v-on:click="changePage($event, page-1)" aria-label="Previous">
+								<span aria-hidden="true">&laquo;</span>
+								<span class="sr-only">Edellinen</span>
+								</a>
+							</li>
+							<li v-for="page in pages"><a class="page-link" v-bind:class="{'d-none': pageHide(page)}" href="#" :data-current="page" v-on:click="changePage($event, page)">{{page}}</a></li>
+							<li class="page-item">
+								<a class="page-link" href="#" v-bind:class="{'text-muted bg-muted cursor-default': page == pages }" v-on:click="changePage($event, page+1)" aria-label="Next">
+								<span aria-hidden="true">&raquo;</span>
+								<span class="sr-only">Seuraava</span>
+								</a>
+							</li>
+							</ul>
+						</nav>
+						<div class="table-responsive">
+							<table class="table table-striped table-sm">
+							<thead>
+								<tr>
+								<th>
+									<span v-if="status == 'pending'">Luotu</span>
+									<span v-else-if="status == 'processing'">Aloitettu</span>
+									<span v-else>Käsitelty</span></th>
+								<th>Tietue</th>
+								<th>Osakohteet</th>
+								<th v-if="status == 'completed'">Muutokset</th>
+								<th v-if="status == 'failed'">Virhe</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr is="result-list"
+								v-for="(result, index) in results"
+								v-bind:result="result">
+								</tr>
+							</tbody>
+							</table>
+						</div>
+					</div>
+					<div v-else>
+						<div class="w-25">
+							<div class="input-group mb-3"><input class="form-control" v-model="biblioId" placeholder="Tietuenumero"/><div class="input-group-append"><button type="submit" class="btn btn-success" @click="getActiveRecord($event)">Tarkista</button></div></div>
+						</div>
+						<div v-if="activation.id" class="table-responsive">
+							<table class="table table-striped table-sm">
+							<thead>
+								<tr>
+								<th>Aktivointikenttä</th>
+								<th>Aktivointiarvo</th>
+								<th>Valutus estetty</th>
+								<th>Viimeksi päivitetty</th>
+								<th>Aktivointi aika</th>
+								<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>
+										<span v-if="showModifyActivation">
+											<select v-model="identifier_field">
+												<option value="035a">035a</option>
+												<option value="020a">020a</option>
+												<option value="024a">024a</option>
+												<option value="003|001">003|001</option>
+											</select>
+										</span>
+										<span v-else>{{activation.identifier_field}}</span>
+									</td>
+									<td>
+										<span v-if="showModifyActivation"><input v-model="identifier" placeholder="Standardinumero"/></span>
+										<span v-else>{{activation.identifier}}</span>
+									</td>
+									<td>
+										<span v-if="showModifyActivation"><input type="checkbox" v-model="blocked"/></span>
+										<span v-else>{{this.activation.blocked | blocked}}</span>
+									</td>
+									<td>{{activation.updated_on | moment}}</td>
+									<td>{{activation.created_on | moment}}</td>
+									<td>
+										<button v-if="!showModifyActivation" class="btn btn-primary" @click="modifyActivation($event)"><i class="fa fa-edit"></i></button>
+										<button v-if="showModifyActivation" class="btn btn-success" @click="updateActiveRecord($event)">Tallenna</button>
+										<button v-if="showModifyActivation" class="btn btn-warning" @click="closeUpdate()">Sulje</button>
+									</td>
+								</tr>
+							</tbody>
+							</table>
+						</div>
+					</div>
+					<div :class="{'d-none': !showLoader }">
+						<div class="row w-100 p-3">
+							<div class="col text-center">
+								<i class="fas fa-circle-notch fa-spin fa-3x"></i>
+							</div>
+						</div>
+					</div>
+					<nav v-bind:class="{'d-none': pages == 1 }" aria-label="Page navigation">
+						<ul class="pagination">
+						<li class="page-item">
+							<a class="page-link" v-bind:class="{'text-muted bg-muted cursor-default': page == 1 }" href="#" v-on:click="changePage($event, page-1)" aria-label="Previous">
+							<span aria-hidden="true">&laquo;</span>
+							<span class="sr-only">Edellinen</span>
+							</a>
+						</li>
+						<li v-for="page in pages"><a class="page-link" v-bind:class="{'d-none': pageHide(page)}" href="#" :data-current="page" v-on:click="changePage($event, page)">{{page}}</a></li>
+						<li class="page-item">
+							<a class="page-link" href="#" v-bind:class="{'text-muted bg-muted cursor-default': page == pages }" v-on:click="changePage($event, page+1)" aria-label="Next">
+							<span aria-hidden="true">&raquo;</span>
+							<span class="sr-only">Seuraava</span>
+							</a>
+						</li>
+						</ul>
+					</nav>
+				</div>
+				</main>
+			</div>
+			<div id="modalWrapper"></div>
+		</div>
+		<template id="list-items">
+		<tr>
+			<td class="col-2">
+				<span v-if="result.status == 'pending'">{{result.created_on | moment}}</span><span v-else>{{result.transfered_on | moment}}</span>
+			</td>
+			<td class="col-4">
+				<div>{{result.marcjson | author}} {{result.marcjson | title}} {{result.itemtype}} (<a v-bind:href="'/cgi-bin/koha/catalogue/detail.pl?biblionumber='+result.biblio_id" target="_blank">{{result.biblio_id}}</a>) <i class="fa fa-code text-muted" @click="toggleShowRecord($event)"></i></div>
+				<div v-show="showRecord" :inner-html.prop="result.marcjson | record"></div>
+			</td>
+			<td class="col-3">
+				<ol v-if="result.componentparts">
+					<li v-for="componentpart in result.componentparts">
+						{{componentpart.marcjson | title}} <i class="fa fa-code text-muted" @click="toggleShowComponentPart($event, componentpart.biblionumber)"></i>
+						<div v-show="showComponentPart == componentpart.biblionumber" :inner-html.prop="componentpart.marcjson | record"></div>
+					</li>
+				</ol>
+			</td>
+			<td v-if="result.status == 'completed'" class="col-2">
+				<div v-if="result.diff != null">
+					<div v-if="active" class="spinner-wrapper">
+						<i class="fa fa-spinner fa-spin"></i>
+					</div>
+					<div class="row m-0" v-else>
+						<div class="col-sm-4">
+							<button v-on:click="getRecord($event)" class="btn btn-sm btn-primary" type="button">Avaa</button>
+						</div>
+						<div v-if="notifyfields" class="col-sm-5 alert alert-warning p-1" role="alert">
+							<span>{{notifyfields}}</span>
+						</div>
+					</div>
+				</div>
+			</td>
+			<td v-if="result.status == 'failed'" class="col-3">
+				{{result.statusmessage}}
+			</td>
+		</tr>
+		</template>
+		<!-- Bootstrap core JavaScript
+		================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+		<script src="[% PLUGIN_PATH %]/includes/vue.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/axios.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/moment-with-locales.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/jquery-3.3.1.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/popper.min.js"></script>
+		<script src="[% PLUGIN_PATH %]/includes/bootstrap.min.js"></script>
+		<script>
+			var notifyFields = '[% notifyfields %]';
+		</script>
+		<script type="module" src="[% PLUGIN_PATH %]/js/viewApp.js"></script>
+	</body>
+</html>
