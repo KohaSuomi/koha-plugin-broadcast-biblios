@@ -33,11 +33,17 @@ export default {
       remoteStatus: '',
       showExportButton: false,
       remoteRecordId: '',
+      disabled: false,
     };
   },
   created() {
     this.config.fetch();
     this.records.getLocal(this.biblio_id);
+  },
+  computed: {
+    isDisabled() {
+      return this.disabled;
+    }
   },
   methods: {
     search() {
@@ -59,10 +65,11 @@ export default {
       });
     },
     importRecord() {
-      this.records.import(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId);
+      this.records.transfer(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId, 'import');
+      this.disabled = true;
     },
     exportRecord() {
-      this.records.export(this.remoteRecordId, this.patron_id, this.selectedInterface);
+      this.records.export(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId, 'export');
     },
     openModal(event) {
       this.selectedInterface = event.target.text;
@@ -126,14 +133,17 @@ export default {
                 <li v-for="error in errors.errors">{{ error }}</li>
               </ul>
             </div>
+            <div v-if="records.saved" class="alert alert-success" role="alert">
+              Lisätty jonoon!
+            </div>
             <div class="row">
               <div v-html="localRecord" class="col-sm-6" :class="{ 'col-sm-8': !remoteRecord }"></div>
               <div v-if="remoteRecord" v-html="remoteRecord" class="col-sm-6"></div>
             </div>
           </div>
           <div class="modal-footer">
-            <button v-if="showExportButton" class="btn btn-secondary" style="float:none;">Vie</button>\
-            <button class="btn btn-primary" style="float:none;" @click="importRecord()">Tuo</button>\
+            <button v-if="showExportButton" class="btn btn-secondary" style="float:none;" @click="exportRecord()">Vie</button>\
+            <button class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">Tuo</button>\
             <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
           </div>
         </div>

@@ -501,10 +501,10 @@
             error:
               description: Internal server error
               type: string
-/broadcast/biblios/{biblio_id}/import:
+/broadcast/biblios/{biblio_id}/transfer:
   post:
-    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#import"
-    operationId: importBroadcastBiblio
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#transfer"
+    operationId: BroadcastBiblioTransfer
     tags:
       - biblios
     parameters:
@@ -539,6 +539,12 @@
                 - array
                 - "null"
               description: "Record's component parts"
+            type:
+              type: string
+              enum: 
+                - "import"
+                - "export"
+              description: "Transfer's type"
     produces:
       - application/json
     responses:

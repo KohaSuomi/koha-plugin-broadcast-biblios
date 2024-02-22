@@ -36,19 +36,9 @@ export const useRecordStore = defineStore("record", {
         errorStore.setError(error);
       }
     },
-    async import(biblio_id, patron_id, interface_name, remote_id) {
+    async transfer(biblio_id, patron_id, interface_name, remote_id, type) {
       try {
-        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/import`, { marcjson: this.remotemarcjson, componentparts: this.remotecomponentparts, interface_name: interface_name, patron_id: patron_id, remote_id: remote_id});
-        this.saved = true;
-      } catch (error) {
-        const errorStore = useErrorStore();
-        errorStore.setError(error);
-      }
-    },
-    async export(remote_id, patron_id, interface_name) {
-      try {
-        const marcjson = this.marcjson;
-        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/export`, { marcjson: marcjson, patron_id: patron_id, interface_name: interface_name, remote_id: remote_id});
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/transfer`, { marcjson: this.remotemarcjson, componentparts: this.remotecomponentparts, interface_name: interface_name, patron_id: patron_id, remote_id: remote_id, type: type });
         this.saved = true;
       } catch (error) {
         const errorStore = useErrorStore();

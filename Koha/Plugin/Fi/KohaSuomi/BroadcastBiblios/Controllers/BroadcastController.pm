@@ -67,7 +67,7 @@ sub listQueue {
     }
 }
 
-sub import {
+sub transfer {
     my $c = shift->openapi->valid_input or return;
 
     my $logger = Koha::Logger->get({ interface => 'api' });
@@ -78,8 +78,8 @@ sub import {
         my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
         my $user_id = $users->getInterfaceUserByPatronId($body->{interface_name}, $body->{patron_id});
         my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $body->{marcjson}});
-        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{interface_name}, type => 'import', user_id => $user_id});
-        $queue->importRecord($biblio_id, $body->{remote_id}, $marc->toXML(), $body->{componentparts});
+        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{interface_name}, type => $body->{type}, user_id => $user_id});
+        $queue->transferRecord($biblio_id, $body->{remote_id}, $marc->toXML(), $body->{componentparts});
 
         return $c->render(status => 200, openapi => {message => "Success"});
     } catch {
@@ -90,24 +90,6 @@ sub import {
         } else {
             return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
         }
-    }
-}
-
-sub export {
-    my $c = shift->openapi->valid_input or return;
-
-    my $logger = Koha::Logger->get({ interface => 'api' });
-
-    try {
-        my $body = $c->req->json;
-        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new();
-        my $response = $queue->exportRecord($body);
-
-        return $c->render(status => $response->{status}, openapi => {message => $response->{message}});
-    } catch {
-        my $error = $_;
-        $logger->error($error);
-        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
     }
 }
 

@@ -112,9 +112,10 @@ sub ua {
     return Mojo::UserAgent->new;
 }
 
-sub importRecord {
+sub transferRecord {
     my ($self, $biblio_id, $broadcast_biblio_id, $marcxml, $componentparts) = @_;
     my $queueStatus = $self->checkBiblionumberQueueStatus($broadcast_biblio_id);
+    warn Data::Dumper::Dumper $queueStatus;
     if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
         print "Broadcast record ".$broadcast_biblio_id." is already in queue\n" if $self->verbose;
         die {status => 409, message => "Broadcast record ".$broadcast_biblio_id." is already in queue"};
