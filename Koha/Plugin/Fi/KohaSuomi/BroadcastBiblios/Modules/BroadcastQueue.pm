@@ -290,8 +290,9 @@ sub processImportComponentParts {
             my $broadcastcomponentpart = $broadcastcomponentparts->[$i];
             my $frameworkcode = GetFrameworkCode( $biblionumber );
             my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
+            my $localrecord = $self->getRecord($localcomponentpart->{marcxml});
             if ($record) {
-                $record = $self->add942ToBiblio($record, $f942);
+                $record = $self->add942ToBiblio($record, $f942) if !$localrecord->field('942');
                 my $success = &ModBiblio($record, $biblionumber, $frameworkcode, {
                             overlay_context => {
                                 source       => 'z3950'
