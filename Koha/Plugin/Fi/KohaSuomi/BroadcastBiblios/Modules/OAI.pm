@@ -98,10 +98,10 @@ sub buildOAI {
 sub processDuplicateFromBibliosArray {
     my ($self) = @_;
     my @biblios = $self->getBibliosClass()->importedRecords($self->getDate(), $self->getNoComponents(), $self->getHostsWithComponents);
-    warn Data::Dumper::Dumper \@biblios;
+
     my @results;
     foreach my $biblionumber (@biblios) {
-        my $result = GetOAISetsBiblio($biblionumber);
+        my $result = getOAISetsBiblio($biblionumber, $self->getSetSpec, $self->getSetName);
         if (scalar(@$result) == 0) {
             print "Adding biblio ".$biblionumber." to OAI set ".$self->getSetSpec."\n" if $self->verbose();
             push @results, $biblionumber;
@@ -126,6 +126,24 @@ sub getOAISet {
     my ($self) = @_;
     my $set = GetOAISetBySpec($self->getSetSpec()) || {};
     return $set;
+}
+
+sub getOAISetsBiblio {
+    my ($biblionumber, $spec, $name) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $query = qq{
+        SELECT oai_sets.*
+        FROM oai_sets
+          LEFT JOIN oai_sets_biblios ON oai_sets_biblios.set_id = oai_sets.id
+        WHERE biblionumber = ?
+        AND spec = ?
+        AND name = ?
+    };
+    my $sth = $dbh->prepare($query);
+
+    $sth->execute($biblionumber, $spec, $name);
+    return $sth->fetchall_arrayref({});
 }
 
 1;
