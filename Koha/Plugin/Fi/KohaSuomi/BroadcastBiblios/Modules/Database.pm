@@ -146,11 +146,11 @@ sub getPendingActiveRecords {
     return $results;
 }
 
-sub updateActiveRecord {
-    my ($self, $id, $params) = @_;
+sub updateActiveRecordIdentifiers {
+    my ($self, $id, $identifier, $identifier_field) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("UPDATE " . $self->activerecords . " SET identifier = ?, identifier_field = ?, blocked = ? WHERE id = ?");
-    $sth->execute($params->{identifier}, $params->{identifier_field}, $params->{blocked}, $id);
+    my $sth = $dbh->prepare("UPDATE " . $self->activerecords . " SET identifier = ?, identifier_field = ? WHERE id = ?");
+    $sth->execute($identifier, $identifier_field, $id);
     $sth->finish();
 }
 
