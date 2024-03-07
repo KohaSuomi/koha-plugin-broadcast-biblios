@@ -66,6 +66,10 @@ sub find {
             return $c->render(status => 404, openapi => {error => "Activation not found for ".$identifier." ".$identifier_field});
         }
 
+        if ($activeRecord && $activeRecord->{blocked}) {
+            return $c->render(status => 403, openapi => {error => "Record is blocked"});
+        }
+
         return $c->render(status => 200, openapi => $activeRecord);
     } catch {
         my $error = $_;
