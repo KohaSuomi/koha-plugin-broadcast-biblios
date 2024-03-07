@@ -71,6 +71,7 @@ sub getIdentifierField {
                 $activefield = $f020->subfield('a');
                 $activefield =~ s/-//gi;
                 $fieldname = '020a';
+                last;
             }
         }
 
