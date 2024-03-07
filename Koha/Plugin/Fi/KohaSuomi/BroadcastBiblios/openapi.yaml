@@ -172,6 +172,14 @@
             error:
               description: Bad request
               type: string
+      "403":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Forbidden
+              type: string
       "404":
         description: An error occured
         schema:
