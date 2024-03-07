@@ -151,11 +151,6 @@ sub getActiveRecordByBiblionumber {
     return $self->db->getActiveRecordByBiblionumber($biblionumber);
 }
 
-sub updateActiveRecord {
-    my ($self, $id, $params) = @_;
-    return $self->db->updateActiveRecord($id, $params);
-}
-
 sub setActiveRecords {
     my ($self) = @_;
     my $params = $self->getParams();
@@ -205,6 +200,13 @@ sub setActiveRecord {
         return {status => 403, message => "Not a host record"} if $self->getBiblios->checkComponentPart($record);
         my $activerecord = $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
         if ($activerecord) {
+            # Update active record identifiers if changed
+            my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
+            if ($activerecord->{identifier} ne $identifier && $activerecord->{identifier_field} ne $identifier_field) {
+                print "Updating active record identifiers for biblionumber: ".$activerecord->{biblionumber}."\n" if $self->verbose;
+                $self->db->updateActiveRecordIdentifiers($activerecord->{id}, $identifier, $identifier_field);
+            }
+            # Update active record blocked status if changed
             my $record_block = $self->getBiblios()->checkBlock($record);
             if ($record_block || $activerecord->{blocked} ne $record_block) {
                 $activerecord->{blocked} = $record_block;
