@@ -217,10 +217,10 @@ sub getQueue {
 }
 
 sub getQueuedRecordByBiblionumber {
-    my ($self, $biblionumber, $interface) = @_;
+    my ($self, $biblionumber, $interface, $type) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE broadcast_biblio_id = ? AND broadcast_interface = ? order by id desc");
-    $sth->execute($biblionumber, $interface);
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE broadcast_biblio_id = ? AND broadcast_interface = ? AND type = ? order by id desc");
+    $sth->execute($biblionumber, $interface, $type);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
     return $result;

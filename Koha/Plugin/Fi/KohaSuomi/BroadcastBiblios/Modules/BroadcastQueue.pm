@@ -250,7 +250,7 @@ sub getQueue {
 
 sub checkBiblionumberQueueStatus {
     my ($self, $biblionumber) = @_;
-    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface);
+    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface, $self->getType);
     return $queue->{status};
 }
 

@@ -69,7 +69,7 @@ export default {
       this.disabled = true;
     },
     exportRecord() {
-      this.records.export(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId, 'export');
+      this.records.transfer(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId, 'export');
     },
     openModal(event) {
       this.selectedInterface = event.target.text;
