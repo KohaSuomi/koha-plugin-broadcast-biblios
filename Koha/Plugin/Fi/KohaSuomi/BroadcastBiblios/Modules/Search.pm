@@ -139,18 +139,18 @@ sub searchFromInterface {
             my $componentparts;
             if ($records) {
                 my $record = $records->[0];
-                if ($interface_name =~ /Melinda/) {
+                if ($interface_name =~ /Melinda/i) {
                     $componentparts = $self->searchSRUComponentParts($config->{sruUrl}, $record);
                 }
                 return {marcjson => $record, componentparts => $componentparts};
             }
         }
     } else {
-        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => $config->{restGet}});
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => $config->{restSearch}});
         my ($path, $headers) = $users->getAuthentication($config->{defaultUser});
         $headers->{"Accept"} = "application/marc-in-json";
         my $ua = $self->ua;
-        my $method = $config->{restGetMethod};
+        my $method = $config->{restSearchMethod};
         my $response = $ua->$method($path => $headers => json => {identifiers => $identifiers})->result;
         if ($response->is_success) {
             return $response->json;

@@ -191,9 +191,26 @@ export default {
               <div class="form-group">
                   <div class="row">
                       <div class="col-9">
+                        <label for="restSearch" class="col-form-label">Search-endpoint</label>
+                        <input type="text" class="form-control" id="restSearch" v-model="selectedInterface.restSearch">
+                        <small id="restSearchHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
+                      </div>
+                      <div class="col-3">
+                        <label for="restGetMethod" class="col-form-label">Method</label>
+                        <select class="form-control" id="restSearchMethod" v-model="selectedInterface.restSearchMethod">
+                            <option selected value="">Valitse</option>
+                            <option value="get">GET</option>
+                            <option value="post">POST</option>
+                        </select>
+                      </div>
+                    </div>
+              </div>
+              <div class="form-group">
+                  <div class="row">
+                      <div class="col-9">
                         <label for="restGet" class="col-form-label">Get-endpoint</label>
                         <input type="text" class="form-control" id="restGet" v-model="selectedInterface.restGet">
-                        <small id="restGetHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
+                        <small id="restGetHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/{biblio_id}</small>
                       </div>
                       <div class="col-3">
                         <label for="restGetMethod" class="col-form-label">Method</label>
