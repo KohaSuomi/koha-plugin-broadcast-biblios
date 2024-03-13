@@ -27,7 +27,8 @@
               type: string
   put:
     x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#update"
-    operationId: updateBroadcastBiblio
+    operationId: updateBroadcastBiblioOld
+    description: DEPRECATED. Use /broadcast/biblios/{biblio_id} instead.
     tags:
       - biblios
     parameters:
@@ -376,7 +377,9 @@
           type: object
           properties:
             identifiers:
-              type: array
+              type: 
+                - array
+                - "null"
               description: "Record's identifiers"
             biblio_id:
               type:
@@ -445,6 +448,55 @@
     x-koha-authorization:
       permissions:
         catalogue: "1"
+  put:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#update"
+    operationId: updateBroadcastBiblio
+    tags:
+      - biblios
+    parameters:
+      - name: biblio_id
+        in: path
+        description: Internal biblio identifier
+        required: true
+        type: integer
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Updated biblio
+        schema:
+          type: object
+          properties:
+            biblio:
+              type: object
+              description: Biblio data
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "404":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Not found
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
 /broadcast/biblios/{biblio_id}/search:
   post:
     x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#search"

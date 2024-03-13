@@ -119,7 +119,7 @@ sub findByIdentifier {
 }
 
 sub searchFromInterface {
-    my ($self, $interface_name, $identifiers) = @_;
+    my ($self, $interface_name, $identifiers, $biblio_id) = @_;
 
     my $config = $self->getConfig->getInterfaceConfig($interface_name);
     if ($config->{sruUrl} && $config->{sruUrl} ne "") {
@@ -151,7 +151,7 @@ sub searchFromInterface {
         $headers->{"Accept"} = "application/marc-in-json";
         my $ua = $self->ua;
         my $method = $config->{restSearchMethod};
-        my $response = $ua->$method($path => $headers => json => {identifiers => $identifiers})->result;
+        my $response = $ua->$method($path => $headers => json => {identifiers => $identifiers, biblio_id => $biblio_id})->result;
         if ($response->is_success) {
             return $response->json;
         } else {
