@@ -107,7 +107,7 @@ sub getActiveRecords {
 
 sub mergeRecords {
     my ($self, $interface) = @_;
-    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MergeRecords->new({interface => $interface});
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MergeRecords->new({interface => $interface, verbose => $self->verbose});
 }
 
 sub getRecord {
@@ -333,7 +333,7 @@ sub processExportQueue {
         my $action;
         my $target_id = $queue->{broadcast_biblio_id};
         try {
-            #$self->db->updateQueueStatus($queue->{id}, 'processing', undef);
+            $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
             my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $queue->{broadcast_interface}});
             if ($target_id) {
                 my $getResponse = $rest->apiCall({type => 'GET', data => {biblio_id => $target_id}, user_id => $queue->{user_id}});
@@ -350,7 +350,7 @@ sub processExportQueue {
                         my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => encode_json($mergedrecord->as_xml_record)}, user_id => $queue->{user_id}});
                         if ($putResponse->is_success) {
                             print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";
-                            #$self->db->updateQueueStatus($queue->{id}, 'completed', $response->message);
+                            $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
                         } else {
                             die "Failed to update record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}.": ".$putResponse->error->message;
                         }
@@ -376,7 +376,7 @@ sub processExportQueue {
             }
         } catch {
             my $error = $_;
-            #$self->db->updateQueueStatus($queue->{id}, 'failed', $error);
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
             print "Error while processing export queue: $error\n";
         }
     }
