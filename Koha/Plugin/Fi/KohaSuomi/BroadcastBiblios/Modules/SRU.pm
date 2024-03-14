@@ -103,8 +103,8 @@ sub ua {
 
 sub MarcXMLToJSON {
     my ($self, $marcxml) = @_;
-    my $marcjson = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new({marcxml => $marcxml});
-    return $marcjson->toJSON();
+    my $marcjson = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new();
+    return $marcjson->toJSON($marcxml);
 }
 
 sub buildTX {
@@ -130,7 +130,7 @@ sub search {
     my ($self) = @_;
 
     my $path = $self->buildPath();
-    print "SRU path: ".$path ."\n";
+    warn "SRU path: ".$path ."\n";
     my $res = $self->buildTX('GET', $path);
     my $records = $self->getRecords($res->res->body);
     return $records;

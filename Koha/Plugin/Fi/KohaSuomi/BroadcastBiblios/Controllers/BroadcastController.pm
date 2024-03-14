@@ -19,6 +19,8 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML;
 use Try::Tiny;
 use Koha::Logger;
 
@@ -34,9 +36,9 @@ sub setToQueue {
     try {
         my $body = $c->req->json;
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{broadcast_interface}, type => $body->{type}, user_id => $body->{user_id}});
-        $queue->setToQueue($body->{active_biblio}, $body->{broadcast_biblio});
+        my $response = $queue->setToQueue($body->{active_biblio}, $body->{broadcast_biblio});
 
-        return $c->render(status => 201, openapi => {message => "Success"});
+        return $c->render(status => $response->{status}, openapi => {message => $response->{message}});
     } catch {
         my $error = $_;
         $logger->error($error);
@@ -62,6 +64,32 @@ sub listQueue {
         my $error = $_;
         $logger->error($error);
         return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+    }
+}
+
+sub transfer {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'api' });
+
+    try {
+        my $biblio_id = $c->validation->param('biblio_id');
+        my $body = $c->req->json;
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
+        my $user_id = $users->getInterfaceUserByPatronId($body->{interface_name}, $body->{patron_id});
+        my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $body->{marcjson}});
+        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{interface_name}, type => $body->{type}, user_id => $user_id});
+        $queue->transferRecord($biblio_id, $body->{remote_id}, $marc->toXML(), $body->{componentparts});
+
+        return $c->render(status => 200, openapi => {message => "Success"});
+    } catch {
+        my $error = $_;
+        $logger->error($error->{message});
+        if ($error->{status}) {
+            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
+        } else {
+            return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+        }
     }
 }
 

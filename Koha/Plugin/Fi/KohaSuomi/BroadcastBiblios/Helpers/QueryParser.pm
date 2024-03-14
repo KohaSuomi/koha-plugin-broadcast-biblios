@@ -66,7 +66,7 @@ sub query {
     my $query;
 
     if ($self->getInterfaceType eq "SRU") {
-        if ($self->getInterface eq "Melinda") {
+        if ($self->getInterface =~ /melinda/) {
             $query = $self->melindaSRUSearch();
         } else {
             $query = $self->kohaSRUSearch();
@@ -101,7 +101,15 @@ sub kohaElasticSearch {
 
 sub kohaSRUSearch {
     my ($self) = @_;
-
+    return 'koha.systemcontrolnumber="'.$self->getIdentifier().'"' if $self->getIdentifierField eq "035a";
+    return "dc.isbn=".$self->getIdentifier() if $self->getIdentifierField eq "020a";
+    return "dc.identifier=".$self->getIdentifier() if $self->getIdentifierField eq "024a";
+    if ($self->getIdentifierField eq "003|001") {
+        my @identifiers = split(/\|/, $self->getIdentifier());
+        my $cn = $identifiers[1];
+        my $cni = $identifiers[0];
+        return "koha.controlnumber=".$cn." AND "."koha.controlnumberidentifier=".$cni;
+    }
 }
 
 sub melindaSRUSearch {

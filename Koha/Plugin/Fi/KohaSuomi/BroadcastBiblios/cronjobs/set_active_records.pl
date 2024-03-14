@@ -33,6 +33,7 @@ use File::Basename;
 use Fcntl qw( :DEFAULT :flock :seek );
 use Koha::Plugins;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config;
 use YAML::XS;
 
 
@@ -73,9 +74,8 @@ if ($help) {
     exit 0;
 }
 
-my $configPath = $ENV{"KOHA_CONF"};
-my($file, $path, $ext) = fileparse($configPath);
-my $configfile = eval { YAML::XS::LoadFile($path.'broadcast-config.yaml') };
+my $configs = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new({verbose => $verbose});
+my $config = $configs->getConfig();
 
 my $params = {
     all => $all,
@@ -87,7 +87,12 @@ my $params = {
 };
 
 if ($interface) {
-    $params->{config} = $configfile->{$interface};
+    foreach my $i (@{$config->{interfaces}}) {
+        if ($i->{name} eq $interface) {
+            $params->{config} = $i;
+            last;
+        }
+    }
 }
 
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new($params);

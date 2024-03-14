@@ -20,6 +20,7 @@ use Modern::Perl;
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode BiblioAutoLink);
@@ -89,6 +90,33 @@ sub find {
     }
 }
 
+sub search {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'api' });
+
+    try {
+        my $biblio = Koha::Biblios->find($c->validation->param('biblio_id'));
+
+        unless ($biblio) {
+            return $c->render(status => 404, openapi => {error => "Biblio not found"});
+        }
+        my $body = $c->req->json;
+        my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+        my $results = $search->searchFromInterface($body->{interface_name}, $body->{identifiers});
+        return $c->render(status => 200, openapi => $results);
+    } catch {
+        my $error = $_;
+        $logger->error($error);
+        if ($error->{status}) {
+            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
+        } else {
+            return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+        }
+    }
+
+}
+
 sub add {
     my $c = shift->openapi->valid_input or return;
 
@@ -141,7 +169,7 @@ sub update {
         }
 
         my $success;
-        my $body = $c->req->body;
+        my $body = $c->req->json;
         my $record = eval {MARC::Record::new_from_xml( $body, "utf8", '')};
         if ($@) {
             return $c->render(status => 400, openapi => {error => $@});
@@ -169,6 +197,30 @@ sub update {
         } else {
             return $c->render(status => 400, openapi => {error => "unable to update record"});
         }
+    } catch {
+        my $error = $_;
+        $logger->error($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+    }
+}
+
+sub getBroadcastBiblio {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'api' });
+    $c->req->headers->accept =~ m/application\/marc-in-json/ ? $c->stash('format', 'marcjson') : $c->stash('format', 'marcxml');
+    try {
+        my $format = $c->stash('format');
+        my $biblio = Koha::Biblios->find($c->validation->param('biblio_id'));
+        my $convert = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new();
+        unless ($biblio) {
+            return $c->render(status => 404, openapi => {error => "Biblio not found"});
+        }
+        my $identifierHelper = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers->new;
+        my @identifiers = $identifierHelper->fetchIdentifiers($biblio->metadata->metadata);
+        my $response = _biblio_wrapper($format, $biblio, @identifiers);
+        
+        return $c->render(status => 200, openapi => $response);
     } catch {
         my $error = $_;
         $logger->error($error);

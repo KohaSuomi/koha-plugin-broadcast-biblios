@@ -18,6 +18,7 @@ package Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Modern::Perl;
+use utf8;
 use Carp;
 use Scalar::Util qw( blessed );
 use Try::Tiny;
@@ -28,8 +29,11 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::CompareRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MergeRecords;
 use JSON;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode);
 use MARC::Field;
@@ -86,6 +90,11 @@ sub getMarcXMLToJSON {
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new;
 }
 
+sub getMarcJSONToXML {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new;
+}
+
 sub getComponentParts {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new;
@@ -94,6 +103,11 @@ sub getComponentParts {
 sub getActiveRecords {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new;
+}
+
+sub mergeRecords {
+    my ($self, $interface) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MergeRecords->new({interface => $interface, verbose => $self->verbose});
 }
 
 sub getRecord {
@@ -112,9 +126,49 @@ sub ua {
     return Mojo::UserAgent->new;
 }
 
+sub transferRecord {
+    my ($self, $biblio_id, $broadcast_biblio_id, $marcxml, $componentparts) = @_;
+    my $queueStatus = $self->checkBiblionumberQueueStatus($broadcast_biblio_id);
+    if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
+        print "Broadcast record ".$broadcast_biblio_id." is already in queue\n" if $self->verbose;
+        die {status => 409, message => "Broadcast record ".$broadcast_biblio_id." is already in queue"};
+    }
+    try {
+        my $record = $self->getRecord($marcxml);
+        if ($record) {
+            my $parts;
+            if ($componentparts) {
+                foreach my $part (@$componentparts) {
+                    my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $part->{marcjson}});
+                    push @$parts, {
+                        biblionumber => $part->{biblionumber},
+                        marcxml => $marc->toXML()
+                    };
+                }
+            }
+            $self->db->insertToQueue({
+                broadcast_interface => $self->getBroadcastInterface,
+                user_id => $self->getUserId,
+                type => $self->getType,
+                broadcast_biblio_id => $broadcast_biblio_id,
+                biblio_id => $biblio_id,
+                marc => $marcxml,
+                componentparts => $parts ? to_json($parts) : undef,
+                diff => undef,
+                hostrecord => $parts ? 1 : 0,
+            });
+        } else {
+            die "Failed to update record $biblio_id\n";
+        }
+    } catch {
+        my $error = $_;
+        print "Error while importing record $biblio_id: $error\n";
+    }
+}
+
 sub pushToRest {
     my ($self, $config, $activerecord, $broadcastrecord) = @_;
-    my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config->{rest}, endpoint => 'setToQueue'});
+    my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => '/api/v1/contrib/kohasuomi/broadcast/queue'});
     my ($path, $headers) = $users->getAuthentication($self->getUserId);
     my $tx = $self->ua->post($path => $headers => json => {
         active_biblio => $activerecord,
@@ -124,12 +178,13 @@ sub pushToRest {
         type => $self->getType,
     });
 
-    if ($tx->res->code eq '200' || $tx->res->code eq '201') {
-        print "Pushed record ".$broadcastrecord->{biblionumber}." to ".$config->{interface_name}."\n";
+    if ($tx->res->code eq '200' || $tx->res->code eq '201' || $tx->res->code eq '204') {
+        my $response = $tx->res->json;
+        print "Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{name}." with response: ". $response->{message}."\n";
     } else {
         my $error = $tx->res->json || $tx->res->error;
         my $errormessage = $error->{message} ? $error->{message} : $error;
-        print "Failed to push record ".$broadcastrecord->{biblionumber}." to ".$config->{interface_name}.": ".$errormessage."\n";
+        print "Failed to push record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{name}.": ".$errormessage."\n";
     }
 }
 
@@ -138,11 +193,12 @@ sub setToQueue {
 
     my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblionumber});
     if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
-        print "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue\n" if $self->verbose;
-        return;
+        print "Broadcast record ".$broadcastrecord->{biblio}->{biblionumber}." is already in queue\n" if $self->verbose;
+        return {status => 409, message => "Broadcast record ".$broadcastrecord->{biblio}->{biblionumber}." is already in queue"};
     };
     try {
-        my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{marcxml});
+        my $return = {status => 201, message => "Success"};
+        my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
         if ($encodingLevel eq 'lower') {
             $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
         } elsif ($encodingLevel eq 'equal') {
@@ -152,17 +208,22 @@ sub setToQueue {
             } elsif (!$timestamp && $broadcastrecord->{componentparts}) {
                 # If broadcast record has component parts, then we need to check if local record has component parts
                 $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
+                $return = {status => 200, message => "Equal encoding level and timestamp, checking component parts"};
             } else {
-                print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblionumber}."\n" if $self->verbose;
+                print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}};
             }
         } else {
             if ($broadcastrecord->{componentparts}) {
                 # If broadcast record has component parts, then we need to check if local record has component parts
                 $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
+                $return = {status => 200, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level, checking component parts"};
             } else {
-                print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblionumber}."\n" if $self->verbose;
+                print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
+                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}};
             }
         }
+        return $return;
     } catch {
         my $error = $_;
         print "Error while setting record ".$broadcastrecord->{biblionumber}." to queue: $error\n";
@@ -202,7 +263,7 @@ sub getQueue {
 
 sub checkBiblionumberQueueStatus {
     my ($self, $biblionumber) = @_;
-    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface);
+    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface, $self->getType);
     return $queue->{status};
 }
 
@@ -269,7 +330,75 @@ sub processExportQueue {
     my ($self) = @_;
     my $queue = $self->db->getPendingQueue('export');
     foreach my $queue (@$queue) {
-        warn Data::Dumper::Dumper $queue;
+        my $action;
+        my $target_id = $queue->{broadcast_biblio_id};
+        try {
+            $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
+            my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $queue->{broadcast_interface}});
+            if ($target_id) {
+                my $getResponse = $rest->apiCall({type => 'GET', data => {biblio_id => $target_id}, user_id => $queue->{user_id}});
+                if ($getResponse->is_success) {
+                    print "Got record ".$target_id." from ".$queue->{broadcast_interface}."\n";
+                    my $record = $getResponse->json->{marcjson} ? $getResponse->json->{marcjson} : $getResponse->json;
+                    my $remoterecord = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $record});
+                    if ($self->compareEncodingLevels($queue->{marc}, $remoterecord->toXML) eq 'lower') {
+                        die "Local record ".$queue->{biblio_id}." has lower encoding level than broadcast record ".$queue->{broadcast_biblio_id}."\n";
+                    } elsif (!$self->compareTimestamps($queue->{marc}, $remoterecord->toXML) ) {
+                        die "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}."\n";
+                    } else {
+                        my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), $self->getRecord($remoterecord->toXML));
+                        my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => encode_json($mergedrecord->as_xml_record)}, user_id => $queue->{user_id}});
+                        if ($putResponse->is_success) {
+                            print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";
+                            $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
+                        } else {
+                            die "Failed to update record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}.": ".$putResponse->error->message;
+                        }
+                    }
+                } else {
+                    die "Failed to get record ".$queue->{broadcast_biblio_id}." from ".$queue->{interface_name}.": ".$getResponse->message;
+                }
+            } else {
+                my $postResponse = $rest->apiCall({type => 'POST', data => {body => $queue->{marc}}, user_id => $queue->{user_id}});
+                if ($postResponse->is_success) {
+                    if ($queue->{componentparts}) {
+                        $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
+                        my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+                        my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id);
+                        unless ($results->{componentparts}) {
+                            $self->processNewExportComponentParts($queue->{broadcast_interface}, $self->getRecord($queue->{marc}), from_json($queue->{componentparts}), $queue->{user_id});
+                        }
+                    }
+                    print "Pushed record to ".$queue->{interface_name}." with response: ". $postResponse->message."\n";
+                } else {
+                    die "Failed to push record to ".$queue->{interface_name}.": ".$postResponse->message;
+                }
+            }
+        } catch {
+            my $error = $_;
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
+            print "Error while processing export queue: $error\n";
+        }
+    }
+}
+
+sub processNewExportComponentParts {
+    my ($self, $interface, $hostrecord, $componentparts, $user_id) = @_;
+    $componentparts = $self->sortComponentParts($componentparts);
+    my $hostcontrolnumber = '('.$hostrecord->field('003')->data.')'.$hostrecord->field('001')->data;
+    my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $interface});
+    foreach my $componentpart (@$componentparts) {
+        my $comprecord = $self->getRecord($componentpart->{marcxml});
+        if ($comprecord->subfield('773', 'w') ne $hostcontrolnumber) {
+            $comprecord->update('773', 'w' => $hostcontrolnumber);
+        }
+        my $response = $rest->apiCall({type => 'POST', data => {marc => $comprecord->as_xml_record}, user_id => $user_id});
+        if ($response->is_success) {
+            my $response = $response->json;
+            print "Pushed component part to ".$interface." with response: ". $response->{message}."\n";
+        } else {
+            die "Failed to push component part to ".$interface.": ".$response->message;
+        }
     }
 }
 

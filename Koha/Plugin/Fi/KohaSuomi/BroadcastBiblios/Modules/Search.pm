@@ -25,6 +25,8 @@ use JSON;
 use C4::Context;
 use Koha::SearchEngine::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::QueryParser;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU;
+use Mojo::UserAgent;
 
 =head new
 
@@ -39,6 +41,16 @@ sub new {
     bless($self, $class);
     return $self;
 
+}
+
+sub getConfig {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new;
+}
+
+sub ua {
+    my ($self) = @_;
+    return Mojo::UserAgent->new;
 }
 
 sub getHostRecord {
@@ -104,6 +116,89 @@ sub findByIdentifier {
         die "findByIdentifier():> Searching ($query):> Returned more than one record?";
     }
     return undef;
+}
+
+sub searchFromInterface {
+    my ($self, $interface_name, $identifiers, $biblio_id) = @_;
+
+    my $config = $self->getConfig->getInterfaceConfig($interface_name);
+    if ($config->{sruUrl} && $config->{sruUrl} ne "") {
+        foreach my $identifier (@$identifiers) {
+            my $queryparser = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::QueryParser->new({
+                interface => $interface_name,
+                interfaceType => "SRU",
+                identifier => $identifier->{identifier},
+                identifierField => $identifier->{identifier_field}
+            });
+            my $query = $queryparser->query;
+            my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new({
+                url => $config->{sruUrl},
+                query => $query
+            });
+            my $records = $sru->search();
+            my $componentparts;
+            if ($records) {
+                my $record = $records->[0];
+                if ($interface_name =~ /Melinda/i) {
+                    $componentparts = $self->searchSRUComponentParts($config->{sruUrl}, $record);
+                }
+                return {marcjson => $record, componentparts => $componentparts};
+            }
+        }
+    } else {
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => $config->{restSearch}});
+        my ($path, $headers) = $users->getAuthentication($config->{defaultUser});
+        $headers->{"Accept"} = "application/marc-in-json";
+        my $ua = $self->ua;
+        my $method = $config->{restSearchMethod};
+        my $response = $ua->$method($path => $headers => json => {identifiers => $identifiers, biblio_id => $biblio_id})->result;
+        if ($response->is_success) {
+            return $response->json;
+        } else {
+            die {status => $response->code, message => $response->message};
+        }
+
+    }
+    
+    return undef;
+
+}
+
+sub searchSRUComponentParts {
+    my ($self, $url, $record) = @_;
+
+    my $startRecord = 1;
+    my $maximumRecords = 25;
+    my @records;
+    my $f001;
+    foreach my $field ($record->{fields}) {
+        if ($field->{tag} eq "001") {
+            $f001 = $field->{value};
+            last;
+        }
+    }
+    while ($startRecord > 0) {
+        my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new({
+            startRecord => $startRecord,
+            maximumRecords => $maximumRecords,
+            url => $url,
+            query => "melinda.partsofhost=".$f001
+        });
+        my $records = $sru->search();
+
+        if ($records) {
+            push @records, $records;
+        }
+
+        if (scalar(@$records) < $maximumRecords) {
+            $startRecord = 0;
+            last;
+        } else {
+            $startRecord += $maximumRecords;
+        }
+    }
+
+    return \@records;
 }
 
 1;

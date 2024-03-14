@@ -23,6 +23,8 @@ use Scalar::Util qw( blessed );
 use Try::Tiny;
 use File::Basename;
 use YAML::XS;
+use JSON;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
 
 =head new
 
@@ -49,18 +51,56 @@ sub interface {
     return shift->{_params}->{interface};
 }
 
+sub interfaces {
+    my ($self) = @_;
+    return shift->{_params}->{interfaces};
+}
+
+sub notifyfields {
+    my ($self) = @_;
+    return shift->{_params}->{notifyfields};
+}
+
+sub getPlugin() {
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new();
+}
+
+sub getInterfaceConfig {
+    my ($self, $interface) = @_;
+    my $interfaces = $self->getConfig()->{interfaces};
+    foreach my $i (@$interfaces) {
+        if ($i->{name} eq $interface) {
+            return $i;
+        }
+    }
+}
+
 sub getConfig {
     my ($self) = @_;
+    
+    my $config = {
+        interfaces => $self->getPlugin()->retrieve_data('interfaces') || '[]',
+        notifyfields => $self->getPlugin()->retrieve_data('notifyfields') || '',
+    };
+    
+    $config->{interfaces} = from_json($config->{interfaces}) if $config->{interfaces};
+    
+    return $config;
 
-    my $configPath = $ENV{"KOHA_CONF"};
-    my($file, $path, $ext) = fileparse($configPath);
-    my $configfile = eval { YAML::XS::LoadFile($path.'broadcast-config.yaml') };
-    if ($@) {
-        warn "Error loading config file: $@";
-        return undef;
-    }
-    return $configfile->{$self->interface} if $configfile->{$self->interface};
-    return $configfile;
+}
+
+sub setConfig {
+    my ($self) = @_;
+
+    $self->getPlugin()->store_data({
+        interfaces => to_json($self->interfaces),
+        notifyfields => $self->notifyfields,
+    });
+}
+
+sub getSecret {
+    my ($self) = @_;
+    return $self->getPlugin()->retrieve_data('secret');
 }
 
 1;
