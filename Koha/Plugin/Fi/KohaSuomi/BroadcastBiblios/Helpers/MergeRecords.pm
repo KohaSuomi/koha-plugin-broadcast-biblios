@@ -44,6 +44,11 @@ sub interface {
     return $self->{_params}->{interface};
 }
 
+sub verbose {
+    my ($self) = @_;
+    return $self->{_params}->{verbose};
+}
+
 sub merge {
     my ($self, $queueRecord, $record) = @_;
 
@@ -83,7 +88,7 @@ sub merge {
         my $field = $merged->field($remove->{tag});
         $merged->delete_fields($field) if $field;
     }
-    print $merged->as_formatted();
+    print $merged->as_formatted() if $self->verbose();
     return $merged;
 }
 
