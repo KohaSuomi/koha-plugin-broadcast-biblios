@@ -83,10 +83,11 @@ sub users {
 
 sub apiCall {
     my ($self, $params) = @_;
-    print Data::Dumper::Dumper($params);
-    my $user_id = $self->getConfig->{defaultUser};
+
+    my $user_id = $params->{user_id} || $self->getConfig->{defaultUser};
     my $type = $params->{type};
     my $data = $params->{data};
+
     my $restEndpoint = $self->getConfig->{$self->getRESTEndpoint($type)};
     my ($path, $headers) = $self->users($restEndpoint)->getAuthentication($user_id);
     $headers = $self->headers($type, $headers);
@@ -94,6 +95,7 @@ sub apiCall {
     my $method = $self->getConfig->{$self->getRESTMethod($type)} ? $self->getConfig->{$self->getRESTMethod($type)} : $type;
     $method = lc($method);
     my $body = $params->{data}->{body};
+    
     my $response = $self->call($method, $path, $headers, $body)->result;
     return $response;
 }
