@@ -32,6 +32,7 @@ export default {
       localStatus: '',
       remoteStatus: '',
       showExportButton: false,
+      interfaceType: '',
       remoteRecordId: '',
       disabled: false,
     };
@@ -53,6 +54,7 @@ export default {
         this.remoteEncodingLevel = recordParser.recordEncodingLevel(response.data.marcjson);
         this.remoteStatus = recordParser.recordStatus(response.data.marcjson);
         this.remoteRecordId = recordParser.recordId(response.data.marcjson);
+        this.interfaceType = this.config.interfaceType(this.selectedInterface);
         this.loader = false;
       } ).catch((error) => {
         this.errors.setError(error);
@@ -142,7 +144,7 @@ export default {
             </div>
           </div>
           <div class="modal-footer">
-            <button v-if="showExportButton" class="btn btn-secondary" style="float:none;" @click="exportRecord()">Vie</button>\
+            <button v-if="showExportButton && interfaceType == 'export'" class="btn btn-secondary" style="float:none;" @click="exportRecord()">Vie</button>\
             <button class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">Tuo</button>\
             <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
           </div>

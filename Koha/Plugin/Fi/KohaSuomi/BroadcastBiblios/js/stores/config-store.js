@@ -35,5 +35,8 @@ export const useConfigStore = defineStore("config", {
         errorStore.setError(error);
       }
     },
+    interfaceType(interface_name) {
+      return this.interfaces.find((i) => i.name === interface_name).type;
+    }
   },
 });
