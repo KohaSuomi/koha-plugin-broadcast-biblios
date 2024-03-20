@@ -191,24 +191,24 @@ export default {
                 <input type="text" class="form-control" id="restUrl" placeholder="Osoite" v-model="selectedInterface.restUrl">
                 <small id="restUrlHelp" class="form-text text-muted">Esim. https://tati.koha-suomi.fi</small>
             </div>
+            <div class="form-group">
+                <div class="row">
+                  <div class="col-9">
+                    <label for="restSearch" class="col-form-label">Search-endpoint</label>
+                    <input type="text" class="form-control" id="restSearch" v-model="selectedInterface.restSearch">
+                    <small id="restSearchHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
+                  </div>
+                  <div class="col-3">
+                    <label for="restGetMethod" class="col-form-label">Method</label>
+                    <select class="form-control" id="restSearchMethod" v-model="selectedInterface.restSearchMethod">
+                        <option selected value="">Valitse</option>
+                        <option value="get">GET</option>
+                        <option value="post">POST</option>
+                    </select>
+                  </div>
+                </div>
+            </div>
             <div v-if="selectedInterface.type === 'export'">
-              <div class="form-group">
-                  <div class="row">
-                      <div class="col-9">
-                        <label for="restSearch" class="col-form-label">Search-endpoint</label>
-                        <input type="text" class="form-control" id="restSearch" v-model="selectedInterface.restSearch">
-                        <small id="restSearchHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
-                      </div>
-                      <div class="col-3">
-                        <label for="restGetMethod" class="col-form-label">Method</label>
-                        <select class="form-control" id="restSearchMethod" v-model="selectedInterface.restSearchMethod">
-                            <option selected value="">Valitse</option>
-                            <option value="get">GET</option>
-                            <option value="post">POST</option>
-                        </select>
-                      </div>
-                    </div>
-              </div>
               <div class="form-group">
                   <div class="row">
                       <div class="col-9">
