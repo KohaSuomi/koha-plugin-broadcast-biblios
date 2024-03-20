@@ -145,8 +145,8 @@ export default {
     <div class="form-group">
       <label for="name" class="col-form-label">Ilmoita kentistä (erota pilkulla):</label>
       <input type="text" class="form-control" id="notifyfields" v-model="config.notifyfields">
-  </div>
-  <hr/>
+    </div>
+    <hr/>
         <div class="form-group row">
             <div class="col-9">
                 <select class="form-control" id="interfaces" @change="selectedInterfaceChanged($event)" v-model="interfaceName">
@@ -172,6 +172,10 @@ export default {
                 <select class="form-control" id="type" v-model="selectedInterface.type">
                     <option v-for="type in interfaceTypes" :value="type.id">{{ type.name }}</option>
                 </select>
+            </div>
+            <div class="form-check py-3">
+                <input class="form-check-input" type="checkbox" value="" id="onDropdown" v-model="selectedInterface.onDropdown">
+                <label for="onDropdown" class="form-check-label">Näytä rajapinta valikossa</label>
             </div>
             <div class="form-group">
                 <label for="defaultUser" class="col-form-label">Oletuskäyttäjä</label>

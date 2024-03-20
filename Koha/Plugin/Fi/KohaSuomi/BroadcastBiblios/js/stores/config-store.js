@@ -11,8 +11,8 @@ export const useConfigStore = defineStore("config", {
     };
   },
   getters: {
-    exportInterfaces() {
-      return this.interfaces.filter((i) => i.type === "export");
+    onDropdown() {
+      return this.interfaces.filter((i) => i.onDropdown === true);
     },
   },
   actions: {

@@ -102,10 +102,10 @@ export default {
     }
   },
   template: `
-    <div class="btn-group" style="margin-left: 5px;">
+    <div v-if="config.onDropdown.length > 0" class="btn-group" style="margin-left: 5px;">
       <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> Vie/Tuo <span class="caret"></span></button>
       <ul id="pushInterfaces" class="dropdown-menu">
-        <li v-for="interface in config.exportInterfaces" :key="interface.name">
+        <li v-for="interface in config.onDropdown" :key="interface.name">
           <a href="#" @click="openModal($event)">{{ interface.name }}</a>
         </li>
       </ul>
