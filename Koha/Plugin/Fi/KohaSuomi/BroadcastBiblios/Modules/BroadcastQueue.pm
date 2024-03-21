@@ -35,6 +35,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MergeRecords;
 use JSON;
+use Encode;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode);
 use MARC::Field;
 
@@ -142,7 +143,7 @@ sub transferRecord {
                     my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $part->{marcjson}});
                     push @$parts, {
                         biblionumber => $part->{biblionumber},
-                        marcxml => $marc->toXML()
+                        marcxml => Encode::decode_utf8($marc->toXML()),
                     };
                 }
             }
@@ -158,7 +159,7 @@ sub transferRecord {
                 hostrecord => $parts ? 1 : 0,
             });
         } else {
-            die "Failed to update record $biblio_id\n";
+            die "Failed to transfer record $biblio_id\n";
         }
     } catch {
         my $error = $_;
