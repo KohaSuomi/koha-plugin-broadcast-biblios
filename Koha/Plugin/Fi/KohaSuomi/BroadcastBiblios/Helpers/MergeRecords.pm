@@ -58,9 +58,9 @@ sub merge {
 
     my $filters = {};
 
-    if ($interface =~ /Melinda/i) {
+    if (defined($interface) && $interface =~ /Melinda/i) {
         $filters = $self->MelindaMerge();
-    } elsif ($interface =~ /Tati/i) {
+    } elsif (defined($interface) && $interface =~ /Tati/i) {
         $filters = $self->TatiMerge();
     } else {
         $filters = $self->KohaFilters();
