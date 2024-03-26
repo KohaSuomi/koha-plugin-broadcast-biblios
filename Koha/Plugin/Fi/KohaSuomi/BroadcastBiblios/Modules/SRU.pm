@@ -99,7 +99,9 @@ sub xmlPath {
 sub ua {
     my ($self) = @_;
     my $ua = Mojo::UserAgent->new;
-    $ua->proxy->https('socks://127.0.0.1:1337');
+    if ($ENV{MOJO_PROXY}) {
+        $ua->proxy->https($ENV{MOJO_PROXY});
+    }
     return $ua;
 }
 
@@ -140,7 +142,12 @@ sub search {
 sub getRecords {
     my ($self, $res) = @_;
 
-    my $xml = XML::LibXML->load_xml(string => $res);
+    my $xml = eval { XML::LibXML->load_xml(string => $res) };
+
+    if ($@) {
+        return { status => 400, message => $@ };
+    }
+
     my @sruRecords = $xml->findnodes($self->xmlPath());
     my @records;
 

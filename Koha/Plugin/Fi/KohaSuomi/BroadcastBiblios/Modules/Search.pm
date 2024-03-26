@@ -149,6 +149,11 @@ sub searchFromInterface {
                 }
                 my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new($params);
                 my $records = $sru->search();
+
+                if ($records->{status}) {
+                    die {status => $records->{status}, message => "SRU search failed: ".$records->{message}};
+                }
+
                 my $componentparts = [];
                 if ($records) {
                     my $record = $records->[0];
