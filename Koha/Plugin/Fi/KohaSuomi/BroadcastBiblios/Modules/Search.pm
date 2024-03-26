@@ -131,6 +131,7 @@ sub searchFromInterface {
 
     my $config = $self->getConfig->getInterfaceConfig($interface_name);
     if ($config->{sruUrl} && $config->{sruUrl} ne "") {
+        push @$identifiers, {identifier => $biblio_id, identifier_field => "biblio_id"} if $biblio_id;
         foreach my $identifier (@$identifiers) {
             my $queryparser = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::QueryParser->new({
                 interface => $interface_name,

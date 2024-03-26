@@ -121,6 +121,7 @@ sub melindaSRUSearch {
     }
     return "bath.isbn=".$self->getIdentifier() if $self->getIdentifierField eq "020a";
     return "dc.identifier=".$self->getIdentifier() if $self->getIdentifierField eq "024a";
+    return "rec.id=".$self->getIdentifier() if $self->getIdentifierField eq "biblio_id";
 }
 
 1;
