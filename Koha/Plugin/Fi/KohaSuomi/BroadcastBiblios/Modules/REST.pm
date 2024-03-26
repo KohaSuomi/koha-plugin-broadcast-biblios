@@ -74,7 +74,7 @@ sub ua {
     my ($self) = @_;
     my $ua = Mojo::UserAgent->new;
     if ($ENV{MOJO_PROXY}) {
-        $ua->proxy->https($ENV{MOJO_PROXY});
+        $ua->proxy->http($ENV{MOJO_PROXY})->https($ENV{MOJO_PROXY});
     }
     return $ua;
 }
