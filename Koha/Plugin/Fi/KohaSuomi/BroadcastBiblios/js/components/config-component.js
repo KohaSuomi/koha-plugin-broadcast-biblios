@@ -80,7 +80,7 @@ export default {
       }
     },
     async isValid() {
-      this.errors.clearError();
+      this.errors.clear();
       let valid = true;
       if (!this.selectedInterface.name) {
         this.errors.setError("Nimi on pakollinen");

@@ -32,9 +32,11 @@ export default {
       localStatus: '',
       remoteStatus: '',
       showExportButton: false,
+      showImportButton: true,
       interfaceType: '',
-      remoteRecordId: '',
+      remoteRecordId: null,
       disabled: false,
+      componentPartsEqual: true,
     };
   },
   created() {
@@ -48,12 +50,19 @@ export default {
   },
   methods: {
     search() {
+      this.remoteRecord = '';
+      this.showExportButton = false;
+      this.showImportButton = true;
+      this.errors.clear();
+      this.records.saved = false;
       this.loader = true;
       this.records.search(this.biblio_id, this.selectedInterface).then((response) => {
-        this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
-        this.remoteEncodingLevel = recordParser.recordEncodingLevel(response.data.marcjson);
-        this.remoteStatus = recordParser.recordStatus(response.data.marcjson);
-        this.remoteRecordId = recordParser.recordId(response.data.marcjson);
+        if (Object.keys(response.data.marcjson).length > 0) {
+          this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
+          this.remoteEncodingLevel = recordParser.recordEncodingLevel(response.data.marcjson);
+          this.remoteStatus = recordParser.recordStatus(response.data.marcjson);
+          this.remoteRecordId = recordParser.recordId(response.data.marcjson);
+        }
         this.interfaceType = this.config.interfaceType(this.selectedInterface);
         this.loader = false;
       } ).catch((error) => {
@@ -63,7 +72,15 @@ export default {
         this.localRecord = recordParser.recordAsHTML(this.records.marcjson);
         this.localEncodingLevel = recordParser.recordEncodingLevel(this.records.marcjson);
         this.localStatus = recordParser.recordStatus(this.records.marcjson);
-        this.compareRecords();
+        if (this.remoteRecord) {
+          this.compareRecords();
+        } else {
+          this.showImportButton = false;
+          if (this.interfaceType == 'export') {
+            this.showExportButton = true;
+          }
+        }
+        this.checkComponentParts();
       });
     },
     importRecord() {
@@ -72,6 +89,21 @@ export default {
     },
     exportRecord() {
       this.records.transfer(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId, 'export');
+    },
+    async exportComponentParts() {
+      for (const part of this.records.componentparts) {
+        const response = await this.processPart(part);
+        if (response.status == 200 || response.status == 201) {
+          this.records.saved = true;
+          this.errors.clear();
+        }
+      }
+    },
+    async processPart(part) {
+      const biblio_id = part.biblionumber;
+      const linkIdentifier = recordParser.hostComponentPartLink(this.records.remotemarcjson);
+      const marcjson = recordParser.updateLinkField(part.marcjson, linkIdentifier);
+      return this.records.transferComponentPart(biblio_id, this.patron_id, this.selectedInterface, 'export', marcjson);
     },
     openModal(event) {
       this.selectedInterface = event.target.text;
@@ -101,6 +133,17 @@ export default {
       if (!hasMelinda && this.selectedInterface.includes('Melinda')) {
         this.showExportButton = false;
       }
+    },
+    checkComponentParts() {
+      let localParts = this.records.componentparts.length;
+      let remoteParts = 0;
+      if (this.records.remotecomponentparts) {
+        remoteParts = this.records.remotecomponentparts.length;
+      }
+      if (localParts != remoteParts && remoteParts == 0 && this.remoteRecord) {
+        this.componentPartsEqual = false;
+        this.errors.setError("Osakohteiden määrä ei täsmää: " + localParts + " vs. " + remoteParts);
+      } 
     }
   },
   template: `
@@ -145,7 +188,8 @@ export default {
           </div>
           <div class="modal-footer">
             <button v-if="showExportButton && interfaceType == 'export'" class="btn btn-secondary" style="float:none;" @click="exportRecord()">Vie</button>\
-            <button class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">Tuo</button>\
+            <button v-if="componentPartsEqual && showImportButton" class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">Tuo</button>\
+            <button v-if="!componentPartsEqual && interfaceType == 'export'" class="btn btn-danger" style="float:none;" @click="exportComponentParts()">Vie osakohteet</button>\
             <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
           </div>
         </div>

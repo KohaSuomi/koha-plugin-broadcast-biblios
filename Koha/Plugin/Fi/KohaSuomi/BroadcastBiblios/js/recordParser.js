@@ -113,6 +113,35 @@ export const systemControlNumbers = (record) => {
     return controlNumbers;
 }
 
+export const hostComponentPartLink = (record) => {
+    let controlNumber = '';
+    let controlNumberIdentifier = '';
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '001') {
+            controlNumber = v.value;
+        }
+        if (v.tag == '003') {
+            controlNumberIdentifier = v.value;
+        }
+    });
+    return '('+controlNumberIdentifier + ')' + controlNumber;
+}
+
+export const updateLinkField = (record, value) => {
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '773') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                    if (v.code == 'w') {
+                        v.value = value;
+                    }
+                });
+            }
+        }
+    });
+    return record;
+}
+
 export const recordId = (record) => {
     let recordId = '';
     let controlNumber = '';

@@ -70,7 +70,7 @@ export default {
         this.userId = '';
     },
     async isValid() {
-        this.errors.clearError();
+        this.errors.clear();
         if (!this.selectedUser.username) {
             this.errors.setError("Tunnus puuttuu");
         }

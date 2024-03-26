@@ -304,6 +304,7 @@ sub _biblio_wrapper {
     my ($format, $biblio, $identifiers) = @_;
 
     my $convert = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new();
+    my $componentParts = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts->new();
 
     my $componentparts = $biblio->get_marc_components(C4::Context->preference('MaxComponentRecords'));
     my $components;
@@ -315,7 +316,7 @@ sub _biblio_wrapper {
     my $bibliowrapper = {
         $format => $format eq 'marcjson' ? $convert->toJSON($biblio->metadata->metadata) : $biblio->metadata->metadata,
         biblionumber => $biblio->biblionumber,
-        componentparts => $components
+        componentparts => $componentParts->sortComponentParts($components)
     };
 
     $bibliowrapper->{identifiers} = $identifiers if $identifiers;

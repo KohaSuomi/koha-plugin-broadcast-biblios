@@ -38,8 +38,19 @@ export const useRecordStore = defineStore("record", {
     },
     async transfer(biblio_id, patron_id, interface_name, remote_id, type) {
       try {
-        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/transfer`, { marcjson: this.remotemarcjson, componentparts: this.remotecomponentparts, interface_name: interface_name, patron_id: patron_id, remote_id: remote_id, type: type });
+        const marcjson = type == 'import' ? this.remotemarcjson : this.marcjson;
+        const componentparts = type == 'import' ? this.remotecomponentparts : this.componentparts;
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/transfer`, { marcjson: marcjson, componentparts: componentparts, interface_name: interface_name, patron_id: patron_id, remote_id: remote_id, type: type });
         this.saved = true;
+      } catch (error) {
+        const errorStore = useErrorStore();
+        errorStore.setError(error);
+      }
+    },
+    async transferComponentPart(biblio_id, patron_id, interface_name, type, marcjson) {
+      try {
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/transfer`, { interface_name: interface_name, patron_id: patron_id, type: type, marcjson: marcjson});
+        return response;
       } catch (error) {
         const errorStore = useErrorStore();
         errorStore.setError(error);

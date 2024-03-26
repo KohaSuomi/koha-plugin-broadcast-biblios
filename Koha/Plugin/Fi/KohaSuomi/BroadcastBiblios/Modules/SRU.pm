@@ -98,7 +98,9 @@ sub xmlPath {
 
 sub ua {
     my ($self) = @_;
-    return Mojo::UserAgent->new;
+    my $ua = Mojo::UserAgent->new;
+    $ua->proxy->https('socks://127.0.0.1:1337');
+    return $ua;
 }
 
 sub MarcXMLToJSON {
@@ -130,7 +132,6 @@ sub search {
     my ($self) = @_;
 
     my $path = $self->buildPath();
-    warn "SRU path: ".$path ."\n";
     my $res = $self->buildTX('GET', $path);
     my $records = $self->getRecords($res->res->body);
     return $records;

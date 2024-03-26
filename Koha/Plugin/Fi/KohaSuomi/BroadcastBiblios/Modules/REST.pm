@@ -60,6 +60,11 @@ sub interface {
     return shift->{_params}->{interface};
 }
 
+sub verbose {
+    my ($self) = @_;
+    return shift->{_params}->{verbose};
+}
+
 sub getConfig {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new->getInterfaceConfig($self->interface);
@@ -67,7 +72,9 @@ sub getConfig {
 
 sub ua {
     my ($self) = @_;
-    return Mojo::UserAgent->new;
+    my $ua = Mojo::UserAgent->new;
+    $ua->proxy->https("socks://127.0.0.1:1337");
+    return $ua;
 }
 
 sub MarcXMLToJSON {
@@ -84,19 +91,22 @@ sub users {
 sub apiCall {
     my ($self, $params) = @_;
 
+    $params = $self->interfaceActions($self->interface, $params);
     my $user_id = $params->{user_id} || $self->getConfig->{defaultUser};
     my $type = $params->{type};
     my $data = $params->{data};
+    my $format = $params->{format};
 
     my $restEndpoint = $self->getConfig->{$self->getRESTEndpoint($type)};
-    my ($path, $headers) = $self->users($restEndpoint)->getAuthentication($user_id);
+    my $path = $self->parseRestData($restEndpoint, $data);
+    my $headers;
+    ($path, $headers) = $self->users($path)->getAuthentication($user_id);
     $headers = $self->headers($type, $headers);
-    $path = $self->parseRestData($path, $data);
     my $method = $self->getConfig->{$self->getRESTMethod($type)} ? $self->getConfig->{$self->getRESTMethod($type)} : $type;
     $method = lc($method);
     my $body = $params->{data}->{body};
     
-    my $response = $self->call($method, $path, $headers, $body)->result;
+    my $response = $self->call($method, $path, $headers, $format, $body)->result;
     return $response;
 }
 
@@ -126,11 +136,8 @@ sub getRESTMethod {
 
 sub parseRestData {
     my ($self, $path, $data) = @_;
-
-    if ($path =~ /{biblio_id}/) {
-        $path =~ s/{biblio_id}/$data->{biblio_id}/g;
-    }
-
+    $path =~ s/{biblio_id}/$data->{biblio_id}/g;
+    $path =~ s/%7Bbiblio_id%7D/$data->{biblio_id}/g;
     return $path;
 }
 
@@ -139,6 +146,7 @@ sub headers {
     
     if ($type eq "GET" || $type eq "SEARCH") {
         $headers->{"Accept"} = "application/marc-in-json" unless $self->interface =~ /Melinda/i;
+        $headers->{"Accept"} = "application/json" if $self->interface =~ /Melinda/i;
         
     }
 
@@ -146,11 +154,22 @@ sub headers {
 }
 
 sub call {
-    my ($self, $method, $path, $headers, $body) = @_;
-
-    my $response = $self->ua->$method($path => $headers);
-    $response = $self->ua->$method($path => $headers => $body) if defined $body && $body;
+    my ($self, $method, $path, $headers, $format, $body) = @_;
+    my $response = $self->ua->inactivity_timeout(180)->$method($path => $headers);
+    $response = $self->ua->inactivity_timeout(180)->$method($path => $headers => $body) if defined $body && $body;
+    $response = $self->ua->inactivity_timeout(180)->$method($path => $headers => $format => $body) if defined $format && ($format eq "json" || $format eq "form") && defined $body && $body;
+    print Data::Dumper::Dumper $response->result if $response->result->is_error && $self->verbose();
     return $response;
+}
+
+sub interfaceActions {
+    my ($self, $interface, $params) = @_;
+
+    if ($interface =~ /Melinda/i) {
+        $params->{format} = "json";
+    }
+
+    return $params;
 }
 
 1;

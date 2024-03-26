@@ -158,4 +158,15 @@ sub fetchIdentifiers {
     return \@identifiers;
 }
 
+sub get001Identifier {
+    my ($self, $marc) = @_;
+    my $record = $self->getRecord($marc);
+    return unless $record;
+    my $f001;
+    if ($record->field('001')) {
+        $f001 = $record->field('001')->data;
+    }
+    return $f001;
+}
+
 1;

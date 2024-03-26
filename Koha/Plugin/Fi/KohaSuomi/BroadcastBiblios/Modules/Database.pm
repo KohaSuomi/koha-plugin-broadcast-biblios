@@ -234,6 +234,16 @@ sub getQueuedRecordByBiblionumber {
     return $result;
 }
 
+sub getQueuedRecordByBiblioId {
+    my ($self, $biblio_id, $interface, $type) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE biblio_id = ? AND broadcast_interface = ? AND type = ? order by id desc limit 1");
+    $sth->execute($biblio_id, $interface, $type);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
 sub countQueue {
     my ($self, $status, $biblio_id) = @_;
     my $dbh = $self->dbh;

@@ -64,14 +64,16 @@ sub merge {
         $filters = $self->TatiMerge();
     }
 
-    foreach my $recordField ($record->fields) {
-        foreach my $keep (@{$filters->{keep}}) {
-            if (defined($keep->{tag}) && $keep->{tag} eq $recordField->tag) {
-                $merged->append_fields($recordField->tag);
-            }
-            foreach my $recordSubfields ($recordField->subfields) {
-                if (defined($keep->{code}) && $keep->{code} eq $recordSubfields->[0]) {
-                    $merged->insert_fields_ordered($recordField);
+    if ($record) {
+        foreach my $recordField ($record->fields) {
+            foreach my $keep (@{$filters->{keep}}) {
+                if (defined($keep->{tag}) && $keep->{tag} eq $recordField->tag && !$merged->field($recordField->tag)) {
+                    $merged->append_fields($recordField);
+                }
+                foreach my $recordSubfields ($recordField->subfields) {
+                    if (defined($keep->{code}) && $keep->{code} eq $recordSubfields->[0]) {
+                        $merged->insert_fields_ordered($recordField);
+                    }
                 }
             }
         }
@@ -88,7 +90,7 @@ sub merge {
         my $field = $merged->field($remove->{tag});
         $merged->delete_fields($field) if $field;
     }
-    print $merged->as_formatted() if $self->verbose();
+    print $merged->as_formatted()."\n" if $self->verbose();
     return $merged;
 }
 
@@ -121,7 +123,7 @@ sub MelindaMerge {
             ind1 => ' ',
             ind2 => ' ',
             subfields => {
-                'a' => 'FI-Tati'
+                'a' => 'TATI'
             }
         }
     );

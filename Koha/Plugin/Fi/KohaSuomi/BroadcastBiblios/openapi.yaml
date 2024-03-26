@@ -592,7 +592,7 @@
               description: "Patron's id"
             remote_id:
               type: 
-                - integer
+                - string
                 - "null"
               description: "Remote id"
             componentparts:

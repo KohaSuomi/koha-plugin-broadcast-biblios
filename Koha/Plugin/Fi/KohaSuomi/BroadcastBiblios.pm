@@ -21,7 +21,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 
 ## Here we set our plugin version
-our $VERSION = "2.5.1";
+our $VERSION = "2.5.2";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
@@ -419,7 +419,7 @@ sub create_queue_table {
         `biblio_id` int(11) DEFAULT NULL,
         `status` ENUM('pending','processing','completed','failed') DEFAULT 'pending',
         `statusmessage` varchar(255) DEFAULT NULL,
-        `broadcast_biblio_id` int(11) NOT NULL,
+        `broadcast_biblio_id` varchar(50) DEFAULT NULL,
         `hostrecord` tinyint(1) NOT NULL DEFAULT 0,
         `componentparts` longtext DEFAULT NULL,
         `marc` longtext NOT NULL,
@@ -442,7 +442,7 @@ sub create_users_table {
         `auth_type` ENUM('basic', 'oauth') DEFAULT 'basic',
         `broadcast_interface` varchar(30) NOT NULL,
         `username` varchar(50) DEFAULT NULL,
-        `password` varchar(50) DEFAULT NULL,
+        `password` varchar(255) DEFAULT NULL,
         `client_id` varchar(50) DEFAULT NULL,
         `client_secret` varchar(50) DEFAULT NULL,
         `access_token` varchar(100) DEFAULT NULL,
@@ -473,6 +473,11 @@ sub upgrade_db {
 
     if ($VERSION eq "2.5.1") {
         $dbh->do("ALTER TABLE `$log_table` MODIFY `type` ENUM('export','import','old') DEFAULT 'import'");
+    }
+
+    if ($VERSION eq "2.5.2") {
+        $dbh->do("ALTER TABLE `$queue_table` MODIFY `broadcast_biblio_id` varchar(50) DEFAULT NULL");
+        $dbh->do("ALTER TABLE `$users_table` MODIFY `password` varchar(255) DEFAULT NULL");
     }
 }
 

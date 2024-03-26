@@ -26,6 +26,7 @@ use C4::Context;
 use Koha::SearchEngine::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::QueryParser;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
 use Mojo::UserAgent;
 
 =head new
@@ -51,6 +52,13 @@ sub getConfig {
 sub ua {
     my ($self) = @_;
     return Mojo::UserAgent->new;
+}
+
+sub getRecord {
+    my ($self, $marcxml) = @_;
+
+    my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+    return $biblios->getRecord($marcxml);
 }
 
 sub getHostRecord {
@@ -131,18 +139,25 @@ sub searchFromInterface {
                 identifierField => $identifier->{identifier_field}
             });
             my $query = $queryparser->query;
-            my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new({
-                url => $config->{sruUrl},
-                query => $query
-            });
-            my $records = $sru->search();
-            my $componentparts;
-            if ($records) {
-                my $record = $records->[0];
+            if ($query) {
+                my $params = {
+                    url => $config->{sruUrl},
+                    query => $query
+                };
                 if ($interface_name =~ /Melinda/i) {
-                    $componentparts = $self->searchSRUComponentParts($config->{sruUrl}, $record);
+                    $params->{version} = "2.0";
                 }
-                return {marcjson => $record, componentparts => $componentparts};
+                my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new($params);
+                my $records = $sru->search();
+                my $componentparts = [];
+                if ($records) {
+                    my $record = $records->[0];
+                    if ($interface_name =~ /Melinda/i && $record->{fields}) {
+                        $componentparts = $self->searchSRUComponentParts($config->{sruUrl}, $record);
+                    }
+                    
+                    return {marcjson => $record, componentparts => $componentparts};
+                }
             }
         }
     } else {
@@ -169,9 +184,9 @@ sub searchSRUComponentParts {
 
     my $startRecord = 1;
     my $maximumRecords = 25;
-    my @records;
+    my @results = ();
     my $f001;
-    foreach my $field ($record->{fields}) {
+    foreach my $field (@{$record->{fields}}) {
         if ($field->{tag} eq "001") {
             $f001 = $field->{value};
             last;
@@ -187,7 +202,16 @@ sub searchSRUComponentParts {
         my $records = $sru->search();
 
         if ($records) {
-            push @records, $records;
+            foreach my $record (@$records) {
+                my $f001;
+                foreach my $field (@{$record->{fields}}) {
+                    if ($field->{tag} eq "001") {
+                        $f001 = $field->{value};
+                        last;
+                    }
+                }
+                push @results, {marcjson => $record, biblionumber => $f001};
+            }
         }
 
         if (scalar(@$records) < $maximumRecords) {
@@ -198,7 +222,7 @@ sub searchSRUComponentParts {
         }
     }
 
-    return \@records;
+    return \@results;
 }
 
 1;

@@ -16,7 +16,7 @@ export const useErrorStore = defineStore('error', {
                 this.errors.push(error.response.data.error);
             }
         },
-        clearError() {
+        clear() {
             this.errors = [];
         },
     },

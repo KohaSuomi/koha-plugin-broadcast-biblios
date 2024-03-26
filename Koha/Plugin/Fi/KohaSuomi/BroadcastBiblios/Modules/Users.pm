@@ -26,7 +26,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config;
 use C4::Context;
-use Crypt::JWT;
+use Crypt::JWT qw(encode_jwt decode_jwt);
 use Mojo::UserAgent;
 use Koha::Logger;
 
@@ -110,7 +110,7 @@ sub addUser {
         die {message => "User already exists", status => 409};
     }
     if ($params->{password}) {
-        $params->{password} = Crypt::JWT::encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+        $params->{password} = encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
     }
     $self->db->insertUser($params);
     return {message => "User added", status => 201};
@@ -123,7 +123,7 @@ sub updateUser {
         die {error => "User not found", status => 404};
     }
     if ($params->{password}) {
-        $params->{password} = Crypt::JWT::encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+        $params->{password} = encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
     }
     $self->db->updateUser($user_id, $params);
     return {message => "User updated", status => 200};
@@ -157,7 +157,10 @@ sub getAuthentication {
 
 sub basicAuth {
     my ($self, $user) = @_;
-    my $password = Crypt::JWT::decode_jwt(token => $user->{password}, key => $self->getSecret)->{payload};
+    my $password = eval { decode_jwt(token => $user->{password}, key => $self->getSecret)};
+    if ($@) {
+        die "Error while decoding password " . $@ . "\n";
+    }
     my $authentication = $user->{username} . ":" . $password;
     my $path = Mojo::URL->new($self->getPath)->userinfo($authentication);
     my $headers = {'Content-Type' => 'application/json'};

@@ -66,7 +66,7 @@ sub query {
     my $query;
 
     if ($self->getInterfaceType eq "SRU") {
-        if ($self->getInterface =~ /melinda/) {
+        if ($self->getInterface =~ /Melinda/i) {
             $query = $self->melindaSRUSearch();
         } else {
             $query = $self->kohaSRUSearch();
@@ -114,7 +114,13 @@ sub kohaSRUSearch {
 
 sub melindaSRUSearch {
     my ($self) = @_;
-
+    if ($self->getIdentifierField eq "035a" && $self->getIdentifier() =~ /FI-MELINDA/i) {
+        my $identifier = $self->getIdentifier();
+        $identifier =~ s/\D//g;
+        return 'rec.id='.$identifier;
+    }
+    return "bath.isbn=".$self->getIdentifier() if $self->getIdentifierField eq "020a";
+    return "dc.identifier=".$self->getIdentifier() if $self->getIdentifierField eq "024a";
 }
 
 1;
