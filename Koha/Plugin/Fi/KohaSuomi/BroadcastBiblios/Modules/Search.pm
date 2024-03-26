@@ -150,7 +150,7 @@ sub searchFromInterface {
                 my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new($params);
                 my $records = $sru->search();
 
-                if ($records->{status}) {
+                if (ref($records) eq "HASH") {
                     die {status => $records->{status}, message => "SRU search failed: ".$records->{message}};
                 }
 
