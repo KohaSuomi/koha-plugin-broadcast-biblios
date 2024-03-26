@@ -372,7 +372,8 @@ sub processExportQueue {
                         }
                     }
                 } else {
-                    die "Failed to get record ".$queue->{broadcast_biblio_id}." from ".$queue->{broadcast_interface}.": ".$getResponse->message;
+                    my $message = $getResponse->{message} ? $getResponse->{message} : $getResponse->message;
+                    die "Failed to get record ".$queue->{broadcast_biblio_id}." from ".$queue->{broadcast_interface}.": ".$message;
                 }
             } else {
                 my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), undef);
