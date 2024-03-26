@@ -208,14 +208,14 @@ sub searchSRUComponentParts {
 
         if ($records) {
             foreach my $record (@$records) {
-                my $f001;
+                my $biblio_id;
                 foreach my $field (@{$record->{fields}}) {
                     if ($field->{tag} eq "001") {
-                        $f001 = $field->{value};
+                        $biblio_id = $field->{value};
                         last;
                     }
                 }
-                push @results, {marcjson => $record, biblionumber => $f001};
+                push @results, {marcjson => $record, biblionumber => $biblio_id};
             }
         }
 
