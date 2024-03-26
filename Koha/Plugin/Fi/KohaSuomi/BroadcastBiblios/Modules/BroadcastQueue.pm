@@ -343,11 +343,12 @@ sub processExportQueue {
         try {
             $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
             my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $queue->{broadcast_interface}, verbose => $self->verbose});
+            my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
             if ($target_id) {
-                my $getResponse = $rest->apiCall({type => 'GET', data => {biblio_id => $target_id}, user_id => $queue->{user_id}});
-                if ($getResponse->is_success) {
+                my $getResponse = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id);
+                if ($getResponse->{marcjson}) {
                     print "Got record ".$target_id." from ".$queue->{broadcast_interface}."\n";
-                    my $record = $getResponse->json->{marcjson} ? $getResponse->json->{marcjson} : $getResponse->json;
+                    my $record = $getResponse->{marcjson};
                     my $remoterecord = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $record});
                     if ($self->compareEncodingLevels($queue->{marc}, $remoterecord->toXML) eq 'lower') {
                         die "Local record ".$queue->{biblio_id}." has lower encoding level than broadcast record ".$queue->{broadcast_biblio_id}."\n";
@@ -355,6 +356,11 @@ sub processExportQueue {
                         die "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}."\n";
                     } else {
                         my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), $self->getRecord($remoterecord->toXML));
+                        
+                        if ($queue->{hostrecord} || $queue->{componentparts}) {
+                            $self->processExportComponentParts($queue->{broadcast_interface}, 'PUT', $record, from_json($queue->{componentparts}), $getResponse->{componentparts}, $queue->{user_id});
+                        }
+                
                         my $marcxml = $mergedrecord->as_xml_record;
                         my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
                         my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}});
@@ -377,10 +383,9 @@ sub processExportQueue {
                     if ($queue->{componentparts}) {
                         $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
                         print "Target id: $target_id\n" if $self->verbose;
-                        my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
                         my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id);
                         unless ($results->{componentparts}) {
-                            $self->processNewExportComponentParts($queue->{broadcast_interface}, $self->getRecord($results->{marcjson}), from_json($queue->{componentparts}), $queue->{user_id});
+                            $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
                         }
                     }
                     print "Pushed record to ".$queue->{broadcast_interface}." with response: ". $postResponse->message."\n";
@@ -396,22 +401,43 @@ sub processExportQueue {
     }
 }
 
-sub processNewExportComponentParts {
-    my ($self, $interface, $hostrecord, $componentparts, $user_id) = @_;
+sub processExportComponentParts {
+    my ($self, $interface, $method, $hostrecord, $componentparts, $broadcastcomponentparts, $user_id) = @_;
+    
     $componentparts = $self->getComponentParts->sortComponentParts($componentparts);
+    $broadcastcomponentparts = $self->getComponentParts->sortComponentParts($broadcastcomponentparts);
+    print Data::Dumper::Dumper $broadcastcomponentparts;
+    if (defined($broadcastcomponentparts) && scalar @$componentparts != scalar @$broadcastcomponentparts) {
+        die "Component parts count mismatch, local: ".scalar @$componentparts.", broadcast: ".scalar @$broadcastcomponentparts."\n";
+    }
+
+    my $hostmarcxml = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $hostrecord})->toXML;
+    $hostrecord = $self->getRecord($hostmarcxml);
     my $hostcontrolnumber = '('.$hostrecord->field('003')->data.')'.$hostrecord->field('001')->data;
     my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $interface});
-    foreach my $componentpart (@$componentparts) {
+
+    for (my $i = 0; $i < scalar @$componentparts; $i++) {
+        my $componentpart = $componentparts->[$i];
         my $comprecord = $self->getRecord($componentpart->{marcxml});
+        my $broadcast_biblio_id;
+        my $broadcastrecord;
+
+        if (defined($broadcastcomponentparts)) {
+            $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
+            my $brmarcxml = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastcomponentparts->[$i]->{marcjson}})->toXML;
+            $broadcastrecord = $self->getRecord($brmarcxml);
+        }
+
         if ($comprecord->subfield('773', 'w') ne $hostcontrolnumber) {
             $comprecord->update('773', 'w' => $hostcontrolnumber);
         }
-        my $mergedrecord = $self->mergeRecords($interface)->merge($comprecord, undef);
+        my $mergedrecord = $self->mergeRecords($interface)->merge($comprecord, $broadcastrecord);
         my $marcxml = $comprecord->as_xml_record;
         my $marc = $interface =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
-        my $response = $rest->apiCall({type => 'POST', data => {marc => $marc}, user_id => $user_id});
+        my $data = $broadcast_biblio_id ? {biblio_id => $broadcast_biblio_id, body => $marc} : {body => $marc};
+        my $response = $rest->apiCall({type => $method, data => $data, user_id => $user_id});
         if ($response->is_success) {
-            print "Pushed component part to ".$interface." with response: ". $response->message."\n";
+            print $method." component part to ".$interface." with response: ". $response->message."\n";
         } else {
             die "Failed to push component part to ".$interface.": ".$response->message;
         }
