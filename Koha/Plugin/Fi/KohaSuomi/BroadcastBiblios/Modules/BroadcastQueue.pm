@@ -439,6 +439,7 @@ sub processExportComponentParts {
         if ($response->is_success) {
             print $method." component part ".$biblio_id." to ".$interface." with response: ". $response->message."\n";
         } else {
+            print "Failed to ".$method." component part ".$biblio_id." to ".$interface.": ".$response->body."\n";
             die "Failed to push component part ".$biblio_id." to ".$interface.": ".$response->message;
         }
     }
