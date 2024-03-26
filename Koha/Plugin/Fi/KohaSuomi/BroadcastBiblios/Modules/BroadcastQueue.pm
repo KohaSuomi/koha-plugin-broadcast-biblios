@@ -354,15 +354,15 @@ sub processExportQueue {
                         die "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}."\n";
                     } else {
                         my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), $self->getRecord($remoterecord->toXML));
-                        # my $marcxml = $mergedrecord->as_xml_record;
-                        # my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
-                        # my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}});
-                        # if ($putResponse->is_success) {
-                        #     print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";
-                        #     $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
-                        # } else {
-                        #     die "Failed to update record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}.": ".$putResponse->message;
-                        # }
+                        my $marcxml = $mergedrecord->as_xml_record;
+                        my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
+                        my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}});
+                        if ($putResponse->is_success) {
+                            print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";
+                            $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
+                        } else {
+                            die "Failed to update record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}.": ".$putResponse->message;
+                        }
                     }
                 } else {
                     die "Failed to get record ".$queue->{broadcast_biblio_id}." from ".$queue->{broadcast_interface}.": ".$getResponse->message;
