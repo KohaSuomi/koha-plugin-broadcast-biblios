@@ -173,11 +173,18 @@ sub appendSystemControlNumber {
     my $f003 = $record->field('003')->data;
     my $newf035 = '('.$f003.')'. $f001;
     my @f035 = $record->field('035');
+    my $found = 0;
     foreach my $field (@f035) {
-        if ($field->subfield('a') ne $newf035) {
-            $record->field('035')->add_subfields('a' => $newf035);
+        if ($field->subfield('a') eq $newf035) {
+            $found = 1;
+            last;
         }
     }
+
+    if (!$found) {
+        $record->append_fields(MARC::Field->new('035', ' ', ' ', 'a' => $newf035));
+    }
+
     return $record;
 }
 
