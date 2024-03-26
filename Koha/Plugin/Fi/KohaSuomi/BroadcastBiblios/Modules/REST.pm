@@ -73,7 +73,9 @@ sub getConfig {
 sub ua {
     my ($self) = @_;
     my $ua = Mojo::UserAgent->new;
-    $ua->proxy->https("socks://127.0.0.1:1337");
+    if ($ENV{MOJO_PROXY}) {
+        $ua->proxy->https($ENV{MOJO_PROXY});
+    }
     return $ua;
 }
 
