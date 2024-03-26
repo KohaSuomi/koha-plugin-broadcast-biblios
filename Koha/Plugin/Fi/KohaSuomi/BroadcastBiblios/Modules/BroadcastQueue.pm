@@ -406,7 +406,6 @@ sub processExportComponentParts {
     
     $componentparts = $self->getComponentParts->sortComponentParts($componentparts);
     $broadcastcomponentparts = $self->getComponentParts->sortComponentParts($broadcastcomponentparts);
-    print Data::Dumper::Dumper $broadcastcomponentparts;
     if (defined($broadcastcomponentparts) && scalar @$componentparts != scalar @$broadcastcomponentparts) {
         die "Component parts count mismatch, local: ".scalar @$componentparts.", broadcast: ".scalar @$broadcastcomponentparts."\n";
     }
@@ -418,6 +417,7 @@ sub processExportComponentParts {
 
     for (my $i = 0; $i < scalar @$componentparts; $i++) {
         my $componentpart = $componentparts->[$i];
+        my $biblio_id = $componentpart->{biblionumber};
         my $comprecord = $self->getRecord($componentpart->{marcxml});
         my $broadcast_biblio_id;
         my $broadcastrecord;
@@ -437,9 +437,9 @@ sub processExportComponentParts {
         my $data = $broadcast_biblio_id ? {biblio_id => $broadcast_biblio_id, body => $marc} : {body => $marc};
         my $response = $rest->apiCall({type => $method, data => $data, user_id => $user_id});
         if ($response->is_success) {
-            print $method." component part to ".$interface." with response: ". $response->message."\n";
+            print $method." component part ".$biblio_id." to ".$interface." with response: ". $response->message."\n";
         } else {
-            die "Failed to push component part to ".$interface.": ".$response->message;
+            die "Failed to push component part ".$biblio_id." to ".$interface.": ".$response->message;
         }
     }
 }
