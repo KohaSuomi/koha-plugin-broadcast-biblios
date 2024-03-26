@@ -62,6 +62,8 @@ sub merge {
         $filters = $self->MelindaMerge();
     } elsif ($interface =~ /Tati/i) {
         $filters = $self->TatiMerge();
+    } else {
+        $filters = $self->KohaFilters();
     }
 
     if ($record) {
@@ -141,6 +143,27 @@ sub TatiMerge {
     my @add = ();
     
     return {keep => \@keep, add => \@add, remove => \@remove};
+}
+
+sub KohaFilters {
+    my ($self) = @_;
+    my @keep = ();
+    my @remove = (
+        {tag => 'CAT'},
+        {tag => 'LOW'},
+        {tag => 'SID'},
+        {tag => 'HLI'},
+        {tag => 'DEL'},
+        {tag => 'LDR'},
+        {tag => 'STA'},
+        {tag => 'COR'},
+        {tag => '942'},
+        {tag => '999'},
+    );
+    my @add = ();
+    
+    return {keep => \@keep, add => \@add, remove => \@remove};
+
 }
 
 sub appendSystemControlNumber {
