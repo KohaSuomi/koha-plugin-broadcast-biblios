@@ -101,8 +101,7 @@ export const recordTimestamp = (record) => {
     let timestamp = '';
     record.fields.forEach(function (v, i, a) {
         if (v.tag == '005') {
-            timestamp = v.value;
-            timestamp = timestamp.replace(/./g, '');
+            timestamp = v.value.replace('.', '');
         }
     });
     return timestamp;
