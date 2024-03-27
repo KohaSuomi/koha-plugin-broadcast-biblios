@@ -94,9 +94,9 @@ sub add {
         $biblio = $biblio->unblessed;
         $biblio->{metadata} = $marcxml;
 
-        my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new({interface => $body->{broadcast_interface}});
-        my $params->{config} = $config->getConfig();
-
+        my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new();
+        my $params->{config} = $config->getInterfaceConfig($body->{broadcast_interface});
+        
         my $activeRecords = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords->new($params);
 
         my $response = $activeRecords->setActiveRecord($biblio);
