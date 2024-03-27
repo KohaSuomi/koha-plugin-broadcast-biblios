@@ -1,4 +1,4 @@
-import * as recordParser from './recordParser.js';
+import * as recordParser from './helpers/recordParser.js';
 
 new Vue({
   el: '#viewApp',

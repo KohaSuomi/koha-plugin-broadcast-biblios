@@ -1,7 +1,8 @@
 import { useConfigStore } from "../stores/config-store.js";
 import { useErrorStore } from "../stores/error-store.js";
 import { useRecordStore } from "../stores/record-store.js";
-import * as recordParser from '../recordParser.js';
+import { useQueueStore } from "../stores/queue-store.js";
+import * as recordParser from '../helpers/recordParser.js';
 
 export default {
   props: ['biblio_id', 'patron_id'],
@@ -9,10 +10,12 @@ export default {
     const configStore = useConfigStore();
     const errorStore = useErrorStore();
     const recordStore = useRecordStore();
+    const queueStore = useQueueStore();
     return {
       config: configStore,
       errors: errorStore,
       records: recordStore,
+      queue: queueStore,
     };
   },
   data() {
@@ -50,6 +53,7 @@ export default {
   },
   methods: {
     search() {
+      this.showRecord = true;
       this.remoteRecord = '';
       this.showExportButton = false;
       this.showImportButton = true;
@@ -82,6 +86,10 @@ export default {
         }
         this.checkComponentParts();
       });
+    },
+    report () {
+      this.showRecord = false;
+      this.queue.fetch(this.biblio_id);
     },
     importRecord() {
       this.records.transfer(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId, 'import');
@@ -150,6 +158,18 @@ export default {
         this.componentPartsEqual = false;
         this.errors.setError("Osakohteiden määrä ei täsmää: " + localParts + " vs. " + remoteParts);
       } 
+    },
+    timestamp (date) {
+      return moment(date).locale('fi').format('D.M.Y H:mm:ss');
+    },
+    alertColor (status) {
+      if (status == 'completed') {
+        return 'alert-success';
+      } else if (status == 'failed') {
+        return 'alert-danger';
+      } else {
+        return 'alert-info';
+      }
     }
   },
   template: `
@@ -170,7 +190,7 @@ export default {
                 <a class="nav-link active" href="#" @click="search()">Siirto</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">Tapahtumat</a>
+                <a class="nav-link" href="#" @click="report()">Tapahtumat</a>
               </li>
             </ul>
           </div>
@@ -184,12 +204,35 @@ export default {
                 <li v-for="error in errors.errors">{{ error }}</li>
               </ul>
             </div>
-            <div v-if="records.saved" class="alert alert-success" role="alert">
-              Lisätty jonoon!
+            <div v-if="showRecord">
+              <div v-if="records.saved" class="alert alert-success" role="alert">
+                Lisätty jonoon!
+              </div>
+              <div class="row">
+                <div v-html="localRecord" class="col-sm-6" :class="{ 'col-sm-8': !remoteRecord }"></div>
+                <div v-if="remoteRecord" v-html="remoteRecord" class="col-sm-6"></div>
+              </div>
             </div>
-            <div class="row">
-              <div v-html="localRecord" class="col-sm-6" :class="{ 'col-sm-8': !remoteRecord }"></div>
-              <div v-if="remoteRecord" v-html="remoteRecord" class="col-sm-6"></div>
+            <div v-if="!showRecord">
+              <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                  <thead>
+                    <tr>
+                      <th>Rajapinta</th>
+                      <th>Tapahtuma</th>
+                      <th>Aika</th>
+                      <th>Tila</th>
+                    </tr>
+                  </thead>
+                  <tbody><tr v-for="(report, index) in this.queue.list" :class="alertColor(report.status)">
+                    <td>{{ report.broadcast_interface }}</td>
+                    <td>{{ $t(report.type) }}</td>
+                    <td>{{ timestamp(report.transfered_on) }}</td>
+                    <td>{{ $t(report.status) }} ({{report.statusmessage}})</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           <div class="modal-footer">

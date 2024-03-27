@@ -253,6 +253,8 @@ sub getQueue {
         }
         push @$res, {
             id => $result->{id},
+            broadcast_interface => $result->{broadcast_interface},
+            type => $result->{type},
             biblio_id => $result->{biblio_id},
             itemtype => $self->getBiblioItemType($result->{biblio_id}),
             marcjson => $self->getMarcXMLToJSON->toJSON($result->{marc}),
