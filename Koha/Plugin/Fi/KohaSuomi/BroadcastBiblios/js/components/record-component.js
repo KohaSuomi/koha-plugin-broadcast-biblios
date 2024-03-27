@@ -2,6 +2,7 @@ import { useConfigStore } from "../stores/config-store.js";
 import { useErrorStore } from "../stores/error-store.js";
 import { useRecordStore } from "../stores/record-store.js";
 import { useQueueStore } from "../stores/queue-store.js";
+import { useActiveStore } from "../stores/active-store.js";
 import * as recordParser from '../helpers/recordParser.js';
 
 export default {
@@ -11,11 +12,13 @@ export default {
     const errorStore = useErrorStore();
     const recordStore = useRecordStore();
     const queueStore = useQueueStore();
+    const activeStore = useActiveStore();
     return {
       config: configStore,
       errors: errorStore,
       records: recordStore,
       queue: queueStore,
+      active: activeStore,
     };
   },
   data() {
@@ -44,6 +47,7 @@ export default {
   },
   created() {
     this.config.fetch();
+    this.active.get(this.biblio_id);
     this.records.getLocal(this.biblio_id);
   },
   computed: {
@@ -90,6 +94,9 @@ export default {
     report () {
       this.showRecord = false;
       this.queue.fetch(this.biblio_id);
+    },
+    activateRecord() {
+      this.active.save(this.biblio_id, this.config.activationInterface);
     },
     importRecord() {
       this.records.transfer(this.biblio_id, this.patron_id, this.selectedInterface, this.remoteRecordId, 'import');
@@ -180,6 +187,17 @@ export default {
           <a href="#" @click="openModal($event)">{{ interface.name }}</a>
         </li>
       </ul>
+    </div>
+    <div class="btn-group">
+      <div v-if="active.loader" ><i class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 5px; margin-top: 10px;"></i></div>
+      <div v-else>
+        <div v-if="active.saved">
+          <i class="fa fa-link text-success" style="font-size:18px; margin-left: 5px; margin-top:7px;" :title="timestamp(active.record.created_on)"></i>
+        </div>
+        <div v-else class="btn-group">
+          <button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button>
+        </div>
+      </div>
     </div>
     <div id="pushRecordOpModal" class="modal fade" role="dialog">
       <div class="modal-dialog" :class="{'modal-lg': remoteRecord}">

@@ -111,6 +111,11 @@ export default {
         this.errors.setError("SRU URL ei ole validi");
         valid = false;
       }
+      
+      if (this.config.activationInterface && this.selectedInterface.activationInterface && this.config.activationInterface !== this.selectedInterface.name) {
+        this.errors.setError("Vain yksi aktivointirajapinta voi olla aktiivinen");
+        valid = false;
+      }
       return valid;
     },
     validateHttpUrl(url) {
@@ -172,6 +177,10 @@ export default {
                 <select class="form-control" id="type" v-model="selectedInterface.type">
                     <option v-for="type in interfaceTypes" :value="type.id">{{ type.name }}</option>
                 </select>
+            </div>
+            <div class="form-check py-3">
+                <input class="form-check-input" type="checkbox" value="" id="activationInterface" v-model="selectedInterface.activationInterface">
+                <label for="activationInterface" class="form-check-label">Tietueiden aktivointirajapinta</label>
             </div>
             <div class="form-check py-3">
                 <input class="form-check-input" type="checkbox" value="" id="onDropdown" v-model="selectedInterface.onDropdown">

@@ -152,15 +152,11 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
     my ( $self ) = @_;
 
     my $biblionumber = $self->{'cgi'}->param('biblionumber');
-    my $importinterface = $self->retrieve_data('importinterface');
     my $patron_id = C4::Context->userenv->{'number'};
     my $dropdown;
     if (haspermission(C4::Context->userenv->{'id'}, {'editcatalogue' => 'edit_catalogue'})) {
         my $pluginpath = $self->get_plugin_http_path();
         $dropdown = '<div id="broadcastApp"><record-component :biblio_id="'.$biblionumber.'" :patron_id="'.$patron_id.'"></record-component></div>';
-        #if ($importinterface) {
-        #    $dropdown .= '<div class="btn-group"><input type="hidden" id="importBroadcastInterface" value="'.$importinterface.'" /><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
-        #}
         $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.15/vue.global.min.js" integrity="sha512-YX1AhLUs26nJDkqXrSgg6kjMat++etdfsgcphWSPcglBGp/sk5I0/pKuu/XIfOCuzDU4GHcOB1E9LlveutWiBw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
         $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue-demi/0.14.6/index.iife.min.js" integrity="sha512-4bZPx/4GmRQW9DcQEbYpO4nLPaIceJ/gfouiSkpLCrrYYKFC9W+dk5dCT5WaDkRoWIMyG+Zw853iFABZgatpYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
         $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/pinia/2.1.7/pinia.iife.min.js" integrity="sha512-o2oH6iY7StQR/0l/6CJpuET6bT1RyGQWUpu1nWLIcGuFZnV4iOlSvtgUrO+i4x3QtoZSve8SAb1LplJWEZTj0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';

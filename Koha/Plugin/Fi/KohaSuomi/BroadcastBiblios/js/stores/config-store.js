@@ -14,6 +14,10 @@ export const useConfigStore = defineStore("config", {
     onDropdown() {
       return this.interfaces.filter((i) => i.onDropdown === true);
     },
+    activationInterface() {
+      const interfaces = this.interfaces.filter((i) => i.activationInterface === true);
+      return interfaces.length > 0 ? interfaces[0].name : "";
+    }
   },
   actions: {
     async fetch() {
