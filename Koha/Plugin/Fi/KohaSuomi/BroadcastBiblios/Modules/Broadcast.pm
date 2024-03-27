@@ -237,7 +237,7 @@ sub fetchBroadcastBiblios {
                         }
                     }
                     unless ($record_found) {
-                        print "No record found for $biblio->{biblionumber} with $config->{interface_name}\n" if $self->verbose;
+                        print "No record found for $biblio->{biblionumber} with $config->{name}\n" if $self->verbose;
                     }
                 }
             } catch {
