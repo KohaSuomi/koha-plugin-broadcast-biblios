@@ -136,8 +136,8 @@ export default {
 
       const localTimestamp = recordParser.recordTimestamp(this.records.marcjson);
       const remoteTimestamp = recordParser.recordTimestamp(this.records.remotemarcjson);
-      if (localTimestamp > remoteTimestamp) {
-        this.showExportButton = true;
+      if (localTimestamp < remoteTimestamp) {
+        this.showExportButton = false;
       }
     },
     checkComponentParts() {
