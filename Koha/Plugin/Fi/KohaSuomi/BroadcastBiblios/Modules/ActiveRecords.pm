@@ -254,8 +254,8 @@ sub processAddedActiveRecord {
     if ($tx->res->code eq '200' || $tx->res->code eq '201') {
         $self->db->updateActiveRecordRemoteBiblionumber($activerecord->{id}, $tx->res->json->{biblionumber});
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({verbose => $self->verbose, broadcast_interface => $self->getConfig->{name}, user_id => $self->getConfig->{defaultUser}, type => 'import'});
-        print "Active record biblionumber: ".$activerecord->{biblionumber}." passed to setToQueue process \n" if $self->verbose;
-        $queue->setToQueue($activerecord, $tx->res->json);
+        my $response = $queue->setToQueue($activerecord, $tx->res->json);
+        print "Active record biblionumber: ".$activerecord->{biblionumber}." set to queue with message: ".$response->{message}."\n" if $self->verbose;
         $self->db->activeRecordUpdated($activerecord->{id});
     } else {
         my $error = $tx->res->json || $tx->error;
