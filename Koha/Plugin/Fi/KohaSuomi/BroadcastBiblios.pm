@@ -164,7 +164,7 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
         $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.15/vue.global.min.js" integrity="sha512-YX1AhLUs26nJDkqXrSgg6kjMat++etdfsgcphWSPcglBGp/sk5I0/pKuu/XIfOCuzDU4GHcOB1E9LlveutWiBw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
         $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue-demi/0.14.6/index.iife.min.js" integrity="sha512-4bZPx/4GmRQW9DcQEbYpO4nLPaIceJ/gfouiSkpLCrrYYKFC9W+dk5dCT5WaDkRoWIMyG+Zw853iFABZgatpYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
         $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/pinia/2.1.7/pinia.iife.min.js" integrity="sha512-o2oH6iY7StQR/0l/6CJpuET6bT1RyGQWUpu1nWLIcGuFZnV4iOlSvtgUrO+i4x3QtoZSve8SAb1LplJWEZTj0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
-        $dropdown .= '<script src="https://unpkg.com/vue-i18n@9"></script>';
+        $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue-i18n/9.10.2/vue-i18n.global.prod.min.js" integrity="sha512-UUOWezsNQ8nhUaGbOuPDdwRouiCjpa9ALauSMzT84F46gilrYGxb++H8a3Ez0iTgTfBDoZ6csW5aw+msdwnifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/axios.min.js"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/moment-with-locales.min.js"></script>';
         $dropdown .= '<script type="module" src="'.$pluginpath.'/js/app.js"></script>';
