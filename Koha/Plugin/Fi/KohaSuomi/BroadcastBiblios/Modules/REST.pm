@@ -101,6 +101,7 @@ sub apiCall {
 
     my $restEndpoint = $self->getConfig->{$self->getRESTEndpoint($type)};
     my $path = $self->parseRestData($restEndpoint, $data);
+    $path = $path.$self->getConfig->{restQueryString} if $self->getConfig->{restQueryString};
     my $headers;
     ($path, $headers) = $self->users($path)->getAuthentication($user_id);
     $headers = $self->headers($type, $headers);

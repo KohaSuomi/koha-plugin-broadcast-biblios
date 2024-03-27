@@ -192,6 +192,11 @@ export default {
                 <small id="restUrlHelp" class="form-text text-muted">Esim. https://tati.koha-suomi.fi</small>
             </div>
             <div class="form-group">
+                <label for="restQueryString" class="col-form-label">Querystring</label>
+                <input type="text" class="form-control" id="restUrl" placeholder="Querystring" v-model="selectedInterface.restQueryString">
+                <small id="restQueryStringHelp" class="form-text text-muted">Esim. ?noop=1&merge=1</small>
+            </div>
+            <div class="form-group">
                 <div class="row">
                   <div class="col-9">
                     <label for="restSearch" class="col-form-label">Search-endpoint</label>
