@@ -133,6 +133,12 @@ export default {
       if (!hasMelinda && this.selectedInterface.includes('Melinda')) {
         this.showExportButton = false;
       }
+
+      const localTimestamp = recordParser.recordTimestamp(this.records.marcjson);
+      const remoteTimestamp = recordParser.recordTimestamp(this.records.remotemarcjson);
+      if (localTimestamp > remoteTimestamp) {
+        this.showExportButton = true;
+      }
     },
     checkComponentParts() {
       let localParts = this.records.componentparts.length;

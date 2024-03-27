@@ -97,6 +97,17 @@ export const recordStatus = (record) => {
     return record.leader.charAt(5);
 }
 
+export const recordTimestamp = (record) => {
+    let timestamp = '';
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '005') {
+            timestamp = v.value;
+            timestamp = timestamp.replace(/./g, '');
+        }
+    });
+    return timestamp;
+}
+
 export const systemControlNumbers = (record) => {
     let controlNumbers = [];
     record.fields.forEach(function (v, i, a) {
