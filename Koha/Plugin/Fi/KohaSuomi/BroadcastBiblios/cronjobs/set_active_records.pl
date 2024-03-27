@@ -43,7 +43,6 @@ my $all = 0;
 my $biblionumber;
 my $verbose = 0;
 my $limit = 0;
-my $interface;
 
 GetOptions(
     'h|help'                     => \$help,
@@ -52,7 +51,6 @@ GetOptions(
     'c|chunks:i'                 => \$chunks,
     'b|biblionumber:i'           => \$biblionumber,
     'l|limit:i'                  => \$limit,
-    'i|interface:s'              => \$interface,
 
 );
 
@@ -65,7 +63,6 @@ my $usage = <<USAGE;
     -c, --chunks            Process biblios in chunks, default is 200.
     -b, --biblionumber      Start sending from defined biblionumber.
     -l, --limit             Limiting the results of biblios.
-    -i, --interface         Interface to use for broadcasting, if set the script is trying to fetch records from interface.
 
 USAGE
 
@@ -75,7 +72,7 @@ if ($help) {
 }
 
 my $configs = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new({verbose => $verbose});
-
+my $interface = $configs->getActivationInterface;
 my $params = {
     all => $all,
     chunks => $chunks,
@@ -86,7 +83,7 @@ my $params = {
 };
 
 if ($interface) {
-    $params->{config} = $configs->getInterfaceConfig($interface);
+    $params->{config} = $interface;
 }
 
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new($params);

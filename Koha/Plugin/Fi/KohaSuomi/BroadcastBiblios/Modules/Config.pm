@@ -75,6 +75,16 @@ sub getInterfaceConfig {
     }
 }
 
+sub getActivationInterface {
+    my ($self) = @_;
+    my $interfaces = $self->getConfig()->{interfaces};
+    foreach my $i (@$interfaces) {
+        if ($i->{activationInterface} eq 1) {
+            return $i;
+        }
+    }
+}
+
 sub getConfig {
     my ($self) = @_;
     
