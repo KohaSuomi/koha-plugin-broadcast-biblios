@@ -187,11 +187,11 @@ sub pushToRest {
 
     if ($tx->res->code eq '200' || $tx->res->code eq '201' || $tx->res->code eq '204') {
         my $response = $tx->res->json;
-        print "Pushed record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{name}." with response: ". $response->{message}."\n";
+        print "Pushed record ".$broadcastrecord->{biblionumber}." to ".$config->{name}." with response: ". $response->{message}."\n";
     } else {
         my $error = $tx->res->json || $tx->res->error;
         my $errormessage = $error->{message} ? $error->{message} : $error;
-        print "Failed to push record ".$broadcastrecord->{biblio}->{biblionumber}." to ".$config->{name}.": ".$errormessage."\n";
+        print "Failed to push record ".$broadcastrecord->{biblionumber}." to ".$config->{name}.": ".$errormessage."\n";
     }
 }
 
@@ -200,12 +200,12 @@ sub setToQueue {
 
     my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblionumber});
     if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
-        print "Broadcast record ".$broadcastrecord->{biblio}->{biblionumber}." is already in queue\n" if $self->verbose;
-        return {status => 409, message => "Broadcast record ".$broadcastrecord->{biblio}->{biblionumber}." is already in queue"};
+        print "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue\n" if $self->verbose;
+        return {status => 409, message => "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue"};
     };
     try {
         my $return = {status => 201, message => "Success"};
-        my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{biblio}->{marcxml});
+        my $encodingLevel = $self->compareEncodingLevels($activerecord->{metadata}, $broadcastrecord->{marcxml});
         if ($encodingLevel eq 'lower') {
             $self->db->insertToQueue($self->processParams($activerecord, $broadcastrecord));
         } elsif ($encodingLevel eq 'equal') {
@@ -217,8 +217,8 @@ sub setToQueue {
                 $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
                 $return = {status => 200, message => "Equal encoding level and timestamp, checking component parts"};
             } else {
-                print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
-                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}};
+                print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblionumber}."\n" if $self->verbose;
+                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblionumber}};
             }
         } else {
             if ($broadcastrecord->{componentparts}) {
@@ -226,8 +226,8 @@ sub setToQueue {
                 $self->processNewComponentPartsToQueue($activerecord->{biblionumber}, $broadcastrecord->{componentparts});
                 $return = {status => 200, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level, checking component parts"};
             } else {
-                print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}."\n" if $self->verbose;
-                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblio}->{biblionumber}};
+                print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblionumber}."\n" if $self->verbose;
+                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblionumber}};
             }
         }
         return $return;
@@ -582,7 +582,7 @@ sub getTimestamp {
 
 sub getEncodingLevel {
     my ($self, $marcxml) = @_;
-    my $record = MARC::Record->new_from_xml($marcxml);
+    my $record = $self->getRecord($marcxml);
     my $leader = $record->leader();
     my $encodingLevel = substr($leader, 17, 1);
     my $encodingStatus = substr($leader, 5, 1);

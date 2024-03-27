@@ -252,7 +252,7 @@ sub processAddedActiveRecord {
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->post($self->getConfig->{restUrl}."/api/v1/contrib/kohasuomi/broadcast/biblios", {'Content-Type' => 'application/json'}, json => {identifiers => @identifiers, biblio_id => $activerecord->{remote_biblionumber}});
     if ($tx->res->code eq '200' || $tx->res->code eq '201') {
-        $self->db->updateActiveRecordRemoteBiblionumber($activerecord->{id}, $tx->res->json->{biblio}->{biblionumber});
+        $self->db->updateActiveRecordRemoteBiblionumber($activerecord->{id}, $tx->res->json->{biblionumber});
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({verbose => $self->verbose, broadcast_interface => $self->getConfig->{name}, user_id => $self->getConfig->{defaultUser}, type => 'import'});
         print "Active record biblionumber: ".$activerecord->{biblionumber}." passed to setToQueue process \n" if $self->verbose;
         $queue->setToQueue($activerecord, $tx->res->json);
