@@ -75,7 +75,6 @@ if ($help) {
 }
 
 my $configs = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new({verbose => $verbose});
-my $config = $configs->getConfig();
 
 my $params = {
     all => $all,
@@ -87,12 +86,7 @@ my $params = {
 };
 
 if ($interface) {
-    foreach my $i (@{$config->{interfaces}}) {
-        if ($i->{name} eq $interface) {
-            $params->{config} = $i;
-            last;
-        }
-    }
+    $params->{config} = $configs->getInterfaceConfig($interface);
 }
 
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new($params);
