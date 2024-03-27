@@ -188,7 +188,7 @@ export default {
         </li>
       </ul>
     </div>
-    <div class="btn-group">
+    <div v-if="config.activationInterface" class="btn-group">
       <div v-if="active.loader" ><i class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 5px; margin-top: 10px;"></i></div>
       <div v-else>
         <div v-if="active.saved">
