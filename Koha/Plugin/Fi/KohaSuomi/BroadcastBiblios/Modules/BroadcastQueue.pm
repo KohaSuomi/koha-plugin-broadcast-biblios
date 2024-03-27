@@ -244,7 +244,7 @@ sub getQueue {
     foreach my $result (@$results) {
         my $diff = $result->{diff} ? from_json($result->{diff}) : undef;
         my $parts;
-        my $componentparts = $result->{componentparts} ? from_json($result->{componentparts}) : undef;
+        my $componentparts = $result->{componentparts} && ref($result->{componentparts}) eq "Array" ? from_json($result->{componentparts}) : undef;
         foreach my $part (@$componentparts) {
             push @$parts, {
                 biblionumber => $part->{biblionumber},
