@@ -325,6 +325,13 @@ Vue.component('result-list', {
     itemType: function (record) {
       return recordParser.recordItemType(record);
     },
+    transfer: function (type) {
+      if (type == 'import') {
+        return 'Tuonti';
+      } else {
+        return 'Vienti';
+      }
+    },
   },
   props: ['result'],
 });

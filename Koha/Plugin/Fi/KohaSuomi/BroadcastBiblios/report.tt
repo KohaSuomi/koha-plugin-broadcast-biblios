@@ -170,7 +170,7 @@
 		<template id="list-items">
 		<tr>
 			<td class="col-2">
-				<span v-if="result.status == 'pending'">{{result.created_on | moment}}</span><span v-else>{{result.transfered_on | moment}}</span>
+				{{result.transfered_on | moment}} ({{result.type | transfer}})
 			</td>
 			<td class="col-4">
 				<div>{{result.marcjson | author}} {{result.marcjson | title}} {{result.itemtype}} (<a v-bind:href="'/cgi-bin/koha/catalogue/detail.pl?biblionumber='+result.biblio_id" target="_blank">{{result.biblio_id}}</a>) <i class="fa fa-code text-muted" @click="toggleShowRecord($event)"></i></div>
