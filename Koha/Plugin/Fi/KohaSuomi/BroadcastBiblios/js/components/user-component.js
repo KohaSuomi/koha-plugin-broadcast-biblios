@@ -106,7 +106,7 @@ export default {
             <div class="col-9">
                 <select class="form-control" id="usersList" @change="selectedUserChanged($event)" v-model="userId">
                     <option selected value="">Valitse käyttäjä</option>
-                    <option v-for="user in users.list" :value="user.id">{{ user.username }}</option>
+                    <option v-for="user in users.list" :value="user.id">{{ user.username }} ({{user.broadcast_interface}})</option>
                 </select>
             </div>
             <div class="col-3">

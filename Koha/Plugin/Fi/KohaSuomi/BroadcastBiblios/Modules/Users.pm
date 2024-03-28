@@ -80,7 +80,7 @@ sub listUsers {
     my $users = $self->db->listUsers;
     my $response = [];
     foreach my $user (@$users) {
-        push @$response, {id => $user->{id}, username => $user->{username}, auth_type => $user->{auth_type}};
+        push @$response, {id => $user->{id}, username => $user->{username}, auth_type => $user->{auth_type}, broadcast_interface => $user->{broadcast_interface}};
     }
     return $response;
 }
