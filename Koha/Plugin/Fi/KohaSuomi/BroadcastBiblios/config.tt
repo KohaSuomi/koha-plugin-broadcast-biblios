@@ -29,7 +29,7 @@
         <div id="content-wrapper">
 			<div class="container-fluid">
 				<main role="main" class="ml-sm-auto pt-3 px-4">
-                    <div id="configApp">
+                    <div id="broadcastApp">
                         <div class="container">
                             <div class="row gutters-sm">
                                 <div class="col-md-4 d-none d-md-block">
@@ -73,13 +73,14 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.15/vue.global.min.js" integrity="sha512-YX1AhLUs26nJDkqXrSgg6kjMat++etdfsgcphWSPcglBGp/sk5I0/pKuu/XIfOCuzDU4GHcOB1E9LlveutWiBw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-demi/0.14.6/index.iife.min.js" integrity="sha512-4bZPx/4GmRQW9DcQEbYpO4nLPaIceJ/gfouiSkpLCrrYYKFC9W+dk5dCT5WaDkRoWIMyG+Zw853iFABZgatpYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pinia/2.1.7/pinia.iife.min.js" integrity="sha512-o2oH6iY7StQR/0l/6CJpuET6bT1RyGQWUpu1nWLIcGuFZnV4iOlSvtgUrO+i4x3QtoZSve8SAb1LplJWEZTj0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-		<!--<script src="[% PLUGIN_PATH %]/includes/vue.min.js"></script>-->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/vue-i18n/9.10.2/vue-i18n.global.prod.min.js" integrity="sha512-UUOWezsNQ8nhUaGbOuPDdwRouiCjpa9ALauSMzT84F46gilrYGxb++H8a3Ez0iTgTfBDoZ6csW5aw+msdwnifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <!--<script src="[% PLUGIN_PATH %]/includes/vue.min.js"></script>-->
 		<script src="[% PLUGIN_PATH %]/includes/axios.min.js"></script>
 		<script src="[% PLUGIN_PATH %]/includes/moment-with-locales.min.js"></script>
 		<script src="[% PLUGIN_PATH %]/includes/jquery-3.3.1.min.js"></script>
 		<script src="[% PLUGIN_PATH %]/includes/popper.min.js"></script>
 		<script src="[% PLUGIN_PATH %]/includes/bootstrap.min.js"></script>
-		<script type="module" src="[% PLUGIN_PATH %]/js/configApp.js"></script>
+		<script type="module" src="[% PLUGIN_PATH %]/js/app.js"></script>
     </body>
 </html>
 
