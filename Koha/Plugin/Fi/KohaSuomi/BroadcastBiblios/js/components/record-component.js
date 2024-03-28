@@ -245,7 +245,7 @@ export default {
                   <tbody><tr v-for="(report, index) in this.queue.list" :class="alertColor(report.status)">
                     <td>{{ report.broadcast_interface }}</td>
                     <td>{{ $t(report.type) }}</td>
-                    <td>{{ timestamp(report.datetime) }}</td>
+                    <td>{{ timestamp(report.transfered_on) }}</td>
                     <td>{{ $t(report.status) }} ({{report.statusmessage}})</td>
                   </tr>
                   </tbody>
