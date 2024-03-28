@@ -187,7 +187,7 @@ export default {
                 <label for="onDropdown" class="form-check-label">Näytä rajapinta valikossa</label>
             </div>
             <div class="form-group">
-                <label for="defaultUser" class="col-form-label">Oletuskäyttäjä</label>
+                <label for="defaultUser" class="col-form-label">Tuonnin oletuskäyttäjä</label>
                 <select class="form-control" id="defaultUser" v-model="selectedInterface.defaultUser">
                     <option v-for="user in users.list" :value="user.id">{{ user.username }}</option>
                 </select>
