@@ -102,12 +102,14 @@ sub search {
             return $c->render(status => 404, openapi => {error => "Biblio not found"});
         }
         my $body = $c->req->json;
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
+        my $user_id = $users->getInterfaceUserByPatronId($body->{interface_name}, $body->{patron_id});
         my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
-        my $results = $search->searchFromInterface($body->{interface_name}, $body->{identifiers});
+        my $results = $search->searchFromInterface($body->{interface_name}, $body->{identifiers}, undef, $user_id);
         return $c->render(status => 200, openapi => $results);
     } catch {
         my $error = $_;
-        $logger->error($error);
+        $logger->error($error->{message});
         if ($error->{status}) {
             return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
         } else {

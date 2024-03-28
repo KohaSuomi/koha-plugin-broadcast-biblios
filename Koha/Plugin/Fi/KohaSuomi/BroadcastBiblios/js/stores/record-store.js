@@ -25,9 +25,9 @@ export const useRecordStore = defineStore("record", {
         errorStore.setError(error);
       }
     },
-    async search(biblio_id, interface_name) {
+    async search(biblio_id, interface_name, patron_id) {
       try {
-        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/search`, { interface_name: interface_name, identifiers: this.identifiers });
+        const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/search`, { interface_name: interface_name, identifiers: this.identifiers, patron_id: patron_id});
         this.remotemarcjson = response.data.marcjson;
         this.remotecomponentparts = response.data.componentparts;
         return response;

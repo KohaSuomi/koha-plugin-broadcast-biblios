@@ -127,7 +127,7 @@ sub findByIdentifier {
 }
 
 sub searchFromInterface {
-    my ($self, $interface_name, $identifiers, $biblio_id) = @_;
+    my ($self, $interface_name, $identifiers, $biblio_id, $user_id) = @_;
 
     my $config = $self->getConfig->getInterfaceConfig($interface_name);
     if ($config->{sruUrl} && $config->{sruUrl} ne "") {
@@ -168,7 +168,7 @@ sub searchFromInterface {
         }
     } else {
         my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => $config->{restSearch}});
-        my ($path, $headers) = $users->getAuthentication($config->{defaultUser});
+        my ($path, $headers) = $users->getAuthentication($user_id);
         $headers->{"Accept"} = "application/marc-in-json";
         my $ua = $self->ua;
         my $method = $config->{restSearchMethod};

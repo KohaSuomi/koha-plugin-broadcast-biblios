@@ -535,6 +535,9 @@
             interface_name:
               type: string
               description: "Interface name"
+            patron_id:
+              type: integer
+              description: "Patron's id"
     produces:
       - application/json
     responses:

@@ -348,7 +348,7 @@ sub processExportQueue {
             my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $queue->{broadcast_interface}, verbose => $self->verbose});
             my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
             if ($target_id) {
-                my $getResponse = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id);
+                my $getResponse = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
                 if ($getResponse->{marcjson}) {
                     print "Got record ".$target_id." from ".$queue->{broadcast_interface}."\n";
                     my $record = $getResponse->{marcjson};
@@ -386,7 +386,7 @@ sub processExportQueue {
                     if ($queue->{componentparts}) {
                         $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
                         print "Target id: $target_id\n" if $self->verbose;
-                        my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id);
+                        my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
                         unless ($results->{componentparts}) {
                             $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
                         }

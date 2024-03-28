@@ -64,7 +64,7 @@ export default {
       this.errors.clear();
       this.records.saved = false;
       this.loader = true;
-      this.records.search(this.biblio_id, this.selectedInterface).then((response) => {
+      this.records.search(this.biblio_id, this.selectedInterface, this.patron_id).then((response) => {
         if (Object.keys(response.data.marcjson).length > 0) {
           this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
           this.remoteEncodingLevel = recordParser.recordEncodingLevel(response.data.marcjson);
@@ -245,7 +245,7 @@ export default {
                   <tbody><tr v-for="(report, index) in this.queue.list" :class="alertColor(report.status)">
                     <td>{{ report.broadcast_interface }}</td>
                     <td>{{ $t(report.type) }}</td>
-                    <td>{{ timestamp(report.transfered_on) }}</td>
+                    <td>{{ timestamp(report.datetime) }}</td>
                     <td>{{ $t(report.status) }} ({{report.statusmessage}})</td>
                   </tr>
                   </tbody>
