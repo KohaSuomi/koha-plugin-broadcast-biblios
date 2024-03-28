@@ -43,6 +43,7 @@ export default {
       remoteRecordId: null,
       disabled: false,
       componentPartsEqual: true,
+      activeTab: 1,
     };
   },
   created() {
@@ -57,6 +58,7 @@ export default {
   },
   methods: {
     search() {
+      this.activeTab = 1;
       this.showRecord = true;
       this.remoteRecord = '';
       this.showExportButton = false;
@@ -64,6 +66,7 @@ export default {
       this.errors.clear();
       this.records.saved = false;
       this.loader = true;
+      this.disabled = false;
       this.records.search(this.biblio_id, this.selectedInterface, this.patron_id).then((response) => {
         if (Object.keys(response.data.marcjson).length > 0) {
           this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
@@ -92,6 +95,7 @@ export default {
       });
     },
     report () {
+      this.activeTab = 2;
       this.showRecord = false;
       this.queue.fetch(this.biblio_id);
     },
@@ -177,7 +181,7 @@ export default {
       } else {
         return 'alert-info';
       }
-    }
+    },
   },
   template: `
     <div v-if="config.onDropdown.length > 0" class="btn-group" style="margin-left: 5px;">
@@ -203,12 +207,12 @@ export default {
       <div class="modal-dialog" :class="{'modal-lg': remoteRecord}">
         <div class="modal-content">
           <div class="modal-header">
-            <ul class="nav nav-pills">
-              <li class="nav-item">
-                <a class="nav-link active" href="#" @click="search()">Siirto</a>
+            <ul class="nav nav-tabs">
+              <li :class="{active : activeTab == 1}">
+                <a href="#" @click="search()">Siirto</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#" @click="report()">Tapahtumat</a>
+              <li :class="{active : activeTab == 2}">
+                <a href="#" @click="report()">Tapahtumat</a>
               </li>
             </ul>
           </div>
