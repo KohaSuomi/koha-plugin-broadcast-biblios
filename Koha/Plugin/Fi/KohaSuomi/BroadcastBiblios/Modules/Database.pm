@@ -273,7 +273,7 @@ sub countQueue {
 sub insertToQueue {
     my ($self, $params) = @_;
     my $dbh = $self->dbh;
-    my $query = "INSERT INTO " . $self->queue . " (user_id, type, broadcast_interface, biblio_id, broadcast_biblio_id, hostrecord, componentparts, marc, diff, transfered_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()";
+    my $query = "INSERT INTO " . $self->queue . " (user_id, type, broadcast_interface, biblio_id, broadcast_biblio_id, hostrecord, componentparts, marc, diff, transfered_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
     my $sth = $dbh->prepare($query);
     $sth->execute($params->{user_id}, $params->{type}, $params->{broadcast_interface}, $params->{biblio_id}, $params->{broadcast_biblio_id}, $params->{hostrecord}, $params->{componentparts}, $params->{marc}, $params->{diff}) or die $sth->errstr;
     $sth->finish();
