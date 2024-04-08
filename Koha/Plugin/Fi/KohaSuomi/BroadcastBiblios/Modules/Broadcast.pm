@@ -229,6 +229,7 @@ sub fetchBroadcastBiblios {
                 return unless $record;
                 return if $self->blockComponentParts($record);
                 return if $self->blockByEncodingLevel($record);
+                return if $self->getBiblios()->checkBlock($record);
                 my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
                 my $bibliowrapper = {
                     marcxml => $biblio->{metadata},
