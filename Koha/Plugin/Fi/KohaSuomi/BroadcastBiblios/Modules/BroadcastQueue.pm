@@ -336,7 +336,7 @@ sub processNewComponentPartsToQueue {
         foreach my $broadcastcomponentpart (@$broadcastcomponentparts) {
             my $biblionumber = $broadcastcomponentpart->{biblionumber};
             my $inQueue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface);
-            if($inQueue && ($inQueue->{status} eq 'pending' || $inQueue->{status} eq 'processing')) {
+            if ($inQueue) {
                 print "Broadcast record $biblionumber is already in queue\n" if $self->verbose;
                 next;
             }
