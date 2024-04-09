@@ -207,7 +207,7 @@ sub setActiveRecord {
         if ($activerecord) {
             # Update active record identifiers if changed
             my ($identifier, $identifier_field) = $self->getIdentifiers->getIdentifierField($biblio->{metadata});
-            if ($activerecord->{identifier} ne $identifier && $activerecord->{identifier_field} ne $identifier_field) {
+            if ($activerecord->{identifier} ne $identifier) {
                 print "Updating active record identifiers for biblionumber: ".$activerecord->{biblionumber}."\n" if $self->verbose;
                 $self->db->updateActiveRecordIdentifiers($activerecord->{id}, $identifier, $identifier_field);
             }
