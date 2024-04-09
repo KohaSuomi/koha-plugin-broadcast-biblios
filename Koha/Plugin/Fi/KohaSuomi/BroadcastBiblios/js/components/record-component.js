@@ -147,14 +147,14 @@ export default {
       } else if (this.localEncodingLevel == '') {
         this.showExportButton = true;
       }
+      const localTimestamp = recordParser.recordTimestamp(this.records.marcjson);
+      const remoteTimestamp = recordParser.recordTimestamp(this.records.remotemarcjson);
       const systemControlNumbers = recordParser.systemControlNumbers(this.records.marcjson);
       var hasMelinda = systemControlNumbers.find(a =>a.includes("MELINDA"));
-      if (!hasMelinda && this.selectedInterface.includes('Melinda')) {
+      if (!hasMelinda && this.selectedInterface.includes('Melinda') && localTimestamp < remoteTimestamp) {
         this.showExportButton = false;
       }
 
-      const localTimestamp = recordParser.recordTimestamp(this.records.marcjson);
-      const remoteTimestamp = recordParser.recordTimestamp(this.records.remotemarcjson);
       if (localTimestamp < remoteTimestamp) {
         this.showExportButton = false;
       }
