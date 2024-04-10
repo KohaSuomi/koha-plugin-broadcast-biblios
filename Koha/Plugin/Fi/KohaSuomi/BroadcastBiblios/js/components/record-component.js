@@ -67,6 +67,7 @@ export default {
       this.records.saved = false;
       this.loader = true;
       this.disabled = false;
+      this.records.getLocal(this.biblio_id);
       this.records.search(this.biblio_id, this.selectedInterface, this.patron_id).then((response) => {
         if (Object.keys(response.data.marcjson).length > 0) {
           this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
