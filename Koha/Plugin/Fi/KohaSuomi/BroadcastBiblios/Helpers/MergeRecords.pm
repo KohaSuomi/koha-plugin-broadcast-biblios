@@ -83,7 +83,8 @@ sub merge {
 
     foreach my $add (@{$filters->{add}}) {
         my $field = MARC::Field->new($add->{tag}, $add->{ind1}, $add->{ind2}, %{$add->{subfields}});
-        unless ($merged->subfield($add->{tag}, %{$add->{subfields}})) {
+        my @added = $merged->field($add->{tag});
+        unless (grep { $_->subfield('a') eq $add->{subfields}->{a} } @added) {
             $merged->append_fields($field);
         }
     }
