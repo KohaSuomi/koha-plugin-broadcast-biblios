@@ -72,12 +72,6 @@ if ($help) {
     exit 0;
 }
 
-unless ($type) {
-    print "Type is required\n";
-    print $usage;
-    exit 1;
-}
-
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     verbose => $verbose,
     type => $type,

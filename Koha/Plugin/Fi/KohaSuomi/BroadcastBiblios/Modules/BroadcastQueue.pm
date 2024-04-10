@@ -288,6 +288,11 @@ sub processQueue {
         $self->processExportQueue;
     } elsif ($self->getType eq "import") {
         $self->processImportQueue;
+    } else {
+        print "Starting to process export queue\n" if $self->verbose;
+        $self->processExportQueue;
+        print "Starting to process import queue\n" if $self->verbose;
+        $self->processImportQueue;
     }
 }
 
