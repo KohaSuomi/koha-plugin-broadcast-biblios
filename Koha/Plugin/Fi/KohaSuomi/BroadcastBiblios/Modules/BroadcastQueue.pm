@@ -546,7 +546,8 @@ sub processNewComponentPartsToQueue {
 
 sub updateRecordInLocal {
     my ($self, $broadcast_interface, $biblio_id, $broadcast_biblio_id, $user_id) = @_;
-    sleep(2); # Wait for the record to be updated in the remote system
+    print "Waiting for 5 seconds\n" if $self->verbose;
+    sleep(5); # Wait for the record to be updated in the remote system
     my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
     my $broadcastrecord = $search->searchFromInterface($broadcast_interface, undef, $broadcast_biblio_id, $user_id);
     my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastrecord->{marcjson}});
