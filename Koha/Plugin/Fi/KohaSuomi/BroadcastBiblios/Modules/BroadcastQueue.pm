@@ -387,9 +387,9 @@ sub processExportQueue {
                 my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
                 my $postResponse = $rest->apiCall({type => 'POST', data => {body => $marc}, user_id => $queue->{user_id}});
                 if ($postResponse->is_success) {
+                    $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
+                    print "Target id: $target_id\n" if $self->verbose;
                     if ($queue->{componentparts}) {
-                        $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
-                        print "Target id: $target_id\n" if $self->verbose;
                         my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
                         unless ($results->{componentparts}) {
                             $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
