@@ -79,8 +79,8 @@ try {
         client_secret => $client_secret,
         auth_type => $auth_type
     });
-    print "User created successfully\n";
+    print "User $username created successfully\n";
 } catch {
     my $error = $_;
-    die "Failed to create user: $error->{message}\n";
+    die "Failed to create user $username: $error->{message}\n";
 };
