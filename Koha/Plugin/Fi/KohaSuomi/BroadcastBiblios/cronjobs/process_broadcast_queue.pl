@@ -43,6 +43,7 @@ my $verbose = 0;
 my $limit = 0;
 my $interface;
 my $type;
+my $update = 0;
 
 GetOptions(
     'h|help'                     => \$help,
@@ -50,6 +51,7 @@ GetOptions(
     'c|chunks:i'                 => \$chunks,
     'l|limit:i'                  => \$limit,
     't|type:s'                   => \$type,
+    'u|update'                   => \$update,
 
 );
 
@@ -61,6 +63,7 @@ my $usage = <<USAGE;
     -c, --chunks            Process biblios in chunks, default is 200.
     -l, --limit             Limiting the results of biblios.
     -t, --type              Type of the broadcast, can be 'import' or 'export'.
+    -u, --update            Update record in local database after broadcast.
 
 USAGE
 
@@ -78,6 +81,7 @@ unless ($type) {
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     verbose => $verbose,
     type => $type,
+    update => $update,
 });
 
 $plugin->process_queue();

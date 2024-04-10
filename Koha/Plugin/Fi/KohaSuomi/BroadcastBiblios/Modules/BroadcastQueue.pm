@@ -72,6 +72,10 @@ sub getType {
     shift->{_params}->{type};
 }
 
+sub updateRecord {
+    shift->{_params}->{update};
+}
+
 sub db {
     my ($self) = @_;
     return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database->new;
@@ -392,9 +396,14 @@ sub processExportQueue {
                         }
                     }
                     print "Pushed record to ".$queue->{broadcast_interface}." with response: ". $postResponse->message."\n";
+                    $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
                 } else {
                     die "Failed to push record to ".$queue->{broadcast_interface}.": ".$postResponse->message;
                 }
+            }
+            if ($self->updateRecord) {
+                print "Updating record ".$queue->{biblio_id}." in local database\n" if $self->verbose;
+                $self->updateRecordInLocal($queue->{broadcast_interface}, $queue->{biblio_id}, $target_id, $queue->{user_id});
             }
         } catch {
             my $error = $_;
@@ -533,6 +542,41 @@ sub processNewComponentPartsToQueue {
         }
     }
         
+}
+
+sub updateRecordInLocal {
+    my ($self, $broadcast_interface, $biblio_id, $broadcast_biblio_id, $user_id) = @_;
+    my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+    my $broadcastrecord = $search->searchFromInterface($broadcast_interface, undef, $broadcast_biblio_id, $user_id);
+    my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastrecord->{marcjson}});
+    my $marcxml = $marc->toXML();
+    my $record = $self->getRecord($marcxml);
+    my $componentparts = $broadcastrecord->{componentparts} ? from_json($broadcastrecord->{componentparts}) : undef;
+    if ($record) {
+        my $parts;
+        if ($componentparts) {
+            foreach my $part (@$componentparts) {
+                my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $part->{marcjson}});
+                push @$parts, {
+                    biblionumber => $part->{biblionumber},
+                    marcxml => Encode::decode_utf8($marc->toXML()),
+                };
+            }
+        }
+        $self->db->insertToQueue({
+            broadcast_interface => $broadcast_interface,
+            user_id => $user_id,
+            type => 'import',
+            broadcast_biblio_id => $broadcast_biblio_id,
+            biblio_id => $biblio_id,
+            marc => $marcxml,
+            componentparts => $parts ? to_json($parts) : undef,
+            diff => undef,
+            hostrecord => $parts ? 1 : 0,
+        });
+    } else {
+        die "Failed to update local record $biblio_id\n";
+    }
 }
 
 sub processParams {

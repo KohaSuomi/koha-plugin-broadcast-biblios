@@ -353,6 +353,7 @@ sub process_queue {
     my $params = {
         verbose => $self->{verbose},
         type => $self->{type},
+        update => $self->{update},
     };
 
     my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new($params);
