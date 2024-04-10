@@ -402,7 +402,7 @@ sub processExportQueue {
                 }
             }
             if ($self->updateRecord) {
-                print "Updating record ".$queue->{biblio_id}." in local database\n" if $self->verbose;
+                print "Adding record ".$target_id." to import queue for updating local record\n" if $self->verbose;
                 $self->updateRecordInLocal($queue->{broadcast_interface}, $queue->{biblio_id}, $target_id, $queue->{user_id});
             }
         } catch {
