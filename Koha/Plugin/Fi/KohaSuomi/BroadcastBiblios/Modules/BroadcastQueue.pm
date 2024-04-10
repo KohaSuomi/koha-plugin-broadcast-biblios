@@ -401,7 +401,7 @@ sub processExportQueue {
                     die "Failed to push record to ".$queue->{broadcast_interface}.": ".$postResponse->message;
                 }
             }
-            if ($self->updateRecord) {
+            if ($self->updateRecord && $target_id) {
                 print "Adding record ".$target_id." to import queue for updating local record\n" if $self->verbose;
                 $self->updateRecordInLocal($queue->{broadcast_interface}, $queue->{biblio_id}, $target_id, $queue->{user_id});
             }
