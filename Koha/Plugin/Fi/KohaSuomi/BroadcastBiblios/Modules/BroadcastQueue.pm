@@ -551,7 +551,7 @@ sub updateRecordInLocal {
     my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastrecord->{marcjson}});
     my $marcxml = $marc->toXML();
     my $record = $self->getRecord($marcxml);
-    my $componentparts = $broadcastrecord->{componentparts} ? from_json($broadcastrecord->{componentparts}) : undef;
+    my $componentparts = scalar($broadcastrecord->{componentparts}) < 0 ? from_json($broadcastrecord->{componentparts}) : undef;
     if ($record) {
         my $parts;
         if ($componentparts) {
