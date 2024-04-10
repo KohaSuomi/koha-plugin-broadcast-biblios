@@ -153,7 +153,7 @@ sub getActiveRecordByBiblionumber {
 
 sub updateActiveRecord {
     my ($self, $id, $params) = @_;
-    return $self->db->updateActiveRecordIdentifiers($id, $params);
+    return $self->db->updateActiveRecord($id, $params);
 }
 
 sub setActiveRecords {
