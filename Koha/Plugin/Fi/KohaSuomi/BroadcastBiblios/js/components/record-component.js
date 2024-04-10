@@ -230,7 +230,7 @@ export default {
               <div v-if="records.saved" class="alert alert-success" role="alert">
                 Lisätty jonoon!
               </div>
-              <div class="row">
+              <div v-else class="row">
                 <div v-html="localRecord" class="col-sm-6" :class="{ 'col-sm-8': !remoteRecord }"></div>
                 <div v-if="remoteRecord" v-html="remoteRecord" class="col-sm-6"></div>
               </div>
@@ -258,9 +258,9 @@ export default {
             </div>
           </div>
           <div class="modal-footer">
-            <button v-if="showExportButton && interfaceType == 'export'" class="btn btn-secondary" style="float:none;" @click="exportRecord()">Vie</button>\
-            <button v-if="componentPartsEqual && showImportButton" class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">Tuo</button>\
-            <button v-if="!componentPartsEqual && interfaceType == 'export'" class="btn btn-danger" style="float:none;" @click="exportComponentParts()">Vie osakohteet</button>\
+            <button v-if="!records.saved && showExportButton && interfaceType == 'export'" class="btn btn-secondary" style="float:none;" @click="exportRecord()">Vie</button>\
+            <button v-if="!records.saved && componentPartsEqual && showImportButton" class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">Tuo</button>\
+            <button v-if="!records.saved && !componentPartsEqual && interfaceType == 'export'" class="btn btn-danger" style="float:none;" @click="exportComponentParts()">Vie osakohteet</button>\
             <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
           </div>
         </div>

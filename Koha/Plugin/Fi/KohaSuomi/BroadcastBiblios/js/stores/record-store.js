@@ -30,6 +30,7 @@ export const useRecordStore = defineStore("record", {
         const response = await axios.post(`/api/v1/contrib/kohasuomi/broadcast/biblios/${biblio_id}/search`, { interface_name: interface_name, identifiers: this.identifiers, patron_id: patron_id});
         this.remotemarcjson = response.data.marcjson;
         this.remotecomponentparts = response.data.componentparts;
+        this.saved = false;
         return response;
       } catch (error) {
         const errorStore = useErrorStore();
