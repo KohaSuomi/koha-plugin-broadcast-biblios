@@ -1,13 +1,13 @@
 export const recordAsHTML = (record) => {
     let html = '<div>';
     html +=
-        '<li class="row" style="list-style:none;"> <div class="col-xs-3 mr-2">';
+        '<li class="row" style="list-style:none; overflow:hidden;"> <div class="col-xs-3 mr-2">';
     html +=
         '<b>000</b></div><div class="col-xs-9">' + record.leader + '</li>';
     record.fields.forEach(function (v, i, a) {
         if ($.isNumeric(v.tag)) {
         html +=
-            '<li class="row" style="list-style:none;"><div class="col-xs-3 mr-2">';
+            '<li class="row" style="list-style:none; overflow:hidden;"><div class="col-xs-3 mr-2">';
         } else {
         html += '<li class="row hidden"><div class="col-xs-3  mr-2">';
         }
