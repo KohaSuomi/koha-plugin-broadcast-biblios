@@ -576,6 +576,7 @@ sub updateRecordInLocal {
             diff => undef,
             hostrecord => $parts ? 1 : 0,
         });
+        print "Added record $broadcast_biblio_id to import queue for updating local record $biblio_id\n" if $self->verbose;
     } else {
         die "Failed to update local record $biblio_id\n";
     }
