@@ -62,7 +62,7 @@ unless ($username && $broadcast_interface && $auth_type) {
 
 if ($auth_type eq 'oauth' && !$client_id && !$client_secret) {
     die "Missing required parameters for oauth. Usage: add_user.pl --username <username> --auth_type oauth --client_id <client_id> --client_secret <client_secret>\n";
-} 
+}
 
 if ($auth_type eq 'basic' && !$password) {
     die "Missing required parameters for basic auth. Usage: add_user.pl --username <username> --auth_type basic --password <password>\n";
