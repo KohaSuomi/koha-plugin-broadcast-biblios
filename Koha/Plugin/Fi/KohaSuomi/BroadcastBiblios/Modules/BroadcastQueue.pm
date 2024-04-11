@@ -397,7 +397,9 @@ sub processExportQueue {
                     if ($queue->{componentparts}) {
                         sleep(7); # Wait for the record to be updated in the remote system
                         my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
-                        $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
+                        if ($results->{marcjson}) {
+                            $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
+                        }
                     }
                     print "Pushed record to ".$queue->{broadcast_interface}." with response: ". $postResponse->message."\n";
                     $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
@@ -422,7 +424,7 @@ sub processExportComponentParts {
     
     $componentparts = $self->getComponentParts->sortComponentParts($componentparts);
     $broadcastcomponentparts = $self->getComponentParts->sortComponentParts($broadcastcomponentparts);
-    if (defined($broadcastcomponentparts) && scalar @$componentparts != scalar @$broadcastcomponentparts) {
+    if ($method eq 'PUT' && defined($broadcastcomponentparts) && scalar @$componentparts != scalar @$broadcastcomponentparts) {
         die "Component parts count mismatch, local: ".scalar @$componentparts.", broadcast: ".scalar @$broadcastcomponentparts."\n";
     }
 
