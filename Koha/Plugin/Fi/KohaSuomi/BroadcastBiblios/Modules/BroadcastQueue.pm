@@ -440,7 +440,7 @@ sub processExportComponentParts {
         my $broadcast_biblio_id;
         my $broadcastrecord;
 
-        if (defined($broadcastcomponentparts)) {
+        if ($method eq 'PUT' && defined($broadcastcomponentparts)) {
             $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
             my $brmarcxml = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastcomponentparts->[$i]->{marcjson}})->toXML;
             $broadcastrecord = $self->getRecord($brmarcxml);
