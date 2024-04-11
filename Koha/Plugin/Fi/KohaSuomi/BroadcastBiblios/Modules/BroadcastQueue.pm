@@ -446,10 +446,11 @@ sub processExportComponentParts {
             my $brmarcxml = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastcomponentparts->[$i]->{marcjson}})->toXML;
             $broadcastrecord = $self->getRecord($brmarcxml);
         }
-
-        if ($comprecord->subfield('773', 'w') ne $hostcontrolnumber) {
-            $comprecord->update('773', 'w' => $hostcontrolnumber);
+        my $f773w = ->subfield('773', 'w');
+        if ($f773w ne $hostcontrolnumber) {
+            $f773w->update('w' => $hostcontrolnumber);
         }
+
         my $mergedrecord = $self->mergeRecords($interface)->merge($comprecord, $broadcastrecord);
         my $marcxml = $comprecord->as_xml_record;
         $self->db->insertToQueue({
