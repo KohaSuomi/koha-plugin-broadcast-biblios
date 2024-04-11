@@ -24,6 +24,7 @@ use Scalar::Util qw( blessed );
 use Try::Tiny;
 use Koha::DateUtils qw( dt_from_string );
 use C4::Context;
+use POSIX qw(strftime);
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
@@ -350,73 +351,76 @@ sub processExportQueue {
     my ($self) = @_;
     my $queue = $self->db->getPendingQueue('export');
     foreach my $queue (@$queue) {
-        my $action;
+        my $starttime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
+        print "Starting to process record ".$queue->{biblio_id}." at ".$starttime."\n" if $self->verbose;
+        my $error;
         my $target_id = $queue->{broadcast_biblio_id};
-        try {
-            $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
-            my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $queue->{broadcast_interface}, verbose => $self->verbose});
-            my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
-            if ($target_id) {
-                my $getResponse = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
-                if ($getResponse->{marcjson}) {
-                    print "Got record ".$target_id." from ".$queue->{broadcast_interface}."\n";
-                    my $record = $getResponse->{marcjson};
-                    my $remoterecord = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $record});
-                    if ($self->compareEncodingLevels($queue->{marc}, $remoterecord->toXML) eq 'lower') {
-                        die "Local record ".$queue->{biblio_id}." has lower encoding level than broadcast record ".$queue->{broadcast_biblio_id}."\n";
-                    } elsif ($self->compareTimestamps($queue->{marc}, $remoterecord->toXML) ) {
-                        die "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}."\n";
-                    } else {
-                        my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), $self->getRecord($remoterecord->toXML));
-                        
-                        if ($queue->{hostrecord} || $queue->{componentparts}) {
-                            $self->processExportComponentParts($queue->{broadcast_interface}, 'PUT', $record, from_json($queue->{componentparts}), $getResponse->{componentparts}, $queue->{user_id});
-                        }
-                
-                        my $marcxml = $mergedrecord->as_xml_record;
-                        my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
-                        my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}});
-                        if ($putResponse->is_success) {
-                            print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";
-                            $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
-                        } else {
-                            die "Failed to update record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}.": ".$putResponse->message;
-                        }
-                    }
+        $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
+        my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $queue->{broadcast_interface}, verbose => $self->verbose});
+        my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
+        if ($target_id) {
+            my $getResponse = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
+            if ($getResponse->{marcjson}) {
+                print "Got record ".$target_id." from ".$queue->{broadcast_interface}."\n";
+                my $record = $getResponse->{marcjson};
+                my $remoterecord = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $record});
+                if ($self->compareEncodingLevels($queue->{marc}, $remoterecord->toXML) eq 'lower') {
+                    $error = "Local record ".$queue->{biblio_id}." has lower encoding level than broadcast record ".$queue->{broadcast_biblio_id}."\n";
+                } elsif ($self->compareTimestamps($queue->{marc}, $remoterecord->toXML) ) {
+                    $error = "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}."\n";
                 } else {
-                    die "Failed to get record ".$queue->{broadcast_biblio_id}." from ".$queue->{broadcast_interface}.": ".$getResponse->{message};
+                    my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), $self->getRecord($remoterecord->toXML));
+                    
+                    if ($queue->{hostrecord} || $queue->{componentparts}) {
+                        $self->processExportComponentParts($queue->{broadcast_interface}, 'PUT', $record, from_json($queue->{componentparts}), $getResponse->{componentparts}, $queue->{user_id});
+                    }
+            
+                    my $marcxml = $mergedrecord->as_xml_record;
+                    my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
+                    my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}});
+                    if ($putResponse->is_success) {
+                        print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";
+                        $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
+                    } else {
+                        $error = "Failed to update record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}.": ".$putResponse->message;
+                    }
                 }
             } else {
-                my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), undef);
-                my $marcxml = $mergedrecord->as_xml_record;
-                my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
-                print Data::Dumper::Dumper($marc) if $self->verbose;
-                my $postResponse = $rest->apiCall({type => 'POST', data => {body => $marc}, user_id => $queue->{user_id}});
-                if ($postResponse->is_success) {
-                    $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
-                    print "Target id: $target_id\n" if $self->verbose;
-                    if ($queue->{componentparts}) {
-                        sleep(7); # Wait for the record to be updated in the remote system
-                        my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
-                        if ($results->{marcjson}) {
-                            $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
-                        }
+                $error = "Failed to get record ".$queue->{broadcast_biblio_id}." from ".$queue->{broadcast_interface}.": ".$getResponse->{message};
+            }
+        } else {
+            my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), undef);
+            my $marcxml = $mergedrecord->as_xml_record;
+            my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
+            my $postResponse = $rest->apiCall({type => 'POST', data => {body => $marc}, user_id => $queue->{user_id}});
+            if ($postResponse->is_success) {
+                $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
+                print "Target id: $target_id\n" if $self->verbose;
+                if ($queue->{componentparts}) {
+                    sleep(7); # Wait for the record to be updated in the remote system
+                    my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
+                    if ($results->{marcjson}) {
+                        $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
                     }
-                    print "Pushed record to ".$queue->{broadcast_interface}." with response: ". $postResponse->message."\n";
-                    $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
-                } else {
-                    die "Failed to push record to ".$queue->{broadcast_interface}.": ".$postResponse->message;
                 }
+                print "Pushed record to ".$queue->{broadcast_interface}." with response: ". $postResponse->message."\n";
+                $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
+            } else {
+                $error = "Failed to push record to ".$queue->{broadcast_interface}.": ".$postResponse->message;
             }
-            if ($self->updateRecord && $target_id) {
-                print "Adding record ".$target_id." to import queue for updating local record\n" if $self->verbose;
-                $self->updateRecordInLocal($queue->{broadcast_interface}, $queue->{biblio_id}, $target_id, $queue->{user_id});
-            }
-        } catch {
-            my $error = $_;
-            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
-            print "Error while processing export queue: $error\n";
         }
+        
+        if ($self->updateRecord && $target_id) {
+            print "Adding record ".$target_id." to import queue for updating local record\n" if $self->verbose;
+            $self->updateRecordInLocal($queue->{broadcast_interface}, $queue->{biblio_id}, $target_id, $queue->{user_id});
+        }
+        
+        if ($error) {
+            print $error."\n";
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
+        }
+        my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
+        print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
     }
 }
 
