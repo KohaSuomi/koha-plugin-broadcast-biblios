@@ -76,8 +76,6 @@ sub ua {
     if ($ENV{MOJO_PROXY}) {
         $ua->proxy->http($ENV{MOJO_PROXY})->https($ENV{MOJO_PROXY});
     }
-    $ua->connect_timeout(180);
-    $ua->inactivity_timeout(180);
     return $ua;
 }
 
@@ -160,9 +158,9 @@ sub headers {
 sub call {
     my ($self, $method, $path, $headers, $format, $body) = @_;
     my $response;
-    $response = $self->ua->$method($path => $headers) if !defined $body || !$body;
-    $response = $self->ua->$method($path => $headers => $body) if defined $body && $body && !defined $format;
-    $response = $self->ua->$method($path => $headers => $format => $body) if defined $format && ($format eq "json" || $format eq "form") && defined $body && $body;
+    $response = $self->ua->inactivity_timeout(180)->$method($path => $headers) if !defined $body || !$body;
+    $response = $self->ua->inactivity_timeout(180)->$method($path => $headers => $body) if defined $body && $body && !defined $format;
+    $response = $self->ua->inactivity_timeout(180)->$method($path => $headers => $format => $body) if defined $format && ($format eq "json" || $format eq "form") && defined $body && $body;
     print Data::Dumper::Dumper $response->result if $response->result->is_error && $self->verbose();
     return $response;
 }
