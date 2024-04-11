@@ -395,10 +395,9 @@ sub processExportQueue {
                     $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
                     print "Target id: $target_id\n" if $self->verbose;
                     if ($queue->{componentparts}) {
+                        sleep(7); # Wait for the record to be updated in the remote system
                         my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
-                        if (scalar($results->{componentparts}) < 0) {
-                            $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
-                        }
+                        $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
                     }
                     print "Pushed record to ".$queue->{broadcast_interface}." with response: ". $postResponse->message."\n";
                     $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
