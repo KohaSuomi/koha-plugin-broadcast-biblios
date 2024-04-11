@@ -377,7 +377,8 @@ sub processExportQueue {
             
                     my $marcxml = $mergedrecord->as_xml_record;
                     my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
-                    my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}});
+                    my $format = $queue->{broadcast_interface} =~ /Melinda/i ? 'json' : undef;
+                    my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}, format => $format});
                     if ($putResponse->is_success) {
                         print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";
                         $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
@@ -392,8 +393,8 @@ sub processExportQueue {
             my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), undef);
             my $marcxml = $mergedrecord->as_xml_record;
             my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? encode_json($self->getMarcXMLToJSON->toJSON($marcxml)) : encode_json($marcxml);
-            print Data::Dumper::Dumper $marc if $self->verbose;
-            my $postResponse = $rest->apiCall({type => 'POST', data => {body => $marc}, user_id => $queue->{user_id}});
+            my $format = $queue->{broadcast_interface} =~ /Melinda/i ? 'json' : undef;
+            my $postResponse = $rest->apiCall({type => 'POST', data => {body => $marc}, user_id => $queue->{user_id}, format => $format});
             if ($postResponse->is_success) {
                 $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
                 print "Target id: $target_id\n" if $self->verbose;
