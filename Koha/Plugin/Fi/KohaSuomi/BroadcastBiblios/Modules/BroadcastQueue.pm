@@ -392,7 +392,7 @@ sub processExportQueue {
         } else {
             my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), undef);
             my $marcxml = $mergedrecord->as_xml_record;
-            my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? encode_json($self->getMarcXMLToJSON->toJSON($marcxml)) : encode_json($marcxml);
+            my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
             print Data::Dumper::Dumper $marc if $self->verbose;
             my $format = $queue->{broadcast_interface} =~ /Melinda/i ? 'json' : undef;
             my $postResponse = $rest->apiCall({type => 'POST', data => {body => $marc}, user_id => $queue->{user_id}, format => $format});
