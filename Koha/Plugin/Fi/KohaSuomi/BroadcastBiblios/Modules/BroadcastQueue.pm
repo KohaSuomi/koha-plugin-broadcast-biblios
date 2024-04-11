@@ -451,15 +451,19 @@ sub processExportComponentParts {
         }
         my $mergedrecord = $self->mergeRecords($interface)->merge($comprecord, $broadcastrecord);
         my $marcxml = $comprecord->as_xml_record;
-        my $marc = $interface =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
-        my $data = $broadcast_biblio_id ? {biblio_id => $broadcast_biblio_id, body => $marc} : {body => $marc};
-        my $response = $rest->apiCall({type => $method, data => $data, user_id => $user_id});
-        if ($response->is_success) {
-            print $method." component part ".$biblio_id." to ".$interface." with response: ". $response->message."\n";
-        } else {
-            print "Failed to ".$method." component part ".$biblio_id." to ".$interface.": ".$response->body."\n";
-            die "Failed to push component part ".$biblio_id." to ".$interface.": ".$response->message;
-        }
+        $self->db->insertToQueue({
+            broadcast_interface => $interface,
+            user_id => $user_id,
+            type => 'export',
+            broadcast_biblio_id => $broadcast_biblio_id,
+            biblio_id => $biblio_id,
+            marc => $marcxml,
+            componentparts => undef,
+            diff => undef,
+            hostrecord => 0,
+        });
+       print "Added component part $biblio_id to export queue\n" if $self->verbose;
+
     }
 }
 
