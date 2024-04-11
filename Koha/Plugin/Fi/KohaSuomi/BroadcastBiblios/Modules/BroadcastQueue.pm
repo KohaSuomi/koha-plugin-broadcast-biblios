@@ -394,7 +394,7 @@ sub processExportQueue {
                 if ($postResponse->is_success) {
                     $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
                     print "Target id: $target_id\n" if $self->verbose;
-                    if (scalar($queue->{componentparts}) > 0) {
+                    if ($queue->{componentparts}) {
                         my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
                         if (scalar($results->{componentparts}) < 0) {
                             $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
