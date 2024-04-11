@@ -450,7 +450,7 @@ sub processExportComponentParts {
             my $brmarcxml = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastcomponentparts->[$i]->{marcjson}})->toXML;
             $broadcastrecord = $self->getRecord($brmarcxml);
         }
-        my $f773w = ->subfield('773', 'w');
+        my $f773w = $comprecord->subfield('773', 'w');
         if ($f773w ne $hostcontrolnumber) {
             $f773w->update('w' => $hostcontrolnumber);
         }
