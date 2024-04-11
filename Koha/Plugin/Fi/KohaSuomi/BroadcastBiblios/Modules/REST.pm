@@ -76,7 +76,7 @@ sub ua {
     if ($ENV{MOJO_PROXY}) {
         $ua->proxy->http($ENV{MOJO_PROXY})->https($ENV{MOJO_PROXY});
     }
-    $ua->inactivity_timeout(300);
+    $ua->inactivity_timeout(180);
     return $ua;
 }
 
