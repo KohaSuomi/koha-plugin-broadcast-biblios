@@ -287,6 +287,14 @@ sub updateQueueStatus {
     $sth->finish();
 }
 
+sub removeComponentPartsFromHostRecord {
+    my ($self, $id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("UPDATE " . $self->queue . " SET componentparts = NULL WHERE id = ?");
+    $sth->execute($id);
+    $sth->finish();
+}
+
 sub updateQueueStatusAndBiblioId {
     my ($self, $id, $biblio_id, $status, $statusmessage) = @_;
     my $dbh = $self->dbh;

@@ -485,6 +485,7 @@ sub putQueueRecord {
             if ($putResponse->is_success) {
                 print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";
                 $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
+                $self->db->removeComponentPartsFromHostRecord($queue->{id}); # Remove component parts from host after successful update
             } else {
                 die "Failed to update record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}.": ".$putResponse->message;
             }
