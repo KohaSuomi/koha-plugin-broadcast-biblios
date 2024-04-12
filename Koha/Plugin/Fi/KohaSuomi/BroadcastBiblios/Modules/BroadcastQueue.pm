@@ -363,7 +363,6 @@ sub processExportQueue {
             }
 
             if ($self->updateRecord && $target_id) {
-                print "Updating local record $queue->{biblio_id} with new 035a \n" if $self->verbose;
                 my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $target_id);
                 $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
             }
@@ -426,7 +425,6 @@ sub processExportComponentParts {
             $broadcast_biblio_id = $self->postQueueRecord($queue);
        }
        if ($self->updateRecord && $broadcast_biblio_id) {
-            print "Updating local record $queue->{biblio_id} with new 035a \n" if $self->verbose;
             my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $broadcast_biblio_id);
             $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
         }
@@ -632,7 +630,7 @@ sub updateLocalRecord {
                 }
             });
     if ($success) {
-        print "Updated record $biblio_id\n" if $self->verbose;
+        print "Updated local record $biblio_id\n" if $self->verbose;
     } else {
         die "Failed to update record $biblio_id\n";
     }
