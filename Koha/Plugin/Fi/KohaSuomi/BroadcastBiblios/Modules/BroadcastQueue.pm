@@ -306,7 +306,7 @@ sub processImportQueue {
         my $frameworkcode = GetFrameworkCode( $biblio_id );
         try {
             my $record = $self->getRecord($queue->{marc});
-            
+
             if ($record) {
                 my $mergedrecord = $self->mergeRecords()->merge($record, undef);
                 if ($biblio_id) {
@@ -336,7 +336,7 @@ sub processImportQueue {
                         die "Failed to add a record\n";
                         $self->db->updateQueueStatus($queue->{id}, 'failed', 'Failed to add a record');
                     }
-                    
+
                 }
             }
         } catch {
@@ -361,10 +361,11 @@ sub processExportQueue {
             } else {
                 $target_id = $self->postQueueRecord($queue);
             }
-            
+
             if ($self->updateRecord && $target_id) {
-                print "Adding record ".$target_id." to import queue for updating local record\n" if $self->verbose;
-                $self->updateRecordInLocal($queue->{broadcast_interface}, $queue->{biblio_id}, $target_id, $queue->{user_id});
+                print "Updating local record $queue->{biblio_id} with new 035a \n" if $self->verbose;
+                my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $target_id);
+                $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
             }
 
             my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
@@ -380,17 +381,14 @@ sub processExportQueue {
 }
 
 sub processExportComponentParts {
-    my ($self, $interface, $method, $hostrecord, $componentparts, $broadcastcomponentparts, $user_id) = @_;
-    
+    my ($self, $interface, $method, $host_id, $componentparts, $broadcastcomponentparts, $user_id) = @_;
+
     $componentparts = $self->getComponentParts->sortComponentParts($componentparts);
     $broadcastcomponentparts = $self->getComponentParts->sortComponentParts($broadcastcomponentparts);
     if ($method eq 'PUT' && defined($broadcastcomponentparts) && scalar @$componentparts != scalar @$broadcastcomponentparts) {
         die "Component parts count mismatch, local: ".scalar @$componentparts.", broadcast: ".scalar @$broadcastcomponentparts."\n";
     }
 
-    my $hostmarcxml = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $hostrecord})->toXML;
-    $hostrecord = $self->getRecord($hostmarcxml);
-    my $hostcontrolnumber = '('.$hostrecord->field('003')->data.')'.$hostrecord->field('001')->data;
     my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $interface});
 
     for (my $i = 0; $i < scalar @$componentparts; $i++) {
@@ -402,9 +400,9 @@ sub processExportComponentParts {
         if ($method eq 'PUT' && defined($broadcastcomponentparts)) {
             $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
         }
-        my $f773w = $comprecord->field('773');
-        if ($comprecord->subfield('773', 'w') ne $hostcontrolnumber) {
-            $f773w->update('w' => $hostcontrolnumber);
+
+        if ($method eq 'POST') {
+            $comprecord = $self->mergeRecords($interface)->updateHostComponentPartLink($comprecord, $host_id);
         }
 
         my $marcxml = $comprecord->as_xml_record;
@@ -423,11 +421,15 @@ sub processExportComponentParts {
        my $queue = $self->db->getQueuedRecordByBiblioId($biblio_id, $interface, 'export');
        $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
        if ($broadcast_biblio_id) {
-           $self->putQueueRecord($queue, $broadcast_biblio_id);
+            $self->putQueueRecord($queue, $broadcast_biblio_id);
        } else {
-           $self->postQueueRecord($queue);
+            $broadcast_biblio_id = $self->postQueueRecord($queue);
        }
-
+       if ($self->updateRecord && $broadcast_biblio_id) {
+            print "Updating local record $queue->{biblio_id} with new 035a \n" if $self->verbose;
+            my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $broadcast_biblio_id);
+            $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
+        }
     }
 }
 
@@ -440,17 +442,13 @@ sub postQueueRecord {
     my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), undef);
     my $marcxml = $mergedrecord->as_xml_record;
     my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
-    
+
     my $postResponse = $rest->apiCall({type => 'POST', data => {body => $marc}, user_id => $queue->{user_id}});
     if ($postResponse->is_success) {
         $target_id = $postResponse->headers->header('record-id') if $postResponse->headers->header('record-id');
         print "Target id: $target_id\n" if $self->verbose;
-        if ($queue->{componentparts}) {
-            sleep(7); # Wait for the record to be updated in the remote system
-            my $results = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
-            if ($results->{marcjson}) {
-                $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $results->{marcjson}, from_json($queue->{componentparts}), undef, $queue->{user_id});
-            }
+        if ($queue->{componentparts} && $target_id) {
+            $self->processExportComponentParts($queue->{broadcast_interface}, 'POST', $target_id, from_json($queue->{componentparts}), undef, $queue->{user_id});
         }
         print "Pushed record to ".$queue->{broadcast_interface}." with response: ". $postResponse->message."\n";
         $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
@@ -466,7 +464,7 @@ sub putQueueRecord {
 
     my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $queue->{broadcast_interface}, verbose => $self->verbose});
     my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
-    
+
     my $getResponse = $search->searchFromInterface($queue->{broadcast_interface}, undef, $target_id, $queue->{user_id});
     if ($getResponse->{marcjson}) {
         print "Got record ".$target_id." from ".$queue->{broadcast_interface}."\n";
@@ -478,11 +476,11 @@ sub putQueueRecord {
             die "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}."\n";
         } else {
             my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), $self->getRecord($remoterecord->toXML));
-            
+
             if ($queue->{hostrecord} || $queue->{componentparts}) {
-                $self->processExportComponentParts($queue->{broadcast_interface}, 'PUT', $record, from_json($queue->{componentparts}), $getResponse->{componentparts}, $queue->{user_id});
+                $self->processExportComponentParts($queue->{broadcast_interface}, 'PUT', $target_id, from_json($queue->{componentparts}), $getResponse->{componentparts}, $queue->{user_id});
             }
-    
+
             my $marcxml = $mergedrecord->as_xml_record;
             my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : encode_json($marcxml);
             my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}});
@@ -582,7 +580,7 @@ sub processNewComponentPartsToQueue {
             }
         }
     }
-        
+
 }
 
 sub updateRecordInLocal {
@@ -620,6 +618,23 @@ sub updateRecordInLocal {
         print "Added record $broadcast_biblio_id to import queue for updating local record $biblio_id\n" if $self->verbose;
     } else {
         die "Failed to update local record $biblio_id\n";
+    }
+}
+
+sub updateLocalRecord {
+    my ($self, $biblio_id, $record) = @_;
+    my $frameworkcode = GetFrameworkCode( $biblio_id );
+    my $f942 = $self->get942Field($biblio_id);
+    $record = $self->add942ToBiblio($record, $f942);
+    my $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
+                overlay_context => {
+                    source       => 'z3950'
+                }
+            });
+    if ($success) {
+        print "Updated record $biblio_id\n" if $self->verbose;
+    } else {
+        die "Failed to update record $biblio_id\n";
     }
 }
 
@@ -687,13 +702,13 @@ sub addItemTypeToBiblio {
     } else {
         die "Failed to get itemtype for biblionumber $biblionumber\n";
     }
-    
+
     return $record;
 }
 
 sub add942ToBiblio {
     my ($self, $record, $f942) = @_;
-    
+
     if ($f942 && $f942->subfield('c')) {
         my @f942 = $record->field('942');
         foreach my $f (@f942) {
@@ -703,7 +718,7 @@ sub add942ToBiblio {
         print "Adding ".$f942->as_formatted()." field to record\n" if $self->verbose;
         $record->insert_fields_ordered($f942);
     }
-    
+
     return $record;
 }
 
