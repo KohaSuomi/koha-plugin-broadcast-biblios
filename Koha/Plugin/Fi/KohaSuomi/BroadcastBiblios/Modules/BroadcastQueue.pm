@@ -445,19 +445,12 @@ sub processExportComponentParts {
         my $biblio_id = $componentpart->{biblionumber};
         my $comprecord = $self->getRecord($componentpart->{marcxml});
         my $broadcast_biblio_id;
-        my $broadcastrecord;
-
-        if ($method eq 'PUT' && defined($broadcastcomponentparts)) {
-            $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
-            my $brmarcxml = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastcomponentparts->[$i]->{marcjson}})->toXML;
-            $broadcastrecord = $self->getRecord($brmarcxml);
-        }
+        
         my $f773w = $comprecord->field('773');
         if ($comprecord->subfield('773', 'w') ne $hostcontrolnumber) {
             $f773w->update('w' => $hostcontrolnumber);
         }
 
-        my $mergedrecord = $self->mergeRecords($interface)->merge($comprecord, $broadcastrecord);
         my $marcxml = $comprecord->as_xml_record;
         $self->db->insertToQueue({
             broadcast_interface => $interface,
