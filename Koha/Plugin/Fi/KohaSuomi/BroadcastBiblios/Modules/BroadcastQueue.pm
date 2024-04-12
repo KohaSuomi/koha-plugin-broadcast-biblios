@@ -445,7 +445,10 @@ sub processExportComponentParts {
         my $biblio_id = $componentpart->{biblionumber};
         my $comprecord = $self->getRecord($componentpart->{marcxml});
         my $broadcast_biblio_id;
-        
+
+        if ($method eq 'PUT' && defined($broadcastcomponentparts)) {
+            $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
+        }
         my $f773w = $comprecord->field('773');
         if ($comprecord->subfield('773', 'w') ne $hostcontrolnumber) {
             $f773w->update('w' => $hostcontrolnumber);
