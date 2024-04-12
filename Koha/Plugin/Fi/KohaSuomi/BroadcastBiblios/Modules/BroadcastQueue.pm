@@ -582,44 +582,6 @@ sub processNewComponentPartsToQueue {
 
 }
 
-sub updateRecordInLocal {
-    my ($self, $broadcast_interface, $biblio_id, $broadcast_biblio_id, $user_id) = @_;
-    print "Waiting for 7 seconds\n" if $self->verbose;
-    sleep(7); # Wait for the record to be updated in the remote system
-    my $search = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search->new();
-    my $broadcastrecord = $search->searchFromInterface($broadcast_interface, undef, $broadcast_biblio_id, $user_id);
-    my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $broadcastrecord->{marcjson}});
-    my $marcxml = $marc->toXML();
-    my $record = $self->getRecord($marcxml);
-    my $componentparts = scalar($broadcastrecord->{componentparts}) < 0 ? from_json($broadcastrecord->{componentparts}) : undef;
-    if ($record) {
-        my $parts;
-        if ($componentparts) {
-            foreach my $part (@$componentparts) {
-                my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $part->{marcjson}});
-                push @$parts, {
-                    biblionumber => $part->{biblionumber},
-                    marcxml => Encode::decode_utf8($marc->toXML()),
-                };
-            }
-        }
-        $self->db->insertToQueue({
-            broadcast_interface => $broadcast_interface,
-            user_id => $user_id,
-            type => 'import',
-            broadcast_biblio_id => $broadcast_biblio_id,
-            biblio_id => $biblio_id,
-            marc => $marcxml,
-            componentparts => $parts ? to_json($parts) : undef,
-            diff => undef,
-            hostrecord => $parts ? 1 : 0,
-        });
-        print "Added record $broadcast_biblio_id to import queue for updating local record $biblio_id\n" if $self->verbose;
-    } else {
-        die "Failed to update local record $biblio_id\n";
-    }
-}
-
 sub updateLocalRecord {
     my ($self, $biblio_id, $record) = @_;
     my $frameworkcode = GetFrameworkCode( $biblio_id );
