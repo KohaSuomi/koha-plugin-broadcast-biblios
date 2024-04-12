@@ -189,4 +189,46 @@ sub appendSystemControlNumber {
     return $record;
 }
 
+sub addSystemControlNumber {
+    my ($self, $record, $target_id) = @_;
+
+    my @f035 = $record->field('035');
+    my $found = 0;
+
+    if ($self->interface =~ /Melinda/i) {
+        $target_id = '(FI-MELINDA)'.$target_id;
+    } elsif ($self->interface =~ /Tati/i) {
+        $target_id = '(FI-TATI)'.$target_id;
+    }
+
+    foreach my $field (@f035) {
+        if ($field->subfield('a') eq $target_id) {
+            $found = 1;
+            last;
+        }
+    }
+
+    if (!$found) {
+        $record->append_fields(MARC::Field->new('035', ' ', ' ', 'a' => $target_id));
+    }
+
+    return $record;
+}
+
+sub updateHostComponentPartLink {
+    my ($self, $record, $host_id) = @_;
+
+    my $f773 = $record->field('773');
+    
+    if ($self->interface =~ /Melinda/i) {
+        $host_id = '(FI-MELINDA)'.$host_id;
+    }
+
+    if ($record->subfield('773', 'w') ne $host_id) {
+        $f773->update('w' => $host_id);
+    }
+
+    return $record;
+}
+
 1;
