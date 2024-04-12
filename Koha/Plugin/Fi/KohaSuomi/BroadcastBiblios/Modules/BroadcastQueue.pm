@@ -416,14 +416,15 @@ sub processExportQueue {
                 print "Adding record ".$target_id." to import queue for updating local record\n" if $self->verbose;
                 $self->updateRecordInLocal($queue->{broadcast_interface}, $queue->{biblio_id}, $target_id, $queue->{user_id});
             }
+            my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
+            print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
         } catch {
             my $error = $_;
             $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
             print "Error while processing export queue: $error\n";
+            my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
+            print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
         }
-        
-        my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
-        print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
     }
 }
 
