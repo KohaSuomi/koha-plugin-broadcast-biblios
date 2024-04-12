@@ -114,6 +114,7 @@ sub MelindaMerge {
     );
 
     my @remove = (
+        {tag => '001'},
         {tag => '003'},
         {tag => '942'},
         {tag => '999'}
