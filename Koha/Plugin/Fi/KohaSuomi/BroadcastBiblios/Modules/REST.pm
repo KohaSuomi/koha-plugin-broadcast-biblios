@@ -158,9 +158,15 @@ sub headers {
 sub call {
     my ($self, $method, $path, $headers, $format, $body) = @_;
     my $response;
-    $response = $self->ua->$method($path => $headers) if !defined $body || !$body;
-    $response = $self->ua->$method($path => $headers => $body) if defined $body && $body && !defined $format;
-    $response = $self->ua->$method($path => $headers => $format => $body) if defined $format && ($format eq "json" || $format eq "form") && defined $body && $body;
+    
+    if (!defined $body || !$body) {
+        $response = $self->ua->$method($path => $headers);
+    } elsif (defined $body && $body && !defined $format) {
+        $response = $self->ua->$method($path => $headers => $body);
+    } elsif (defined $format && ($format eq "json" || $format eq "form") && defined $body && $body) {
+        $response = $self->ua->$method($path => $headers => $format => $body);
+    }
+    
     print Data::Dumper::Dumper $response->result if $response->result->is_error && $self->verbose();
     return $response;
 }
