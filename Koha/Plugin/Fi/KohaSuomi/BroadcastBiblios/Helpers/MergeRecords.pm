@@ -209,7 +209,7 @@ sub addSystemControlNumber {
     }
 
     if (!$found) {
-        $record->append_fields(MARC::Field->new('035', ' ', ' ', 'a' => $target_id));
+        $record->insert_fields_ordered(MARC::Field->new('035', ' ', ' ', 'a' => $target_id));
     }
 
     return $record;
@@ -241,7 +241,7 @@ sub updateControlNumberAndIdentifier {
     if ($self->interface =~ /Melinda/i) {
         $new003 = 'FI-MELINDA';
     }
-    
+
     if ($new003) {
         $f001->update($identifier);
         $f003->update($new003);   
