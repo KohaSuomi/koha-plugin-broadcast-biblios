@@ -183,7 +183,7 @@ sub appendSystemControlNumber {
     }
 
     if (!$found) {
-        $record->append_fields(MARC::Field->new('035', ' ', ' ', 'a' => $newf035));
+        $record->insert_fields_ordered(MARC::Field->new('035', ' ', ' ', 'a' => $newf035));
     }
 
     return $record;
