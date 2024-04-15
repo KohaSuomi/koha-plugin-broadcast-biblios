@@ -166,7 +166,7 @@ export default {
       if (this.records.remotecomponentparts) {
         remoteParts = this.records.remotecomponentparts.length;
       }
-      if (localParts != remoteParts && remoteParts == 0 && this.remoteRecord) {
+      if (localParts != remoteParts && remoteParts == 0 && this.remoteRecord && this.showExportButton == false) {
         this.componentPartsEqual = false;
         this.errors.setError("Osakohteiden määrä ei täsmää: " + localParts + " vs. " + remoteParts);
       } 
