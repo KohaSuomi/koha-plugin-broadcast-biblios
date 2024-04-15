@@ -221,23 +221,6 @@ export default {
               <div class="form-group">
                   <div class="row">
                       <div class="col-9">
-                        <label for="restGet" class="col-form-label">Get-endpoint</label>
-                        <input type="text" class="form-control" id="restGet" v-model="selectedInterface.restGet">
-                        <small id="restGetHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/{biblio_id}</small>
-                      </div>
-                      <div class="col-3">
-                        <label for="restGetMethod" class="col-form-label">Method</label>
-                        <select class="form-control" id="restGetMethod" v-model="selectedInterface.restGetMethod">
-                            <option selected value="">Valitse</option>
-                            <option value="get">GET</option>
-                            <option value="post">POST</option>
-                        </select>
-                      </div>
-                    </div>
-              </div>
-              <div class="form-group">
-                  <div class="row">
-                      <div class="col-9">
                         <label for="restPost" class="col-form-label">Add-endpoint</label>
                         <input type="text" class="form-control" id="restAdd" v-model="selectedInterface.restAdd">
                         <small id="restAddHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/</small>
@@ -268,11 +251,6 @@ export default {
                         </select>
                       </div>
                   </div>
-              </div>
-              <div class="form-group">
-                  <label for="restDelete" class="col-form-label">Delete-endpoint</label>
-                  <input type="text" class="form-control" id="restDelete" v-model="selectedInterface.restDelete">
-                  <small id="restDeleteHelp" class="form-text text-muted">Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/{biblio_id}</small>
               </div>
               <hr/>
               <h5>SRU-haku</h5>
