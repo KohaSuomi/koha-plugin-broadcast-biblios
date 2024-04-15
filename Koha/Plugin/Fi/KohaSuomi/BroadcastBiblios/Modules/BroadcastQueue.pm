@@ -453,6 +453,7 @@ sub postQueueRecord {
         }
         print "Pushed record to ".$queue->{broadcast_interface}." with response: ". $postResponse->message."\n";
         $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
+        $self->db->removeComponentPartsFromHostRecord($queue->{id}); # Remove component parts from host after successful add
     } else {
         die "Failed to push record to ".$queue->{broadcast_interface}.": ".$postResponse->message;
     }
