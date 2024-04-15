@@ -364,6 +364,9 @@ sub processExportQueue {
 
             if ($self->updateRecord && $target_id) {
                 my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $target_id);
+                if ($queue->{componentparts}) {
+                    $self->mergeRecords($queue->{broadcast_interface})->updateHostComponentPartLink($newrecord, $target_id);
+                }
                 $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
             }
 

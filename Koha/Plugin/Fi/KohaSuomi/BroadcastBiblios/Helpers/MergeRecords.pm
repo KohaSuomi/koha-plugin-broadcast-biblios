@@ -231,4 +231,23 @@ sub updateHostComponentPartLink {
     return $record;
 }
 
+sub updateControlNumberAndIdentifier {
+    my ($self, $record, $identifier) = @_;
+
+    my $f001 = $record->field('001');
+    my $f003 = $record->field('003');
+    my $new003;
+
+    if ($self->interface =~ /Melinda/i) {
+        $new003 = 'FI-MELINDA';
+    }
+    
+    if ($new003) {
+        $f001->update($identifier);
+        $f003->update($new003);   
+    }
+
+    return $record;
+}
+
 1;
