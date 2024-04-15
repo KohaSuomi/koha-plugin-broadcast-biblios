@@ -385,7 +385,7 @@ sub processExportComponentParts {
 
     $componentparts = $self->getComponentParts->sortComponentParts($componentparts);
     $broadcastcomponentparts = $self->getComponentParts->sortComponentParts($broadcastcomponentparts);
-    if ($method eq 'PUT' && defined($broadcastcomponentparts) && scalar @$componentparts != scalar @$broadcastcomponentparts) {
+    if ($method eq 'PUT' && $broadcastcomponentparts && scalar @$componentparts != scalar @$broadcastcomponentparts) {
         die "Component parts count mismatch, local: ".scalar @$componentparts.", broadcast: ".scalar @$broadcastcomponentparts."\n";
     }
 
@@ -397,7 +397,7 @@ sub processExportComponentParts {
         my $comprecord = $self->getRecord($componentpart->{marcxml});
         my $broadcast_biblio_id;
 
-        if ($method eq 'PUT' && defined($broadcastcomponentparts)) {
+        if ($method eq 'PUT' && $broadcastcomponentparts) {
             $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
         }
 
