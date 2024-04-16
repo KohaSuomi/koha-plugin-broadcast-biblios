@@ -222,10 +222,9 @@ sub updateHostComponentPartLink {
     
     if ($self->interface =~ /Melinda/i) {
         $host_id = '(FI-MELINDA)'.$host_id;
-    }
-
-    if ($record->subfield('773', 'w') ne $host_id) {
-        $f773->update('w' => $host_id);
+        if ($record->subfield('773', 'w') ne $host_id) {
+            $f773->update('w' => $host_id);
+        }
     }
 
     return $record;
