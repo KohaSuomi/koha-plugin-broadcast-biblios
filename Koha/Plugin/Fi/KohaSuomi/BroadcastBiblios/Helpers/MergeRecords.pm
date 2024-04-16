@@ -68,10 +68,11 @@ sub merge {
 
     if ($record) {
         foreach my $recordField ($record->fields) {
+            my $tag_in_keep = grep { defined($_->{tag}) && $_->{tag} eq $recordField->tag } @{$filters->{keep}};
+            if ($tag_in_keep && !$merged->field($recordField->tag)) {
+                $merged->append_fields($recordField);
+            }
             foreach my $keep (@{$filters->{keep}}) {
-                if (defined($keep->{tag}) && $keep->{tag} eq $recordField->tag && !$merged->field($recordField->tag)) {
-                    $merged->append_fields($recordField);
-                }
                 foreach my $recordSubfields ($recordField->subfields) {
                     if (defined($keep->{code}) && $keep->{code} eq $recordSubfields->[0]) {
                         $merged->insert_fields_ordered($recordField);
