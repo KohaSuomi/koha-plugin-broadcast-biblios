@@ -68,6 +68,30 @@
             biblio_id:
               type: integer
               description: Internal biblio identifier
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "403":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Forbidden
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
     x-koha-authorization:
       permissions:
         editcatalogue: edit_catalogue
