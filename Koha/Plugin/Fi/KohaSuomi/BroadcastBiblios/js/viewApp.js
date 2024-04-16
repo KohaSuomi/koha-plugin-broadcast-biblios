@@ -1,4 +1,4 @@
-import * as recordParser from './recordParser.js';
+import * as recordParser from './helpers/recordParser.js';
 
 new Vue({
   el: '#viewApp',
@@ -324,6 +324,13 @@ Vue.component('result-list', {
     },
     itemType: function (record) {
       return recordParser.recordItemType(record);
+    },
+    transfer: function (type) {
+      if (type == 'import') {
+        return 'Tuonti';
+      } else {
+        return 'Vienti';
+      }
     },
   },
   props: ['result'],

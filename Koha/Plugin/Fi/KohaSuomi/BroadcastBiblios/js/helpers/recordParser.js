@@ -1,13 +1,13 @@
 export const recordAsHTML = (record) => {
     let html = '<div>';
     html +=
-        '<li class="row" style="list-style:none;"> <div class="col-xs-3 mr-2">';
+        '<li class="row" style="list-style:none; overflow:hidden;"> <div class="col-xs-3 mr-2">';
     html +=
         '<b>000</b></div><div class="col-xs-9">' + record.leader + '</li>';
     record.fields.forEach(function (v, i, a) {
         if ($.isNumeric(v.tag)) {
         html +=
-            '<li class="row" style="list-style:none;"><div class="col-xs-3 mr-2">';
+            '<li class="row" style="list-style:none; overflow:hidden;"><div class="col-xs-3 mr-2">';
         } else {
         html += '<li class="row hidden"><div class="col-xs-3  mr-2">';
         }
@@ -87,6 +87,98 @@ export const recordAuthor = (record) => {
         }
     });
     return author;
+}
+
+export const recordEncodingLevel = (record) => {
+    return record.leader.charAt(17);
+}
+
+export const recordStatus = (record) => {
+    return record.leader.charAt(5);
+}
+
+export const recordTimestamp = (record) => {
+    let timestamp = '';
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '005') {
+            timestamp = v.value.replace('.', '');
+        }
+    });
+    return timestamp;
+}
+
+export const systemControlNumbers = (record) => {
+    let controlNumbers = [];
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '035') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                    if (v.code == 'a') {
+                        controlNumbers.push(v.value);
+                    }
+                });
+            }
+        }
+    });
+    return controlNumbers;
+}
+
+export const hostComponentPartLink = (record) => {
+    let controlNumber = '';
+    let controlNumberIdentifier = '';
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '001') {
+            controlNumber = v.value;
+        }
+        if (v.tag == '003') {
+            controlNumberIdentifier = v.value;
+        }
+    });
+    return '('+controlNumberIdentifier + ')' + controlNumber;
+}
+
+export const updateLinkField = (record, value) => {
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '773') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                    if (v.code == 'w') {
+                        v.value = value;
+                    }
+                });
+            }
+        }
+    });
+    return record;
+}
+
+export const recordId = (record) => {
+    let recordId = '';
+    let controlNumber = '';
+    let controlNumberIdentifier = '';
+    record.fields.forEach(function (v, i, a) {
+        if (v.tag == '999') {
+            if (v.subfields) {
+                v.subfields.forEach(function (v, i, a) {
+                if (v.code == 'c') {
+                    recordId = v.value;
+                }
+                });
+            }
+        }
+        if (v.tag == '001') {
+            controlNumber = v.value;
+        }
+        if (v.tag == '003') {
+            controlNumberIdentifier = v.value;
+        }
+    });
+
+    if (controlNumberIdentifier == 'FI-MELINDA' && !recordId) {
+        recordId = controlNumber;
+    }
+
+    return recordId;
 }
 
 export const recordItemType = (record) => {
@@ -216,3 +308,18 @@ export const parseDiff = (record) => {
     
     return html;
 };
+
+export const mergeRecords = (local, remote) => {
+    let tags = Object.keys(local);
+    let merged = {};
+    tags.forEach((element) => {
+        merged[element] = {};
+        if (local[element]) {
+        merged[element].old = local[element];
+        }
+        if (remote[element]) {
+        merged[element].new = remote[element];
+        }
+    });
+    return merged;
+}

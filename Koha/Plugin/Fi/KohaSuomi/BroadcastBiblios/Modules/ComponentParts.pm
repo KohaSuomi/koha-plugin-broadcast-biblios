@@ -53,4 +53,10 @@ sub fetch {
     return $components;
 }
 
+sub sortComponentParts {
+    my ($self, $componentparts) = @_;
+    my @sorted = sort { $a->{biblionumber} <=> $b->{biblionumber} } @{$componentparts};
+    return \@sorted;
+}
+
 1;

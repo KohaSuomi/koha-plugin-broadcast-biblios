@@ -98,13 +98,17 @@ sub xmlPath {
 
 sub ua {
     my ($self) = @_;
-    return Mojo::UserAgent->new;
+    my $ua = Mojo::UserAgent->new;
+    if ($ENV{MOJO_PROXY}) {
+        $ua->proxy->http($ENV{MOJO_PROXY})->https($ENV{MOJO_PROXY});
+    }
+    return $ua;
 }
 
 sub MarcXMLToJSON {
     my ($self, $marcxml) = @_;
-    my $marcjson = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new({marcxml => $marcxml});
-    return $marcjson->toJSON();
+    my $marcjson = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON->new();
+    return $marcjson->toJSON($marcxml);
 }
 
 sub buildTX {
@@ -130,7 +134,6 @@ sub search {
     my ($self) = @_;
 
     my $path = $self->buildPath();
-    print "SRU path: ".$path ."\n";
     my $res = $self->buildTX('GET', $path);
     my $records = $self->getRecords($res->res->body);
     return $records;
@@ -139,7 +142,12 @@ sub search {
 sub getRecords {
     my ($self, $res) = @_;
 
-    my $xml = XML::LibXML->load_xml(string => $res);
+    my $xml = eval { XML::LibXML->load_xml(string => $res) };
+
+    if ($@) {
+        return { status => 400, message => $@ };
+    }
+
     my @sruRecords = $xml->findnodes($self->xmlPath());
     my @records;
 

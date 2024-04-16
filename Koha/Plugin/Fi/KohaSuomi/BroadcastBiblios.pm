@@ -13,6 +13,7 @@ use utf8;
 use YAML::XS;
 use Encode;
 use Mojo::JSON qw(decode_json);
+use UUID 'uuid';
 
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
@@ -20,7 +21,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 
 ## Here we set our plugin version
-our $VERSION = "2.5.1";
+our $VERSION = "2.5.2";
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
@@ -151,48 +152,18 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
     my ( $self ) = @_;
 
     my $biblionumber = $self->{'cgi'}->param('biblionumber');
-    my $exportapis = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('exportapis')));
-    my $importapi = YAML::XS::Load(Encode::encode_utf8($self->retrieve_data('importapi')));
-    my $importinterface = $self->retrieve_data('importinterface');
+    my $patron_id = C4::Context->userenv->{'number'};
     my $dropdown;
-    if ($exportapis && $importapi && haspermission(C4::Context->userenv->{'id'}, {'editcatalogue' => 'edit_catalogue'})) {
+    if (haspermission(C4::Context->userenv->{'id'}, {'editcatalogue' => 'edit_catalogue'})) {
         my $pluginpath = $self->get_plugin_http_path();
-        $dropdown = '<div id="pushApp">
-            <div class="btn-group" style="margin-left: 5px;">
-            <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> Vie/Tuo <span class="caret"></span></button>
-            <ul id="pushInterfaces" class="dropdown-menu">';
-        foreach my $api (@{$exportapis}) {
-            $dropdown .= '<li><a href="#" @click="openModal($event)"
-            data-host="'.$api->{host}.'" 
-            data-basepath="'.$api->{basePath}.'" 
-            data-searchpath="'.$api->{searchPath}.'"
-            data-reportpath="'.$api->{reportPath}.'"
-            data-token="'.Digest::SHA::hmac_sha256_hex($api->{apiToken}).'"
-            data-type="'.$api->{type}.'"
-            data-interface="'.$api->{interface}.'"
-            data-toggle="modal" data-target="#pushRecordOpModal">'.$api->{interfaceName}.'</a></li>';
-        }
-        $dropdown .= '<li><a href="#" id="importInterface" class="import hidden"
-            data-host="'.$importapi->{host}.'" 
-            data-basepath="'.$importapi->{basePath}.'" 
-            data-searchpath="'.$importapi->{searchPath}.'"
-            data-reportpath="'.$importapi->{reportPath}.'"
-            data-activation="'.$importapi->{activation}.'"
-            data-token="'.Digest::SHA::hmac_sha256_hex($importapi->{apiToken}).'"
-            data-type="'.$importapi->{type}.'">'.$importapi->{interface}.'</a></li>';
-        $dropdown .= '</ul></div>';
-        if ($importinterface) {
-            $dropdown .= '<div class="btn-group"><input type="hidden" id="importBroadcastInterface" value="'.$importinterface.'" /><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
-        } elsif ($importapi->{activation} eq "enabled") {
-            $dropdown .= '<div class="btn-group"><i v-if="loader" class="fa fa-spinner fa-spin" style="font-size:14px; margin-left: 10px; margin-top: 10px;"></i><span v-if="activated" style="margin-left: 10px;"><i class="fa fa-link text-success" style="font-size:18px; margin-top:7px;" :title="activated"></i></span></div><div v-if="active" class="btn-group" style="margin-left: 5px;"><button class="btn btn-default" @click="oldActivateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button></div>';
-        }
-        $dropdown .= '<div><input type="hidden" id="biblioId" value="'.$biblionumber.'" /></div>';
-        $dropdown .= '<recordmodal></recordmodal>';
-        $dropdown .= '<script src="'.$pluginpath.'/includes/vue.min.js"></script>';
-        $dropdown .= '<script src="'.$pluginpath.'/includes/vuex.min.js"></script>';
+        $dropdown = '<div id="broadcastApp"><record-component :biblio_id="'.$biblionumber.'" :patron_id="'.$patron_id.'"></record-component></div>';
+        $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.15/vue.global.min.js" integrity="sha512-YX1AhLUs26nJDkqXrSgg6kjMat++etdfsgcphWSPcglBGp/sk5I0/pKuu/XIfOCuzDU4GHcOB1E9LlveutWiBw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
+        $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue-demi/0.14.6/index.iife.min.js" integrity="sha512-4bZPx/4GmRQW9DcQEbYpO4nLPaIceJ/gfouiSkpLCrrYYKFC9W+dk5dCT5WaDkRoWIMyG+Zw853iFABZgatpYw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
+        $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/pinia/2.1.7/pinia.iife.min.js" integrity="sha512-o2oH6iY7StQR/0l/6CJpuET6bT1RyGQWUpu1nWLIcGuFZnV4iOlSvtgUrO+i4x3QtoZSve8SAb1LplJWEZTj0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
+        $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue-i18n/9.10.2/vue-i18n.global.prod.min.js" integrity="sha512-UUOWezsNQ8nhUaGbOuPDdwRouiCjpa9ALauSMzT84F46gilrYGxb++H8a3Ez0iTgTfBDoZ6csW5aw+msdwnifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/axios.min.js"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/moment-with-locales.min.js"></script>';
-        $dropdown .= '<script src="'.$pluginpath.'/js/push.js"></script></div>';
+        $dropdown .= '<script type="module" src="'.$pluginpath.'/js/app.js"></script>';
     }
     return $dropdown;
 }
@@ -208,6 +179,7 @@ sub install() {
     $self->create_active_records_table();
     $self->create_queue_table();
     $self->create_users_table();
+    $self->create_secret();
 }
 
 ## This is the 'upgrade' method. It will be triggered when a newer version of a
@@ -284,7 +256,6 @@ sub fetch_broadcast {
     my ( $self ) = @_;
 
     my $broadcast = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Broadcast->new({
-        config => $self->{config},
         all => $self->{all},
         verbose => $self->{verbose},
         blocked_encoding_level => $self->{blocked_encoding_level},
@@ -382,10 +353,18 @@ sub process_queue {
     my $params = {
         verbose => $self->{verbose},
         type => $self->{type},
+        update => $self->{update},
     };
 
     my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new($params);
     $queue->processQueue();
+}
+
+sub create_secret {
+    my ( $self ) = @_;
+
+    my $secret = uuid();
+    $self->store_data({secret => $secret});
 }
 
 sub create_log_table {
@@ -438,7 +417,7 @@ sub create_queue_table {
         `biblio_id` int(11) DEFAULT NULL,
         `status` ENUM('pending','processing','completed','failed') DEFAULT 'pending',
         `statusmessage` varchar(255) DEFAULT NULL,
-        `broadcast_biblio_id` int(11) NOT NULL,
+        `broadcast_biblio_id` varchar(50) DEFAULT NULL,
         `hostrecord` tinyint(1) NOT NULL DEFAULT 0,
         `componentparts` longtext DEFAULT NULL,
         `marc` longtext NOT NULL,
@@ -461,7 +440,7 @@ sub create_users_table {
         `auth_type` ENUM('basic', 'oauth') DEFAULT 'basic',
         `broadcast_interface` varchar(30) NOT NULL,
         `username` varchar(50) DEFAULT NULL,
-        `password` varchar(50) DEFAULT NULL,
+        `password` varchar(255) DEFAULT NULL,
         `client_id` varchar(50) DEFAULT NULL,
         `client_secret` varchar(50) DEFAULT NULL,
         `access_token` varchar(100) DEFAULT NULL,
@@ -492,6 +471,11 @@ sub upgrade_db {
 
     if ($VERSION eq "2.5.1") {
         $dbh->do("ALTER TABLE `$log_table` MODIFY `type` ENUM('export','import','old') DEFAULT 'import'");
+    }
+
+    if ($VERSION eq "2.5.2") {
+        $dbh->do("ALTER TABLE `$queue_table` MODIFY `broadcast_biblio_id` varchar(50) DEFAULT NULL");
+        $dbh->do("ALTER TABLE `$users_table` MODIFY `password` varchar(255) DEFAULT NULL");
     }
 }
 

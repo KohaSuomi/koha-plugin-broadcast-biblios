@@ -202,11 +202,11 @@ sub getQueue {
     } elsif ($status && $biblio_id) {
         $query .= " WHERE status = ? AND biblio_id = ?";
     }
-    my $orderBy = $status eq 'pending' || $status eq 'processing' ? 'created_on' : 'transfered_on';
+ 
     if ($page && $limit) {
-        $query .= " ORDER BY ".$orderBy." DESC LIMIT " . ($page-1)*$limit . ", " . $limit;
+        $query .= " ORDER BY transfered_on DESC LIMIT " . ($page-1)*$limit . ", " . $limit;
     } else {
-        $query .= " ORDER BY ".$orderBy." DESC";
+        $query .= " ORDER BY transfered_on DESC";
     }
 
     my $sth = $dbh->prepare($query);
@@ -225,10 +225,20 @@ sub getQueue {
 }
 
 sub getQueuedRecordByBiblionumber {
-    my ($self, $biblionumber, $interface) = @_;
+    my ($self, $biblionumber, $interface, $type) = @_;
     my $dbh = $self->dbh;
-    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE broadcast_biblio_id = ? AND broadcast_interface = ? order by id desc limit 1");
-    $sth->execute($biblionumber, $interface);
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE broadcast_biblio_id = ? AND broadcast_interface = ? AND type = ? order by id desc limit 1");
+    $sth->execute($biblionumber, $interface, $type);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
+sub getQueuedRecordByBiblioId {
+    my ($self, $biblio_id, $interface, $type) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE biblio_id = ? AND broadcast_interface = ? AND type = ? order by id desc limit 1");
+    $sth->execute($biblio_id, $interface, $type);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
     return $result;
@@ -263,9 +273,9 @@ sub countQueue {
 sub insertToQueue {
     my ($self, $params) = @_;
     my $dbh = $self->dbh;
-    my $query = "INSERT INTO " . $self->queue . " (user_id, type, broadcast_interface, biblio_id, broadcast_biblio_id, hostrecord, componentparts, marc, diff) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    my $query = "INSERT INTO " . $self->queue . " (user_id, type, broadcast_interface, biblio_id, broadcast_biblio_id, hostrecord, componentparts, marc, diff, transfered_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
     my $sth = $dbh->prepare($query);
-    $sth->execute($params->{user_id}, $params->{type}, $params->{broadcast_interface}, $params->{biblio_id}, $params->{broadcast_biblio_id}, $params->{hostrecord}, $params->{componentparts}, $params->{marc}, $params->{diff});
+    $sth->execute($params->{user_id}, $params->{type}, $params->{broadcast_interface}, $params->{biblio_id}, $params->{broadcast_biblio_id}, $params->{hostrecord}, $params->{componentparts}, $params->{marc}, $params->{diff}) or die $sth->errstr;
     $sth->finish();
 }
 
@@ -274,6 +284,14 @@ sub updateQueueStatus {
     my $dbh = $self->dbh;
     my $sth = $dbh->prepare("UPDATE " . $self->queue . " SET status = ?, statusmessage = ?, transfered_on = NOW() WHERE id = ?");
     $sth->execute($status, $statusmessage, $id);
+    $sth->finish();
+}
+
+sub removeComponentPartsFromHostRecord {
+    my ($self, $id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("UPDATE " . $self->queue . " SET componentparts = NULL WHERE id = ?");
+    $sth->execute($id);
     $sth->finish();
 }
 
@@ -367,21 +385,39 @@ sub getBroadcastLogLatest {
 
 =cut
 
+sub listUsers {
+    my ($self) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->users);
+    $sth->execute();
+    my $results = $sth->fetchall_arrayref({});
+    $sth->finish();
+    return $results;
+}
+
 sub insertUser {
     my ($self, $params) = @_;
     my $dbh = $self->dbh;
-    my $query = "INSERT INTO " . $self->users . " (auth_type, broadcast_interface, username, password, client_id, client_secret, linked_borrowernumber) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    my $query = "INSERT INTO " . $self->users . " (auth_type, broadcast_interface, username, password, client_id, client_secret, linked_borrowernumber, access_token_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     my $sth = $dbh->prepare($query);
-    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber});
+    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber}, $params->{access_token_url});
     $sth->finish();
 }
 
 sub updateUser {
     my ($self, $user_id, $params) = @_;
     my $dbh = $self->dbh;
-    my $query = "UPDATE " . $self->users . " SET auth_type = ?, broadcast_interface = ?, username = ?, password = ?, client_id = ?, client_secret = ?, linked_borrowernumber = ? WHERE id = ?";
+    my $query = "UPDATE " . $self->users . " SET auth_type = ?, broadcast_interface = ?, username = ?, password = ?, client_id = ?, client_secret = ?, linked_borrowernumber = ?, access_token_url = ? WHERE id = ?";
     my $sth = $dbh->prepare($query);
-    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber}, $user_id);
+    $sth->execute($params->{auth_type}, $params->{broadcast_interface}, $params->{username}, $params->{password}, $params->{client_id}, $params->{client_secret}, $params->{linked_borrowernumber}, $params->{access_token_url}, $user_id);
+    $sth->finish();
+}
+
+sub deleteUser {
+    my ($self, $user_id) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("DELETE FROM " . $self->users . " WHERE id = ?");
+    $sth->execute($user_id);
     $sth->finish();
 }
 
@@ -409,6 +445,16 @@ sub getUserByUserId {
     my $dbh = $self->dbh;
     my $sth = $dbh->prepare("SELECT * FROM " . $self->users . " WHERE id = ?");
     $sth->execute($user_id);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
+sub getUserByUsername {
+    my ($self, $username) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->users . " WHERE username = ?");
+    $sth->execute($username);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
     return $result;

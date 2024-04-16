@@ -66,7 +66,7 @@ sub query {
     my $query;
 
     if ($self->getInterfaceType eq "SRU") {
-        if ($self->getInterface eq "Melinda") {
+        if ($self->getInterface =~ /Melinda/i) {
             $query = $self->melindaSRUSearch();
         } else {
             $query = $self->kohaSRUSearch();
@@ -101,12 +101,27 @@ sub kohaElasticSearch {
 
 sub kohaSRUSearch {
     my ($self) = @_;
-
+    return 'koha.systemcontrolnumber="'.$self->getIdentifier().'"' if $self->getIdentifierField eq "035a";
+    return "dc.isbn=".$self->getIdentifier() if $self->getIdentifierField eq "020a";
+    return "dc.identifier=".$self->getIdentifier() if $self->getIdentifierField eq "024a";
+    if ($self->getIdentifierField eq "003|001") {
+        my @identifiers = split(/\|/, $self->getIdentifier());
+        my $cn = $identifiers[1];
+        my $cni = $identifiers[0];
+        return "koha.controlnumber=".$cn." AND "."koha.controlnumberidentifier=".$cni;
+    }
 }
 
 sub melindaSRUSearch {
     my ($self) = @_;
-
+    if ($self->getIdentifierField eq "035a" && $self->getIdentifier() =~ /FI-MELINDA/i) {
+        my $identifier = $self->getIdentifier();
+        $identifier =~ s/\D//g;
+        return 'rec.id='.$identifier;
+    }
+    return "bath.isbn=".$self->getIdentifier() if $self->getIdentifierField eq "020a";
+    return "dc.identifier=".$self->getIdentifier() if $self->getIdentifierField eq "024a";
+    return "rec.id=".$self->getIdentifier() if $self->getIdentifierField eq "biblio_id";
 }
 
 1;

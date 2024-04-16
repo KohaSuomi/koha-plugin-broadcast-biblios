@@ -24,8 +24,9 @@ use Try::Tiny;
 use JSON;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config;
 use C4::Context;
-use Crypt::JWT;
+use Crypt::JWT qw(encode_jwt decode_jwt);
 use Mojo::UserAgent;
 use Koha::Logger;
 
@@ -54,9 +55,19 @@ sub getConfig {
     return shift->{_params}->{config};
 }
 
+sub getSecret {
+    my ($self) = @_;
+    return Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new()->getSecret;
+}
+
 sub getEndpoint {
     my ($self) = @_;
     return shift->{_params}->{endpoint};
+}
+
+sub getPath {
+    my ($self) = @_;
+    return $self->getConfig->{restUrl}.$self->getEndpoint;
 }
 
 sub ua {
@@ -64,8 +75,68 @@ sub ua {
     return Mojo::UserAgent->new;
 }
 
-sub addUser {
+sub listUsers {
+    my ($self) = @_;
+    my $users = $self->db->listUsers;
+    my $response = [];
+    foreach my $user (@$users) {
+        push @$response, {id => $user->{id}, username => $user->{username}, auth_type => $user->{auth_type}, broadcast_interface => $user->{broadcast_interface}};
+    }
+    return $response;
+}
 
+sub getUser {
+    my ($self, $user_id) = @_;
+    my $user = $self->db->getUserByUserId($user_id);
+    if (!$user) {
+        die {message => "User not found", status => 404};
+    }
+    return {id => $user->{id}, username => $user->{username}, auth_type => $user->{auth_type}, client_id => $user->{client_id}, client_secret => $user->{client_secret}, access_token_url => $user->{access_token_url}, broadcast_interface => $user->{broadcast_interface}, linked_borrowernumber => $user->{linked_borrowernumber}};
+}
+
+sub getInterfaceUserByPatronId {
+    my ($self, $interface_name, $patron_id) = @_;
+    my $user = $self->db->getBroadcastInterfaceUser($interface_name, $patron_id);
+    if (!$user) {
+        die {message => "User not found", status => 404};
+    }
+    return $user->{id};
+}
+
+sub addUser {
+    my ($self, $params) = @_;
+    my $user = $self->db->getUserByUsername($params->{username});
+    if ($user->{username} && $user->{username} eq $params->{username}) {
+        die {message => "User already exists", status => 409};
+    }
+    if ($params->{password}) {
+        $params->{password} = encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+    }
+    $self->db->insertUser($params);
+    return {message => "User added", status => 201};
+}
+
+sub updateUser {
+    my ($self, $user_id, $params) = @_;
+    my $user = $self->db->getUserByUserId($user_id);
+    if (!$user) {
+        die {error => "User not found", status => 404};
+    }
+    if ($params->{password}) {
+        $params->{password} = encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+    }
+    $self->db->updateUser($user_id, $params);
+    return {message => "User updated", status => 200};
+}
+
+sub deleteUser {
+    my ($self, $user_id) = @_;
+    my $user = $self->db->getUserByUserId($user_id);
+    if (!$user) {
+        die {error => "User not found", status => 404};
+    }
+    $self->db->deleteUser($user_id);
+    return {message => "User deleted", status => 200};
 }
 
 sub getAuthentication {
@@ -86,18 +157,20 @@ sub getAuthentication {
 
 sub basicAuth {
     my ($self, $user) = @_;
-    my $endpoint = $self->getConfig->{baseUrl}.'/'.$self->getConfig->{$self->getEndpoint}->{path};
-    my $authentication = $user->{username} . ":" . $user->{password};
-    my $path = Mojo::URL->new($endpoint)->userinfo($authentication);
+    my $password = eval { decode_jwt(token => $user->{password}, key => $self->getSecret)};
+    if ($@) {
+        die "Error while decoding password " . $@ . "\n";
+    }
+    my $authentication = $user->{username} . ":" . $password;
+    my $path = Mojo::URL->new($self->getPath)->userinfo($authentication);
     my $headers = {'Content-Type' => 'application/json'};
     return ($path, $headers);
 }
 
 sub OAUTH2 {
     my ($self, $user) = @_;
-    my $path = $self->getConfig->{baseUrl}.'/'.$self->getConfig->{$self->getEndpoint}->{path};
     my $headers = {'Content-Type' => 'application/json', 'Authorization' => 'Bearer ' . $self->getAccessToken($user)};
-    return ($path, $headers);
+    return ($self->getPath, $headers);
 }
 
 sub getAccessToken {
