@@ -401,9 +401,7 @@ sub processExportComponentParts {
             $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
         }
 
-        if ($method eq 'POST') {
-            $comprecord = $self->mergeRecords($interface)->updateHostComponentPartLink($comprecord, $host_id);
-        }
+        $comprecord = $self->mergeRecords($interface)->updateHostComponentPartLink($comprecord, $host_id);
 
         my $marcxml = $comprecord->as_xml_record;
         $self->db->insertToQueue({
