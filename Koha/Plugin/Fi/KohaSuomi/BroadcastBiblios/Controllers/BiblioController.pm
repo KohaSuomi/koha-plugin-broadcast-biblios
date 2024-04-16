@@ -129,7 +129,7 @@ sub add {
         my $biblio_id;
         my $biblioitemnumber;
 
-        my $body = $c->req->body;
+        my $body = $c->req->json;
         unless ($body) {
             return $c->render(status => 400, openapi => {error => "Missing MARCXML body"});
         }
