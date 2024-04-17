@@ -110,6 +110,8 @@ sub MelindaMerge {
         {tag => 'LDR'},
         {tag => 'STA'},
         {tag => 'COR'},
+        {tag => '015'},
+        {tag => '042'},
         {code => '5'},
         {code => '9'}
     );
