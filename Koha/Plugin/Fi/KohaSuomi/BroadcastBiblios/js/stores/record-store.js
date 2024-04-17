@@ -34,7 +34,9 @@ export const useRecordStore = defineStore("record", {
         return response;
       } catch (error) {
         const errorStore = useErrorStore();
-        errorStore.setError(error);
+        if (error.response.status != 404) {
+          errorStore.setError(error);
+        }
       }
     },
     async transfer(biblio_id, patron_id, interface_name, remote_id, type) {

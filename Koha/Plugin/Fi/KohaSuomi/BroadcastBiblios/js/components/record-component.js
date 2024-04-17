@@ -69,7 +69,7 @@ export default {
       this.disabled = false;
       this.records.getLocal(this.biblio_id);
       this.records.search(this.biblio_id, this.selectedInterface, this.patron_id).then((response) => {
-        if (Object.keys(response.data.marcjson).length > 0) {
+        if (response && Object.keys(response.data.marcjson).length > 0) {
           this.remoteRecord = recordParser.recordAsHTML(response.data.marcjson);
           this.remoteEncodingLevel = recordParser.recordEncodingLevel(response.data.marcjson);
           this.remoteStatus = recordParser.recordStatus(response.data.marcjson);
