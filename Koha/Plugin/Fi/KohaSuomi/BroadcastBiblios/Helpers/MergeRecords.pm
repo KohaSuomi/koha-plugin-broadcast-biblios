@@ -57,7 +57,7 @@ sub merge {
     $merged = $self->appendSystemControlNumber($merged);
 
     my $filters = $self->KohaFilters();
-    print Data::Dumper::Dumper $filters if $self->verbose();
+
     if (defined($interface) && $interface =~ /Melinda/i) {
         $filters = $self->MelindaMerge();
     } elsif (defined($interface) && $interface =~ /Tati/i) {
