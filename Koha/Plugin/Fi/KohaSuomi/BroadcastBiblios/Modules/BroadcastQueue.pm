@@ -393,6 +393,7 @@ sub processExportComponentParts {
     my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $interface});
 
     for (my $i = 0; $i < scalar @$componentparts; $i++) {
+        my $queue;
         try {
             my $componentpart = $componentparts->[$i];
             my $biblio_id = $componentpart->{biblionumber};
@@ -418,7 +419,7 @@ sub processExportComponentParts {
                 hostrecord => 0,
             });
             print "Added component part $biblio_id to export queue\n" if $self->verbose;
-            my $queue = $self->db->getQueuedRecordByBiblioId($biblio_id, $interface, 'export');
+            $queue = $self->db->getQueuedRecordByBiblioId($biblio_id, $interface, 'export');
             $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
             if ($broadcast_biblio_id) {
                 $self->putQueueRecord($queue, $broadcast_biblio_id);
