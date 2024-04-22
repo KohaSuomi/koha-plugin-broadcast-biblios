@@ -68,7 +68,11 @@ sub merge {
         foreach my $recordField ($record->fields) {
             my $tag_in_keep = grep { defined($_->{tag}) && $_->{tag} eq $recordField->tag } @{$filters->{keep}};
             if ($tag_in_keep) {
-                if (!$merged->field($recordField->tag) && !$merged->field($recordField->tag, $recordField->as_string)) {
+                if (looks_like_number($recordField->tag)) {
+                    if (!$merged->field($recordField->tag) && !$merged->field($recordField->tag, $recordField->as_string)) {
+                        $merged->insert_fields_ordered($recordField);
+                    }
+                } else {
                     $merged->append_fields($recordField);
                 }
             }
