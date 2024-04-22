@@ -56,14 +56,12 @@ sub merge {
     my $merged = $queueRecord;
     $merged = $self->appendSystemControlNumber($merged);
 
-    my $filters = {};
-    print $interface."\n" if $self->verbose();
+    my $filters = $self->KohaFilters();
+
     if (defined($interface) && $interface =~ /Melinda/i) {
         $filters = $self->MelindaMerge();
     } elsif (defined($interface) && $interface =~ /Tati/i) {
         $filters = $self->TatiMerge();
-    } else {
-        $filters = $self->KohaFilters();
     }
 
     if ($record) {
