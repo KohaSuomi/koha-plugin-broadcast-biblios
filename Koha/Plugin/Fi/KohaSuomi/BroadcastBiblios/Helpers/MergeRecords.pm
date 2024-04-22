@@ -93,8 +93,11 @@ sub merge {
     }
 
     foreach my $remove (@{$filters->{remove}}) {
-        my @fields = $merged->field($remove->{tag}.'..');
-        $merged->delete_fields(@fields) if @fields;
+        foreach my $field ($merged->fields) {
+            if ($field->tag eq $remove->{tag}) {
+                $merged->delete_field($field);
+            }
+        }
     }
 
     print $merged->as_formatted()."\n" if $self->verbose();
