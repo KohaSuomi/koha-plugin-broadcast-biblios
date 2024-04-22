@@ -373,8 +373,8 @@ sub processExportQueue {
             my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
             print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
         } catch {
-            my $error = $_;
-            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
+            my $exception = $_;
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $exception->error);
             my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
             print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
         }
