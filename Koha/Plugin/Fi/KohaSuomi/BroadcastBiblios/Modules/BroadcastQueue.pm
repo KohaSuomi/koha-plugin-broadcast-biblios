@@ -343,7 +343,7 @@ sub processImportQueue {
         } catch {
             my $exception = $_;
             $self->db->updateQueueStatus($queue->{id}, 'failed', $exception->error);
-            print "Error while processing import queue: $error\n";
+            print "Error while processing import queue: $exception->error\n";
         }
     }
 }
