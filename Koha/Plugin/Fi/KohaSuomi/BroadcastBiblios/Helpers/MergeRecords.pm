@@ -92,9 +92,10 @@ sub merge {
         }
     }
 
-
-    my @remove_tags = map { $_->{tag} } @{$filters->{remove}};
-    $merged->delete_fields(@remove_tags);
+    foreach my $remove (@{$filters->{remove}}) {
+        my $field = $merged->field($remove->{tag});
+        $merged->delete_field($field) if $field;
+    }
 
     print $merged->as_formatted()."\n" if $self->verbose();
     return $merged;
