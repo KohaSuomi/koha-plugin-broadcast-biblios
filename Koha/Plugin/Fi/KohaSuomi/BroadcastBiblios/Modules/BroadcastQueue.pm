@@ -393,41 +393,46 @@ sub processExportComponentParts {
     my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $interface});
 
     for (my $i = 0; $i < scalar @$componentparts; $i++) {
-        my $componentpart = $componentparts->[$i];
-        my $biblio_id = $componentpart->{biblionumber};
-        my $comprecord = $self->getRecord($componentpart->{marcxml});
-        my $broadcast_biblio_id;
+        try {
+            my $componentpart = $componentparts->[$i];
+            my $biblio_id = $componentpart->{biblionumber};
+            my $comprecord = $self->getRecord($componentpart->{marcxml});
+            my $broadcast_biblio_id;
 
-        if ($method eq 'PUT' && scalar @$broadcastcomponentparts > 0) {
-            $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
-        }
+            if ($method eq 'PUT' && scalar @$broadcastcomponentparts > 0) {
+                $broadcast_biblio_id = $broadcastcomponentparts->[$i]->{biblionumber};
+            }
 
-        $comprecord = $self->mergeRecords($interface)->updateHostComponentPartLink($comprecord, $host_id);
+            $comprecord = $self->mergeRecords($interface)->updateHostComponentPartLink($comprecord, $host_id);
 
-        my $marcxml = $comprecord->as_xml_record;
-        $self->db->insertToQueue({
-            broadcast_interface => $interface,
-            user_id => $user_id,
-            type => 'export',
-            broadcast_biblio_id => $broadcast_biblio_id,
-            biblio_id => $biblio_id,
-            marc => $marcxml,
-            componentparts => undef,
-            diff => undef,
-            hostrecord => 0,
-        });
-       print "Added component part $biblio_id to export queue\n" if $self->verbose;
-       my $queue = $self->db->getQueuedRecordByBiblioId($biblio_id, $interface, 'export');
-       $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
-       if ($broadcast_biblio_id) {
-            $self->putQueueRecord($queue, $broadcast_biblio_id);
-       } else {
-            $broadcast_biblio_id = $self->postQueueRecord($queue);
-       }
-       if ($self->updateRecord && $broadcast_biblio_id) {
-            my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $broadcast_biblio_id);
-            $self->mergeRecords($queue->{broadcast_interface})->updateControlNumberAndIdentifier($newrecord, $broadcast_biblio_id);
-            $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
+            my $marcxml = $comprecord->as_xml_record;
+            $self->db->insertToQueue({
+                broadcast_interface => $interface,
+                user_id => $user_id,
+                type => 'export',
+                broadcast_biblio_id => $broadcast_biblio_id,
+                biblio_id => $biblio_id,
+                marc => $marcxml,
+                componentparts => undef,
+                diff => undef,
+                hostrecord => 0,
+            });
+            print "Added component part $biblio_id to export queue\n" if $self->verbose;
+            my $queue = $self->db->getQueuedRecordByBiblioId($biblio_id, $interface, 'export');
+            $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
+            if ($broadcast_biblio_id) {
+                $self->putQueueRecord($queue, $broadcast_biblio_id);
+            } else {
+                $broadcast_biblio_id = $self->postQueueRecord($queue);
+            }
+            if ($self->updateRecord && $broadcast_biblio_id) {
+                my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $broadcast_biblio_id);
+                $self->mergeRecords($queue->{broadcast_interface})->updateControlNumberAndIdentifier($newrecord, $broadcast_biblio_id);
+                $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
+            }
+        } catch {
+            my $exception = $_;
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $exception->error);
         }
     }
 }
