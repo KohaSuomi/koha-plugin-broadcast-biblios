@@ -57,7 +57,7 @@ sub merge {
     $merged = $self->appendSystemControlNumber($merged);
 
     my $filters = {};
-
+    print $interface."\n" if $self->verbose();
     if (defined($interface) && $interface =~ /Melinda/i) {
         $filters = $self->MelindaMerge();
     } elsif (defined($interface) && $interface =~ /Tati/i) {
