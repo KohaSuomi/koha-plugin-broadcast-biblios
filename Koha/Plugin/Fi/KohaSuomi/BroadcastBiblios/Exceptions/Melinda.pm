@@ -13,6 +13,10 @@ use Exception::Class (
         isa         => 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda',
         description => 'Conflict',
     }
+    'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::UnprocessableEntity' => {
+        isa         => 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda',
+        description => 'Unprocessable Entity',
+    }
 );
 
 =head1 NAME
@@ -29,6 +33,12 @@ Generic Melinda exception
 =head2 Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::Conflict
 
 Exception to be used when a conflict is detected
+
+=cut
+
+=head2 Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::UnprocessableEntity
+
+Exception to be used when an unprocessable entity is detected
 
 =cut
 

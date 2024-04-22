@@ -1,8 +1,6 @@
 package Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler;
 
-use strict;
-use warnings;
-use Koha::Logger;
+use Modern::Perl;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic;
 
@@ -25,6 +23,8 @@ sub handle_melinda_exception {
     # Handle the Melinda exception
     if ($status eq '409') {
         Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::Conflict->throw( $exception->{message} );
+    } elsif ($status eq '422') {
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::UnprocessableEntity->throw( $exception->{message} );
     } else {
         Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda->throw( $exception->{message} );
     }
