@@ -12,7 +12,7 @@ use Exception::Class (
     'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::Conflict' => {
         isa         => 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda',
         description => 'Conflict',
-    }
+    },
     'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::UnprocessableEntity' => {
         isa         => 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda',
         description => 'Unprocessable Entity',
