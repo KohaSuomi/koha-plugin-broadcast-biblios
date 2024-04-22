@@ -69,7 +69,7 @@ sub merge {
     if ($record) {
         foreach my $recordField ($record->fields) {
             my $tag_in_keep = grep { defined($_->{tag}) && $_->{tag} eq $recordField->tag } @{$filters->{keep}};
-            if ($tag_in_keep && !$merged->field($recordField->tag, $recordField->as_string)) {
+            if ($tag_in_keep) {
                 $merged->append_fields($recordField);
             }
             foreach my $keep (@{$filters->{keep}}) {
