@@ -172,11 +172,11 @@ sub transferRecord {
                 hostrecord => $parts ? 1 : 0,
             });
         } else {
-            die "Failed to transfer record $biblio_id\n";
+            Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to transfer the record"});
         }
     } catch {
-        my $error = $_;
-        print "Error while importing record $biblio_id: $error\n";
+        my $exception = $_;
+        print "Error while importing record $biblio_id: $exception\n";
     }
 }
 
@@ -325,7 +325,7 @@ sub processImportQueue {
                     if ($success) {
                         print "Updated record $biblio_id\n" if $self->verbose;
                     } else {
-                        die "Failed to update record $biblio_id\n";
+                        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to update the record"});
                     }
                     $self->db->updateQueueStatus($queue->{id}, 'completed', $success);
                     $self->getActiveRecords->activeRecordUpdatedByBiblionumber($biblio_id);
@@ -335,15 +335,14 @@ sub processImportQueue {
                         print "Added a record $biblionumber\n" if $self->verbose;
                         $self->db->updateQueueStatusAndBiblioId($queue->{id}, $biblionumber, 'completed', 'Record added');
                     } else {
-                        die "Failed to add a record\n";
-                        $self->db->updateQueueStatus($queue->{id}, 'failed', 'Failed to add a record');
+                        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to add a record"});
                     }
 
                 }
             }
         } catch {
-            my $error = $_;
-            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
+            my $exception = $_;
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $exception->error);
             print "Error while processing import queue: $error\n";
         }
     }
