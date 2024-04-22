@@ -3,58 +3,48 @@ package Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler;
 use strict;
 use warnings;
 use Koha::Logger;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic;
 
 sub handle_exception {
-    my ($self, $exception) = @_;
-
-    # Log the exception
-    $self->log_exception($exception);
+    my ($self, $interface, $status, $exception) = @_;
 
     # Handle the exception based on its type
-    if ($exception->isa('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda')) {
+    if ($interface eq 'Melinda') {
         # Handle custom exception
-        $self->handle_melinda_exception($exception);
+        $self->handle_melinda_exception($status, $exception);
     } else {
         # Handle other exceptions
-        $self->handle_generic_exception($exception);
+        $self->handle_generic_exception($status, $exception);
     }
 }
 
-sub log_exception {
-    my ($self, $exception) = @_;
-
-    # Log the exception details
-    # You can use your preferred logging mechanism here
-    # For example:
-    # log_error("Exception: " . $exception->message);
-    my $logger = Koha::Logger->get();
-    $logger->error("Exception: " . $exception->message);
-}
-
 sub handle_melinda_exception {
-    my ($self, $exception) = @_;
+    my ($self, $status, $exception) = @_;
 
-    # Handle the custom exception
-    # You can define your own logic here
-    # For example:
-    # display_error("Custom Exception: " . $exception->message);
-    display_error("Melinda error: " . $exception->message);
+    # Handle the Melinda exception
+    if ($status eq '409') {
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::Conflict->throw( $exception->{message} );
+    } else {
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda->throw( $exception->{message} );
+    }
+
+    display_error("Melinda Exception: " . $exception->{message});
 }
 
 sub handle_generic_exception {
-    my ($self, $exception) = @_;
+    my ($self, $status, $exception) = @_;
 
     # Handle the generic exception
-    # You can define your own logic here
-    # For example:
-    # display_error("Generic Exception: " . $exception->message);
+    Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic->throw( $exception->{message} );
+    display_error("Generic Exception: " . $exception->{message});
 }
 
 sub display_error {
     my ($message) = @_;
 
     # Display the error message
-    print $message;
+    print "$message \n";
 }
 
 1;

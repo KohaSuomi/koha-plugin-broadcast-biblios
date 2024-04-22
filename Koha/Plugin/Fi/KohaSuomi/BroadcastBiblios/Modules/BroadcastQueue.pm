@@ -375,7 +375,6 @@ sub processExportQueue {
         } catch {
             my $error = $_;
             $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
-            Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($error);
             my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
             print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
         }
@@ -454,15 +453,7 @@ sub postQueueRecord {
         $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
         $self->db->removeComponentPartsFromHostRecord($queue->{id}); # Remove component parts from host after successful add
     } else {
-        if ($queue->{broadcast_interface} =~ /Melinda/i){
-            if ($postResponse->message eq "Conflict") {
-                Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::Conflict->throw($postResponse->result->json->{message});
-            } else {
-                Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda->throw($postResponse->message);
-            }
-        } else {
-            die "Failed to push record to ".$queue->{broadcast_interface}.": ".$postResponse->message;
-        }
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $postResponse->code, $postResponse->json);
     }
 
     return $target_id;
@@ -498,19 +489,11 @@ sub putQueueRecord {
                 $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
                 $self->db->removeComponentPartsFromHostRecord($queue->{id}); # Remove component parts from host after successful update
             } else {
-                if ($queue->{broadcast_interface} =~ /Melinda/i){
-                    if ($putResponse->message eq "Conflict") {
-                        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda::Conflict->throw($putResponse->result->json->{message});
-                    } else {
-                        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda->throw($putResponse->message);
-                    }
-                } else {
-                    die "Failed to update record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}.": ".$putResponse->message;
-                }
+                Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $putResponse->code, $putResponse->json);
             }
         }
     } else {
-        die "Failed to get record ".$queue->{broadcast_biblio_id}." from ".$queue->{broadcast_interface}.": ".$getResponse->{message};
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $getResponse->{code}, $getResponse->{message});
     }
 }
 
