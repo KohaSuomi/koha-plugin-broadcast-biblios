@@ -53,7 +53,7 @@ sub merge {
     my ($self, $queueRecord, $record) = @_;
 
     my $interface = $self->interface();
-    my $merged = $queueRecord;
+    my $merged = $queueRecord->clone();
     $merged = $self->appendSystemControlNumber($merged);
 
     my $filters = $self->KohaFilters();
