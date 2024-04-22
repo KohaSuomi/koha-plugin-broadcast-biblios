@@ -141,6 +141,14 @@ sub TatiMerge {
     my ($self) = @_;
     my @keep = ();
     my @remove = (
+        {tag => 'CAT'},
+        {tag => 'LOW'},
+        {tag => 'SID'},
+        {tag => 'HLI'},
+        {tag => 'DEL'},
+        {tag => 'LDR'},
+        {tag => 'STA'},
+        {tag => 'COR'},
         {tag => '942'},
         {tag => '999'},
     );
