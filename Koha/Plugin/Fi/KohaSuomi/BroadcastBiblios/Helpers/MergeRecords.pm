@@ -75,7 +75,9 @@ sub merge {
             foreach my $keep (@{$filters->{keep}}) {
                 foreach my $recordSubfields ($recordField->subfields) {
                     if (defined($keep->{code}) && $keep->{code} eq $recordSubfields->[0]) {
-                        $merged->insert_fields_ordered($recordField);
+                        if (!$merged->field($recordField->tag) && !$merged->field($recordField->tag, $recordField->as_string)) {
+                            $merged->insert_fields_ordered($recordField);
+                        }
                     }
                 }
             }
