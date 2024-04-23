@@ -27,6 +27,8 @@ use Koha::DateUtils qw(dt_from_string);
 use MARC::Record;
 use Koha::Logger;
 use XML::LibXML;
+use Koha::ActionLogs;
+use C4::Biblio qw( ModBiblioMarc );
 
 =head new
 
@@ -147,6 +149,57 @@ sub getRecord {
     }
 
     return $record;
+}
+
+sub restoreRecordFromActionLog {
+    my ($self, $action_id) = @_;
+
+    my $action_log = Koha::ActionLogs->find($action_id);
+    my (undef, $marc) = split('=>\s*', $action_log->info);
+    my $biblionumber = $action_log->object;
+    my @marc_lines = split('\n', $marc);
+    my $marc_record = MARC::Record->new();
+    my $last_tag;
+    foreach my $line (@marc_lines) {
+
+        if ($line =~ /LDR/) {
+            $line =~ s/^LDR //;
+            $marc_record->leader($line);
+
+        }
+        elsif ($line =~ /^00\d/) {
+            my $tag = substr($line, 0, 3);
+            my $value = substr($line, 4);
+            $value =~ s/^\s+//; # Remove whitespace from the beginning of the value
+            my $field = MARC::Field->new($tag, $value);
+            $marc_record->append_fields($field);
+            $last_tag = $tag;
+        } elsif ($line =~ /^\d/) {
+            my $tag = substr($line, 0, 3);
+            my $ind1 = substr($line, 4, 1);
+            my $ind2 = substr($line, 5, 1);
+            my $subfield = substr($line, 6);
+            $subfield =~ s/^\s+//; # Remove whitespace from the beginning of the value
+            my $code = substr($subfield, 1, 1);
+            my $data = substr($subfield, 2);
+            my $field = MARC::Field->new($tag, $ind1, $ind2, $code => $data);
+            $marc_record->append_fields($field);
+            $last_tag = $tag;
+        } else {
+            $line =~ s/^\s+//; # Remove whitespace from the beginning of the value
+            my $code = substr($line, 1, 1);
+            my $data = substr($line, 2);
+            my $field = $marc_record->field( $last_tag );
+            $field->add_subfields( $code => $data );
+        }
+    }
+
+    my $biblio_id = eval { ModBiblioMarc( $marc_record, $biblionumber ) };
+    if ($@) {
+        warn "Error: $@";
+    } else {
+        return $biblio_id;
+    }
 }
 
 sub checkBlock {

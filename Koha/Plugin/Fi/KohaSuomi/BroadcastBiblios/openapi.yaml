@@ -119,6 +119,56 @@
     x-koha-authorization:
       permissions:
         editcatalogue: edit_catalogue
+/biblios/restore/{action_id}:
+  post:
+    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#restore"
+    operationId: restoreBiblioFromActionLog
+    tags:
+      - biblios
+    parameters:
+      - name: action_id
+        in: path
+        description: Internal action identifier
+        required: true
+        type: integer
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Restored a biblio
+        schema:
+          type: object
+          properties:
+            biblio_id:
+              type: integer
+              description: Internal biblio identifier
+      "400":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Bad request
+              type: string
+      "403":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Forbidden
+              type: string
+      "500":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Internal server error
+              type: string
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
 "/biblios/{biblio_id}/componentparts":
   get:
     x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BiblioController#getcomponentparts"

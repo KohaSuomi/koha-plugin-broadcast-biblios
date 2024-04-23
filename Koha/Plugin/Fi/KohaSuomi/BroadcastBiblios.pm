@@ -168,6 +168,18 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
     return $dropdown;
 }
 
+## If your plugin needs to add some javascript in the staff intranet, you'll want
+## to return that javascript here. Don't forget to wrap your javascript in
+## <script> tags. By not adding them automatically for you, you'll have a
+## chance to include other javascript files if necessary.
+sub intranet_js {
+    my ( $self ) = @_;
+
+    my $pluginpath = $self->get_plugin_http_path();
+    my $scripts = '<script src="'.$pluginpath.'/js/restore.js"></script>';
+    return $scripts;
+}
+
 ## This is the 'install' method. Any database tables or other setup that should
 ## be done when the plugin if first installed should be executed in this method.
 ## The installation method should always return true if the installation succeeded

@@ -206,6 +206,23 @@ sub update {
     }
 }
 
+sub restore {
+    my $c = shift->openapi->valid_input or return;
+
+    my $logger = Koha::Logger->get({ interface => 'api' });
+
+    try {
+        my $action_id = $c->validation->param('action_id');
+        my $biblios = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios->new();
+        my $biblio_id = $biblios->restoreRecordFromActionLog($action_id);
+        return $c->render(status => 200, openapi => {biblio_id => $biblio_id});
+    } catch {
+        my $error = $_;
+        $logger->error($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+    }
+}
+
 sub getBroadcastBiblio {
     my $c = shift->openapi->valid_input or return;
 
