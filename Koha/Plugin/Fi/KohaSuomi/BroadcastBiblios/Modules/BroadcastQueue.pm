@@ -386,7 +386,7 @@ sub processExportComponentParts {
     $componentparts = $self->getComponentParts->sortComponentParts($componentparts);
     $broadcastcomponentparts = $self->getComponentParts->sortComponentParts($broadcastcomponentparts);
     if ($method eq 'PUT' && scalar @$broadcastcomponentparts > 0 && scalar @$componentparts != scalar @$broadcastcomponentparts) {
-        die "Component parts count mismatch, local: ".scalar @$componentparts.", broadcast: ".scalar @$broadcastcomponentparts."\n";
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 409, {message => "Component parts count mismatch, local: ".scalar @$componentparts.", broadcast: ".scalar @$broadcastcomponentparts});
     }
 
     my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $interface});
@@ -509,7 +509,7 @@ sub processImportComponentParts {
     my $f942 = $self->get942Field($biblio_id);
     if ($localcomponentparts) {
         unless (scalar @{$broadcastcomponentparts} == scalar @{$localcomponentparts}) {
-            die "Component parts count mismatch, broadcast: ".scalar @{$broadcastcomponentparts}.", local: ".scalar @{$localcomponentparts}."\n";
+            Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 409, {message => "Component parts count mismatch, broadcast: ".scalar @{$broadcastcomponentparts}.", local: ".scalar @{$localcomponentparts}});
         }
         $localcomponentparts = $self->getComponentParts->sortComponentParts($localcomponentparts);
         my $localcomponentpartscount = scalar @{$localcomponentparts};
@@ -530,10 +530,10 @@ sub processImportComponentParts {
                 if ($success) {
                     print "Updated component part $biblionumber\n" if $self->verbose;
                 } else {
-                    die "Failed to update component part $biblionumber\n";
+                    Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to update component part $biblionumber"});
                 }
             } else {
-                die "Failed to update component part $biblionumber\n";
+                Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to update component part $biblionumber"});
             }
         }
     } else {
@@ -548,10 +548,10 @@ sub processImportComponentParts {
                 if ($biblionumber) {
                     print "Added component part $biblionumber\n" if $self->verbose;
                 } else {
-                    die "Failed to add component part ".$broadcastcomponentpart->{biblionumber}."\n";
+                    Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to add component part"});
                 }
             } else {
-                die "Failed to add component part ".$broadcastcomponentpart->{biblionumber}."\n";
+                Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to add component part ".$broadcastcomponentpart->{biblionumber}});
             }
         }
     }
@@ -602,7 +602,7 @@ sub updateLocalRecord {
     if ($success) {
         print "Updated local record $biblio_id\n" if $self->verbose;
     } else {
-        die "Failed to update record $biblio_id\n";
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to update the record $biblio_id"});
     }
 }
 

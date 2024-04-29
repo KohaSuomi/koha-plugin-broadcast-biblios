@@ -35,8 +35,13 @@ sub handle_melinda_exception {
 sub handle_generic_exception {
     my ($self, $status, $exception) = @_;
 
-    # Handle the generic exception
-    Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic->throw( $exception->{message} );
+    if ($status eq '409') {
+        # Handle the conflict exception
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Conflict->throw( $exception->{message} );
+    } else {
+        # Handle the generic exception
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic->throw( $exception->{message} );
+    }
     display_error("Generic Exception: " . $exception->{message});
 }
 
