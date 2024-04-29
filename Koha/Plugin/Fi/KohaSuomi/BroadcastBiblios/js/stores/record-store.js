@@ -34,7 +34,7 @@ export const useRecordStore = defineStore("record", {
         return response;
       } catch (error) {
         const errorStore = useErrorStore();
-        if (error.response.status != 404) {
+        if (error.response && error.response.status != 404) {
           errorStore.setError(error);
         }
       }
