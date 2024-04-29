@@ -173,7 +173,7 @@
 				{{result.transfered_on | moment}} (<i class="fa" :class="[result.type == 'export' ? 'fa-arrow-up text-primary' : 'fa-arrow-down text-warning']"></i> {{result.type | transfer}})
 			</td>
 			<td class="col-4">
-				<div>{{result.marcjson | author}} {{result.marcjson | title}} {{result.itemtype}} (<a v-bind:href="'/cgi-bin/koha/catalogue/detail.pl?biblionumber='+result.biblio_id" target="_blank">{{result.biblio_id}}</a>) <i class="fa fa-code text-muted" @click="toggleShowRecord($event)"></i></div>
+				<div>{{result.marcjson | author}} {{result.marcjson | title}} {{result.itemtype}} (<a v-bind:href="'/cgi-bin/koha/catalogue/detail.pl?biblionumber='+result.biblio_id" target="_blank" class="record-link">{{result.biblio_id}}</a>) <i class="fa fa-code text-muted" @click="toggleShowRecord($event)"></i></div>
 				<div v-show="showRecord" :inner-html.prop="result.marcjson | record"></div>
 			</td>
 			<td class="col-3">
@@ -217,5 +217,10 @@
 			var notifyFields = '[% notifyfields %]';
 		</script>
 		<script type="module" src="[% PLUGIN_PATH %]/js/viewApp.js"></script>
+		<style>
+			.record-link:visited {
+				color: green;
+			}
+		</style>
 	</body>
 </html>
