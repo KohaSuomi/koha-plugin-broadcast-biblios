@@ -123,9 +123,13 @@ sub updateUser {
     if (!$user) {
         die {error => "User not found", status => 404};
     }
+
     if ($params->{password}) {
         $params->{password} = encode_jwt(payload => $params->{password}, alg => 'HS256', key => $self->getSecret);
+    } else {
+        $params->{password} = $user->{password};
     }
+
     $self->db->updateUser($user_id, $params);
     return {message => "User updated", status => 200};
 }
