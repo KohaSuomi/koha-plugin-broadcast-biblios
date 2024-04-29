@@ -475,7 +475,7 @@ sub putQueueRecord {
         print "Got record ".$target_id." from ".$queue->{broadcast_interface}."\n";
         my $record = $getResponse->{marcjson};
         my $remoterecord = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $record});
-        if ($self->compareEncodingLevels($queue->{marc}, $remoterecord->toXML) eq 'lower') {
+        if ($self->compareExportEncodingLevels($queue->{marc}, $remoterecord->toXML) eq 'lower') {
             Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Local record ".$queue->{biblio_id}." has lower encoding level than broadcast record ".$queue->{broadcast_biblio_id}});
         } elsif ($self->compareTimestamps($queue->{marc}, $remoterecord->toXML) ) {
             Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}});
@@ -631,6 +631,17 @@ sub compareEncodingLevels {
     my $localEncoding = $self->getEncodingLevel($localmarc);
     my $broadcastEncoding = $self->getEncodingLevel($broadcastmarc);
     return $self->compareRecords->compareEncodingLevels($localEncoding, $broadcastEncoding);
+}
+
+sub compareExportEncodingLevels {
+    my ($self, $localmarc, $broadcastmarc) = @_;
+    my $localEncoding = $self->getEncodingLevel($localmarc);
+    my $broadcastEncoding = $self->getEncodingLevel($broadcastmarc);
+    if ($localEncoding->{encodingLevel} eq '4' && $broadcastEncoding->{encodingLevel} eq '3') {
+        return "equal";
+    } else {
+        return $self->compareRecords->compareEncodingLevels($localEncoding, $broadcastEncoding);
+    } 
 }
 
 sub compareTimestamps {
