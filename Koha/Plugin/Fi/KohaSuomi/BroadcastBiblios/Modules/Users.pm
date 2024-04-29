@@ -25,6 +25,7 @@ use JSON;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler;
 use C4::Context;
 use Crypt::JWT qw(encode_jwt decode_jwt);
 use Mojo::UserAgent;
@@ -159,7 +160,7 @@ sub basicAuth {
     my ($self, $user) = @_;
     my $password = eval { decode_jwt(token => $user->{password}, key => $self->getSecret)};
     if ($@) {
-        die "Error while decoding password " . $@ . "\n";
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception("Generic", 500, {message => "Error while decoding password " . $@});
     }
     my $authentication = $user->{username} . ":" . $password;
     my $path = Mojo::URL->new($self->getPath)->userinfo($authentication);
