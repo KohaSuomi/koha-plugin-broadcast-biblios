@@ -85,7 +85,7 @@ sub kohaElasticSearch {
     my $identifierField = $self->getIdentifierField();
     my $identifier_field;
     my $query;
-    $identifier_field = "system-control-field" if $identifierField eq "035a";
+    $identifier_field = "system-control-number" if $identifierField eq "035a";
     $identifier_field = "isbn" if $identifierField eq "020a";
     $identifier_field = "identifier-other" if $identifierField eq "024a";
     if ($identifierField eq "003|001") {
