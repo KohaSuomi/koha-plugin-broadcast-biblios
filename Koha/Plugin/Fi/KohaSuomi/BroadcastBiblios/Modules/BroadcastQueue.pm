@@ -342,8 +342,9 @@ sub processImportQueue {
             }
         } catch {
             my $exception = $_;
-            $self->db->updateQueueStatus($queue->{id}, 'failed', $exception->error);
-            print "Error while processing import queue: $exception->error\n";
+            my $error = $exception->error ? $exception->error : $exception;
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
+            print "Error while processing import queue: $error\n";
         }
     }
 }
@@ -373,7 +374,8 @@ sub processExportQueue {
             print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
         } catch {
             my $exception = $_;
-            $self->db->updateQueueStatus($queue->{id}, 'failed', $exception->error);
+            my $error = $exception->error ? $exception->error : $exception;
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
             my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
             print "Finished processing record ".$queue->{biblio_id}." at ".$endtime."\n" if $self->verbose;
         }
@@ -432,7 +434,8 @@ sub processExportComponentParts {
             }
         } catch {
             my $exception = $_;
-            $self->db->updateQueueStatus($queue->{id}, 'failed', $exception->error);
+            my $error = $exception->error ? $exception->error : $exception;
+            $self->db->updateQueueStatus($queue->{id}, 'failed', $error);
         }
     }
 }
