@@ -95,12 +95,12 @@ sub getUser {
 }
 
 sub getInterfaceUserByPatronId {
-    my ($self, $interface_name, $patron_id, $default_user) = @_;
+    my ($self, $interface_name, $patron_id) = @_;
     my $user = $self->db->getBroadcastInterfaceUser($interface_name, $patron_id);
-    if (!$user && !$default_user) {
+    if (!$user) {
         die {message => "User not found", status => 404};
     }
-    return $user->{id} ? $user->{id} : $default_user;
+    return $user->{id};
 }
 
 sub addUser {
