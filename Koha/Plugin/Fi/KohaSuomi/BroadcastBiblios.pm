@@ -375,6 +375,11 @@ sub process_queue {
 sub create_secret {
     my ( $self ) = @_;
 
+    my $old_secret = $self->retrieve_data('secret');
+    if ($old_secret) {
+        warn "Secret already exists";
+        return;
+    }
     my $secret = uuid();
     $self->store_data({secret => $secret});
 }
