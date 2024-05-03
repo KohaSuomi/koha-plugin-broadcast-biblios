@@ -60,6 +60,8 @@ sub merge {
 
     if (defined($interface) && $interface =~ /Melinda/i) {
         $filters = $self->MelindaMerge();
+    } elsif (defined($interface) && $interface =~ /Vaari/i) {
+        $filters = $self->VaariMerge();
     } elsif (defined($interface) && $interface =~ /Tati/i) {
         $filters = $self->TatiMerge();
     }
@@ -140,6 +142,45 @@ sub MelindaMerge {
             ind2 => ' ',
             subfields => {
                 'a' => 'TATI'
+            }
+        }
+    );
+    
+    return {keep => \@keep, add => \@add, remove => \@remove};
+}
+
+sub VaariMerge {
+    my ($self) = @_;
+
+    my @keep = (
+        {tag => 'CAT'},
+        {tag => 'LOW'},
+        {tag => 'SID'},
+        {tag => 'HLI'},
+        {tag => 'DEL'},
+        {tag => 'LDR'},
+        {tag => 'STA'},
+        {tag => 'COR'},
+        {tag => '015'},
+        {tag => '042'},
+        {code => '5'},
+        {code => '9'}
+    );
+
+    my @remove = (
+        {tag => '001'},
+        {tag => '003'},
+        {tag => '942'},
+        {tag => '999'}
+    );
+
+    my @add = (
+        {
+            tag => 'LOW',
+            ind1 => ' ',
+            ind2 => ' ',
+            subfields => {
+                'a' => 'VAARI'
             }
         }
     );
