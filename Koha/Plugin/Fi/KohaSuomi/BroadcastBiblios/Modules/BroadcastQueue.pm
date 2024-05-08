@@ -160,6 +160,13 @@ sub transferRecord {
                     };
                 }
             }
+
+            my $diff;
+            if ($self->getType eq 'import') {
+                my $localrecord = Koha::Biblios->find($biblio_id);
+                $diff = $self->getDiff($localrecord->metadata->metadata, $marcxml);
+            }
+
             $self->db->insertToQueue({
                 broadcast_interface => $self->getBroadcastInterface,
                 user_id => $self->getUserId,
@@ -168,7 +175,7 @@ sub transferRecord {
                 biblio_id => $biblio_id,
                 marc => $marcxml,
                 componentparts => $parts ? to_json($parts) : undef,
-                diff => undef,
+                diff => $diff ? to_json($diff) : undef,
                 hostrecord => $parts ? 1 : 0,
             });
         } else {
