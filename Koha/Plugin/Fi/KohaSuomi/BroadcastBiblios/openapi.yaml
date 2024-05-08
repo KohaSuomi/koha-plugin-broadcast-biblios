@@ -750,65 +750,9 @@
             error:
               description: Internal server error
               type: string
-/broadcast/biblios/export:
-  post:
-    x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#export"
-    operationId: exportBroadcastBiblio
-    tags:
-      - biblios
-    parameters:
-      - name: body
-        in: body
-        description: Record search parameters
-        required: true
-        schema:
-          type: object
-          properties:
-            marcjson:
-              type: object
-              description: "Record's marc-in-json"
-            interface_name:
-              type: string
-              description: "Interface name"
-            patron_id:
-              type: integer
-              description: "Patron's id"
-            remote_id:
-              type: 
-                - integer
-                - "null"
-              description: "Remote id"      
-    produces:
-      - application/json
-    responses:
-      "200":
-        description: Import record
-        schema:
-          type: object
-      "400":
-        description: An error occured
-        schema:
-          type: object
-          properties:
-            error:
-              description: Bad request
-              type: string
-      "404":
-        description: An error occured
-        schema:
-          type: object
-          properties:
-            error:
-              description: Not found
-              type: string
-      "500":
-        description: An error occured
-        schema:
-          type: object
-          properties:
-            error:
-              description: Internal server error
-              type: string
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
 /broadcast/queue:
   get:
     x-mojo-to: "Fi::KohaSuomi::BroadcastBiblios::Controllers::BroadcastController#listQueue"
