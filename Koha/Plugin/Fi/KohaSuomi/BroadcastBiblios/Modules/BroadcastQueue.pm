@@ -528,6 +528,8 @@ sub processImportComponentParts {
             my $record = $self->getRecord($broadcastcomponentpart->{marcxml});
             if ($record) {
                 my $mergedrecord = $self->mergeRecords()->merge($record, undef);
+                my $local942 = $self->get942Field($biblionumber);
+                $f942 = $local942 if $local942;
                 $mergedrecord = $self->add942ToBiblio($mergedrecord, $f942);
                 my $success = &ModBiblio($mergedrecord, $biblionumber, $frameworkcode, {
                             overlay_context => {
