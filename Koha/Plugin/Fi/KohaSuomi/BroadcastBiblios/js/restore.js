@@ -6,7 +6,7 @@ $(document).ready(function () {
             rows.forEach(function(row) {
                 if (row.cells[2].textContent.includes("Catalog") && row.cells[3].textContent.includes("Modify")) {
                     var loginfoRow = row.querySelector(".loginfo");
-                    if (loginfoRow) {
+                    if (loginfoRow && loginfoRow.textContent.startsWith("biblio")) {
                         let actionId = loginfoRow.id.match(/\d+/g)[0];
                         var restoreButton = document.createElement("button");
                         restoreButton.textContent = "Palauta";
