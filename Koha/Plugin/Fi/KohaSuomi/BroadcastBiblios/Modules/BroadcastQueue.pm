@@ -175,7 +175,7 @@ sub transferRecord {
                 biblio_id => $biblio_id,
                 marc => $marcxml,
                 componentparts => $parts ? to_json($parts) : undef,
-                diff => $diff ? to_json($diff) : undef,
+                diff => $diff ? $diff : undef,
                 hostrecord => $parts ? 1 : 0,
             });
         } else {
