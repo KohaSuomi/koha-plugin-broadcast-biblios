@@ -372,6 +372,7 @@ sub processExportQueue {
 
             if ($self->updateRecord && $target_id) {
                 my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $target_id);
+                $self->mergeRecords($queue->{broadcast_interface})->appendSystemControlNumber($newrecord);
                 $self->mergeRecords($queue->{broadcast_interface})->updateControlNumberAndIdentifier($newrecord, $target_id);
                 $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
             }
@@ -434,6 +435,7 @@ sub processExportComponentParts {
             }
             if ($self->updateRecord && $broadcast_biblio_id) {
                 my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $broadcast_biblio_id);
+                $self->mergeRecords($queue->{broadcast_interface})->appendSystemControlNumber($newrecord);
                 $self->mergeRecords($queue->{broadcast_interface})->updateControlNumberAndIdentifier($newrecord, $broadcast_biblio_id);
                 $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
             }
