@@ -98,7 +98,10 @@ export default {
     report () {
       this.activeTab = 2;
       this.showRecord = false;
-      this.queue.fetch(this.biblio_id);
+      this.loader = true;
+      this.queue.fetch(this.biblio_id).then(() => {
+        this.loader = false;
+      });
     },
     activateRecord() {
       this.active.save(this.biblio_id, this.config.activationInterface);
@@ -210,10 +213,10 @@ export default {
           <div class="modal-header">
             <ul class="nav nav-tabs">
               <li :class="{active : activeTab == 1}">
-                <a href="#" @click="search()">Siirto</a>
+                <a href="#" @click="search()">Siirto <i v-if="activeTab == 1" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
               </li>
               <li :class="{active : activeTab == 2}">
-                <a href="#" @click="report()">Tapahtumat</a>
+                <a href="#" @click="report()">Tapahtumat <i v-if="activeTab == 2" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
               </li>
             </ul>
           </div>
