@@ -203,7 +203,7 @@ sub update {
         }
     } catch {
         my $error = $_;
-        if ($error->isa('Mojo::Exception')) {
+        if ($error->isa('Mojo::Exception') {
             $logger->error($error->to_string);
             return $c->render(status => 500, openapi => {error => $error->to_string});
         } else {
