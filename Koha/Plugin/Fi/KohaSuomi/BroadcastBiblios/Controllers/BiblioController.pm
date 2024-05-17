@@ -173,7 +173,7 @@ sub update {
         }
 
         my $success;
-        my $body = $c->req->json;
+        my $body = $c->req->body;
         my $record = eval {MARC::Record::new_from_xml( $body, "utf8", '')};
         if ($@) {
             return $c->render(status => 400, openapi => {error => $@});
