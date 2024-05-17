@@ -503,11 +503,11 @@ sub putQueueRecord {
                 $self->db->updateQueueStatus($queue->{id}, 'completed', $putResponse->message);
                 $self->db->removeComponentPartsFromHostRecord($queue->{id}); # Remove component parts from host after successful update
             } else {
-                Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $putResponse->code, $putResponse->json);
+                Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $putResponse->code, {message => $putResponse->{message}});
             }
         }
     } else {
-        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $getResponse->{code}, $getResponse->{message});
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $getResponse->code, {message => $getResponse->{message}});
     }
 }
 
