@@ -203,13 +203,8 @@ sub update {
         }
     } catch {
         my $error = $_;
-        if ($error->isa('Mojo::Exception') {
-            $logger->error($error->to_string);
-            return $c->render(status => 500, openapi => {error => $error->to_string});
-        } else {
-            $logger->error($error);
-            return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
-        }
+        $logger->error($error);
+        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
     }
 }
 
