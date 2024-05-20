@@ -467,7 +467,9 @@ sub postQueueRecord {
         $self->db->updateQueueStatus($queue->{id}, 'completed', $postResponse->message);
         $self->db->removeComponentPartsFromHostRecord($queue->{id}); # Remove component parts from host after successful add
     } else {
-        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $postResponse->code, $postResponse->json);
+        my $message = $postResponse->{message};
+        $message .= " ".$postResponse->json->{message} if $postResponse->json && $postResponse->json->{message};
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception($queue->{broadcast_interface}, $postResponse->code, {message => $message});
     }
 
     return $target_id;
