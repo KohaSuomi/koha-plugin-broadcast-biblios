@@ -87,7 +87,7 @@ sub kohaElasticSearch {
     my $query;
     $identifier_field = "system-control-number" if $identifierField eq "035a";
     $identifier_field = "isbn" if $identifierField eq "020a";
-    $identifier_field = "identifier-other" if $identifierField eq "024a";
+    $identifier_field = "identifier-standard" if $identifierField eq "024a";
     if ($identifierField eq "003|001") {
         my @identifiers = split(/\|/, $identifier);
         my $cn = $identifiers[1];
