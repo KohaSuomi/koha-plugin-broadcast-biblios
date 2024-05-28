@@ -433,6 +433,7 @@ sub _restRequestCall {
 
 sub _getActiveRecord {
     my ($self, $config, $identifier, $identifier_field) = @_;
+    $identifier =~ s/-//g if $identifier_field eq '020a' || $identifier_field eq '024a';
     my $path = $config->{restUrl}.'/api/v1/contrib/kohasuomi/broadcast/biblios/active'.'?identifier='.$identifier.'&identifier_field='.$identifier_field;
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->get($path);
