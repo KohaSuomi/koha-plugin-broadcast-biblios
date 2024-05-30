@@ -4,18 +4,22 @@ $(document).ready(function () {
         if (logstElement) {
             var rows = logstElement.querySelectorAll("tr");
             rows.forEach(function(row) {
-                if (row.cells[2].textContent.includes("Catalog") && row.cells[3].textContent.includes("Modify")) {
-                    var loginfoRow = row.querySelector(".loginfo");
-                    if (loginfoRow && /BEFORE=>/.test(loginfoRow.textContent)) {
-                        let actionId = loginfoRow.id.match(/\d+/g)[0];
-                        var restoreButton = document.createElement("button");
-                        restoreButton.textContent = "Palauta";
-                        restoreButton.onclick = function() {
-                            sendRequest(actionId, row.cells[0].textContent);
-                        };
-                        loginfoRow.appendChild(document.createElement("br"));
-                        loginfoRow.appendChild(restoreButton);
-                    }
+                let restoreButton = document.createElement("button");
+                if (row.cells[2].textContent.includes("Catalog") && row.cells[3].textContent.includes("Modify")){
+                    restoreButton.textContent = "Restore";
+                } else if (row.cells[2].textContent.includes("Luettelo") && row.cells[3].textContent.includes("Muokkaa")){
+                    restoreButton.textContent = "Palauta";
+                } else if (row.cells[2].textContent.includes("Katalog") && row.cells[3].textContent.includes("Redigera")){
+                    restoreButton.textContent = "Återställ";
+                }
+                let loginfoRow = row.querySelector(".loginfo");
+                if (loginfoRow && /BEFORE=>/.test(loginfoRow.textContent)) {
+                    let actionId = loginfoRow.id.match(/\d+/g)[0];
+                    restoreButton.onclick = function() {
+                        sendRequest(actionId, row.cells[0].textContent);
+                    };
+                    loginfoRow.appendChild(document.createElement("br"));
+                    loginfoRow.appendChild(restoreButton);
                 }
                 
             });
