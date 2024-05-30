@@ -5,12 +5,11 @@ $(document).ready(function () {
             var rows = logstElement.querySelectorAll("tr");
             rows.forEach(function(row) {
                 let restoreButton = document.createElement("button");
-                var userLang = navigator.language || navigator.userLanguage; 
-                if (userLang == 'en-US'){
+                if (row.cells[2].textContent.includes("Catalog") && row.cells[3].textContent.includes("Modify")){
                     restoreButton.textContent = "Restore";
-                } else if (userLang == 'fi-FI'){
+                } else if (row.cells[2].textContent.includes("Luettelo") && row.cells[3].textContent.includes("Muokkaa")){
                     restoreButton.textContent = "Palauta";
-                } else if (userLang == 'sv-SE'){
+                } else if (row.cells[2].textContent.includes("Katalog") && row.cells[3].textContent.includes("Redigera")){
                     restoreButton.textContent = "Återställ";
                 }
                 let loginfoRow = row.querySelector(".loginfo");
