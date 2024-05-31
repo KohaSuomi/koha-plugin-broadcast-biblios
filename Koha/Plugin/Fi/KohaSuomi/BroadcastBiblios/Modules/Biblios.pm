@@ -28,7 +28,7 @@ use MARC::Record;
 use Koha::Logger;
 use XML::LibXML;
 use Koha::ActionLogs;
-use C4::Biblio qw( ModBiblioMarc );
+use C4::Biblio qw( ModBiblioMarc TransformMarcToKoha );
 
 =head new
 
@@ -161,7 +161,7 @@ sub restoreRecordFromActionLog {
     my $marc_record = MARC::Record->new();
     my $last_tag;
     foreach my $line (@marc_lines) {
-
+        
         if ($line =~ /LDR/) {
             $line =~ s/^LDR //;
             $marc_record->leader($line);
@@ -189,15 +189,24 @@ sub restoreRecordFromActionLog {
             $line =~ s/^\s+//; # Remove whitespace from the beginning of the value
             my $code = substr($line, 1, 1);
             my $data = substr($line, 2);
-            my $field = $marc_record->field( $last_tag );
-            $field->add_subfields( $code => $data );
+            my @fields = $marc_record->field( $last_tag );
+            foreach my $field (@fields) {
+                if (!$field->subfield($code)) {
+                    $field->add_subfields( $code => $data );
+                }
+            }
         }
     }
-
+    
     my $biblio_id = eval { ModBiblioMarc( $marc_record, $biblionumber ) };
     if ($@) {
         warn "Error: $@";
     } else {
+        my $dbh = C4::Context->dbh;
+        my $biblio = C4::Biblio::TransformMarcToKoha({ record => $marc_record });
+        my $frameworkcode = C4::Biblio::GetFrameworkCode($biblio_id);
+        C4::Biblio::_koha_modify_biblio($dbh, $biblio, $frameworkcode);
+        C4::Biblio::_koha_modify_biblioitem_nonmarc($dbh, $biblio);
         return $biblio_id;
     }
 }
