@@ -213,7 +213,7 @@ sub setActiveRecord {
             }
             # Update active record blocked status if changed
             my $record_block = $self->getBiblios()->checkBlock($record);
-            if ($record_block || $activerecord->{blocked} ne $record_block) {
+            if ($record_block) {
                 $activerecord->{blocked} = $record_block;
                 $self->db->updateActiveRecordBlocked($activerecord->{id}, $activerecord->{blocked});
             }
