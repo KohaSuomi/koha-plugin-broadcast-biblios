@@ -145,7 +145,7 @@ sub transferRecord {
     my $queueStatus = $self->db->getQueuedRecordByBiblioId($biblio_id, $self->getType);
     if ($queueStatus && ($queueStatus->{status} eq 'pending' || $queueStatus->{status} eq 'processing')) {
         print "Record ".$biblio_id." is already in queue\n" if $self->verbose;
-        die {status => 409, message => "Record ".$biblio_id." is already in queue"};
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 409, {message => "Record ".$biblio_id." is already in queue"});
     };
     try {
         my $record = $self->getRecord($marcxml);
@@ -216,7 +216,7 @@ sub setToQueue {
     my $queueStatus = $self->db->getQueuedRecordByBiblioId($activerecord->{biblionumber}, $self->getType);
     if ($queueStatus && ($queueStatus->{status} eq 'pending' || $queueStatus->{status} eq 'processing')) {
         print "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue\n" if $self->verbose;
-        die {status => 409, message => "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue"};
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 409, {message => "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue"});
     };
     try {
         my $return = {status => 201, message => "Success"};
