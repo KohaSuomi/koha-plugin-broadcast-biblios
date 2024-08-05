@@ -42,7 +42,11 @@ sub setToQueue {
     } catch {
         my $error = $_;
         $logger->error($error);
-        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+        if ($error->{status}) {
+            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
+        } else {
+            return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+        }
     }
 }
 

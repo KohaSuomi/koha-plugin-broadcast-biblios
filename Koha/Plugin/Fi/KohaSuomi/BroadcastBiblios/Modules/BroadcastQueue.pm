@@ -215,7 +215,7 @@ sub setToQueue {
     my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblionumber});
     if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
         print "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue\n" if $self->verbose;
-        return {status => 409, message => "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue"};
+        die {status => 409, message => "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue"};
     };
     try {
         my $return = {status => 201, message => "Success"};
