@@ -225,7 +225,7 @@ sub getQueue {
 }
 
 sub getQueuedRecordByBiblionumber {
-    my ($self, $biblionumber, $interface, $type) = @_;
+    my ($self, $biblionumber, $type) = @_;
     my $dbh = $self->dbh;
     my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE broadcast_biblio_id = ? AND type = ? order by id desc limit 1");
     $sth->execute($biblionumber, $type);
@@ -235,7 +235,7 @@ sub getQueuedRecordByBiblionumber {
 }
 
 sub getQueuedRecordByBiblioId {
-    my ($self, $biblio_id, $interface, $type) = @_;
+    my ($self, $biblio_id, $type) = @_;
     my $dbh = $self->dbh;
     my $sth = $dbh->prepare("SELECT * FROM " . $self->queue . " WHERE biblio_id = ? AND type = ? order by id desc limit 1");
     $sth->execute($biblio_id, $type);

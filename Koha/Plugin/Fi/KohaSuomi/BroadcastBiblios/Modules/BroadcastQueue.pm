@@ -142,7 +142,7 @@ sub ua {
 
 sub transferRecord {
     my ($self, $biblio_id, $broadcast_biblio_id, $marcxml, $componentparts) = @_;
-    my $queueStatus = $self->db->getQueuedRecordByBiblioId($biblio_id, $self->getBroadcastInterface, $self->getType);
+    my $queueStatus = $self->db->getQueuedRecordByBiblioId($biblio_id, $self->getType);
     if ($queueStatus && ($queueStatus->{status} eq 'pending' || $queueStatus->{status} eq 'processing')) {
         print "Record ".$biblio_id." is already in queue\n" if $self->verbose;
         die {status => 409, message => "Record ".$biblio_id." is already in queue"};
@@ -287,7 +287,7 @@ sub getQueue {
 
 sub checkBiblionumberQueueStatus {
     my ($self, $biblionumber) = @_;
-    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface, $self->getType);
+    my $queue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getType);
     return $queue->{status};
 }
 
@@ -426,7 +426,7 @@ sub processExportComponentParts {
                 hostrecord => 0,
             });
             print "Added component part $biblio_id to export queue\n" if $self->verbose;
-            $queue = $self->db->getQueuedRecordByBiblioId($biblio_id, $interface, 'export');
+            $queue = $self->db->getQueuedRecordByBiblioId($biblio_id, 'export');
             $self->db->updateQueueStatus($queue->{id}, 'processing', undef);
             if ($broadcast_biblio_id) {
                 $self->putQueueRecord($queue, $broadcast_biblio_id);
@@ -580,8 +580,8 @@ sub processNewComponentPartsToQueue {
         $broadcastcomponentparts = $self->getComponentParts->sortComponentParts($broadcastcomponentparts);
         foreach my $broadcastcomponentpart (@$broadcastcomponentparts) {
             my $biblionumber = $broadcastcomponentpart->{biblionumber};
-            my $inQueue = $self->db->getQueuedRecordByBiblionumber($biblionumber, $self->getBroadcastInterface);
-            if ($inQueue) {
+            my $inQueue = $self->checkBiblionumberQueueStatus($biblionumber);
+            if ($inQueue && ($inQueue eq 'pending' || $inQueue eq 'processing')) {
                 print "Broadcast record $biblionumber is already in queue\n" if $self->verbose;
                 next;
             }
