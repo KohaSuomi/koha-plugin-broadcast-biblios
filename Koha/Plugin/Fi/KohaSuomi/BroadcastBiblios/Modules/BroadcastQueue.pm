@@ -204,7 +204,8 @@ sub pushToRest {
         print "Pushed record ".$broadcastrecord->{biblionumber}." to ".$config->{name}." with response: ". $response->{message}."\n";
     } else {
         my $error = $tx->res->json || $tx->res->error;
-        my $errormessage = $error->{message} ? $error->{message} : $error;
+        my $errormessage = $error->{message} if $error->{message};
+        $errormessage = $error->{error} if $error->{error};
         print "Failed to push record ".$broadcastrecord->{biblionumber}." to ".$config->{name}.": ".$errormessage."\n";
     }
 }
@@ -212,8 +213,8 @@ sub pushToRest {
 sub setToQueue {
     my ($self, $activerecord, $broadcastrecord) = @_;
 
-    my $queueStatus = $self->checkBiblionumberQueueStatus($broadcastrecord->{biblionumber});
-    if ($queueStatus && ($queueStatus eq 'pending' || $queueStatus eq 'processing')) {
+    my $queueStatus = $self->db->getQueuedRecordByBiblioId($activerecord->{biblionumber}, $self->getType);
+    if ($queueStatus && ($queueStatus->{status} eq 'pending' || $queueStatus->{status} eq 'processing')) {
         print "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue\n" if $self->verbose;
         die {status => 409, message => "Broadcast record ".$broadcastrecord->{biblionumber}." is already in queue"};
     };
