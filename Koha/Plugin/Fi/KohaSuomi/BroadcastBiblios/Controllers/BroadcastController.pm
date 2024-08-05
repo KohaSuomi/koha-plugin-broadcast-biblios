@@ -21,6 +21,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler;
 use Try::Tiny;
 use Koha::Logger;
 
@@ -31,8 +32,6 @@ use Koha::Logger;
 sub setToQueue {
     my $c = shift->openapi->valid_input or return;
 
-    my $logger = Koha::Logger->get({ interface => 'api' });
-
     try {
         my $body = $c->req->json;
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{broadcast_interface}, type => $body->{type}, user_id => $body->{user_id}});
@@ -41,12 +40,7 @@ sub setToQueue {
         return $c->render(status => $response->{status}, openapi => {message => $response->{message}});
     } catch {
         my $error = $_;
-        $logger->error($error);
-        if ($error->{status}) {
-            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
-        } else {
-            return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
-        }
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->display_api_error($c, $error);
     }
 }
 
@@ -90,12 +84,7 @@ sub transfer {
         return $c->render(status => 200, openapi => {message => "Success"});
     } catch {
         my $error = $_;
-        $logger->error($error->{message});
-        if ($error->{status}) {
-            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
-        } else {
-            return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
-        }
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->display_api_error($c, $error);
     }
 }
 
