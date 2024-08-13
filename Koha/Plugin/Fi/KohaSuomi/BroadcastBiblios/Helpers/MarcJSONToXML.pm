@@ -67,8 +67,8 @@ sub toXML {
 
 sub escapeChars {
     my ($self, $string) = @_;
-    $string =~ s/</&lt;/sg;
-    $string =~ s/>/&gt;/sg;
+    #$string =~ s/</&lt;/sg; #Aleph does not like these
+    #$string =~ s/>/&gt;/sg;
     $string =~ s/&/&amp;/sg;
     $string =~ s/"/&quot;/sg;
     $string =~ s/'/&apos;/sg;
