@@ -89,7 +89,7 @@ sub xmlToHash {
                 my @subfields = $datafield->getElementsByTagName("subfield");
                 my @sf;
                 foreach my $subfield (@subfields){
-                    push @sf, {code => $subfield->getAttribute("code"), value => $subfield->textContent};
+                    push @sf, {code => $subfield->getAttribute("code"), value => $self->revertEscapeXML($subfield->textContent)};
                 }
                 push @df, {tag => $datafield->getAttribute("tag"), ind1 => $datafield->getAttribute("ind1"), ind2 => $datafield->getAttribute("ind2"), subfield => \@sf}
             }
@@ -98,6 +98,16 @@ sub xmlToHash {
     }
 
     return $hash;
+}
+
+sub revertEscapeXML {
+    my ($self, $string) = @_;
+    $string =~ s/&lt;/</sg;
+    $string =~ s/&gt;/>/sg;
+    $string =~ s/&amp;/&/sg;
+    $string =~ s/&quot;/"/sg;
+    $string =~ s/&apos;/'/sg;
+    return $string;
 }
 
 1;
