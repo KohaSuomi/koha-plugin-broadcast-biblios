@@ -80,7 +80,7 @@ sub xmlToHash {
             
             my @cf;
             foreach my $controlfield (@controlfields) {
-                push @cf, {tag => $controlfield->getAttribute("tag"), value => $controlfield->textContent}
+                push @cf, {tag => $controlfield->getAttribute("tag"), value => $self->revertEscapeXML($controlfield->textContent)}
             }
             $hash->{controlfield} = \@cf;
             
