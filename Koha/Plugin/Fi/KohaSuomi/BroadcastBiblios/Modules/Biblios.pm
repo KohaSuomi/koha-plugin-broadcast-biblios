@@ -24,6 +24,7 @@ use Try::Tiny;
 use Koha::Biblio::Metadatas;
 use Koha::Database;
 use Koha::DateUtils qw(dt_from_string);
+use POSIX qw( strftime );
 use MARC::Record;
 use Koha::Logger;
 use XML::LibXML;
@@ -248,6 +249,18 @@ sub checkActionLog {
     }
 
     return 1;
+}
+
+sub diff005toTimestamp {
+    my ($self, $record, $timestamp) = @_;
+
+    my $field = $record->field('005');
+    my $date = $field->data();
+    $date =~ s/[^0-9]//g;
+    $timestamp = dt_from_string($timestamp);
+    my $date_string = strftime( "%Y%m%d%H%M%S", localtime($timestamp->epoch) ) . '0';
+    return $date_string cmp $date;
+
 }
 
 1;
