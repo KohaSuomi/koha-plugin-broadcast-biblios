@@ -145,7 +145,7 @@ sub searchFromInterface {
                     url => $config->{sruUrl},
                     query => $query
                 };
-                if ($interface_name =~ /Melinda/i) {
+                if ($interface_name =~ /Melinda|Vaari/i) {
                     $params->{version} = "2.0";
                 }
                 my $sru = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU->new($params);
@@ -158,7 +158,7 @@ sub searchFromInterface {
                 my $componentparts = [];
                 if ($records) {
                     my $record = $records->[0];
-                    if ($interface_name =~ /Melinda/i && $record->{fields}) {
+                    if ($interface_name =~ /Melinda|Vaari/i && $record->{fields}) {
                         $componentparts = $self->searchSRUComponentParts($config->{sruUrl}, $record);
                     }
                     

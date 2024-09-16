@@ -66,7 +66,7 @@ sub query {
     my $query;
 
     if ($self->getInterfaceType eq "SRU") {
-        if ($self->getInterface =~ /Melinda/i) {
+        if ($self->getInterface =~ /Melinda|Vaari/i) {
             $query = $self->melindaSRUSearch();
         } else {
             $query = $self->kohaSRUSearch();

@@ -147,8 +147,8 @@ sub headers {
     my ($self, $type, $headers) = @_;
     
     if ($type eq "GET" || $type eq "SEARCH") {
-        $headers->{"Accept"} = "application/marc-in-json" unless $self->interface =~ /Melinda/i;
-        $headers->{"Accept"} = "application/json" if $self->interface =~ /Melinda/i;
+        $headers->{"Accept"} = "application/marc-in-json" unless $self->interface =~ /Melinda|Vaari/i;
+        $headers->{"Accept"} = "application/json" if $self->interface =~ /Melinda|Vaari/i;
         
     }
 
@@ -174,7 +174,7 @@ sub call {
 sub interfaceActions {
     my ($self, $interface, $params) = @_;
 
-    if ($interface =~ /Melinda/i) {
+    if ($interface =~ /Melinda|Vaari/i) {
         $params->{format} = "json";
     }
 

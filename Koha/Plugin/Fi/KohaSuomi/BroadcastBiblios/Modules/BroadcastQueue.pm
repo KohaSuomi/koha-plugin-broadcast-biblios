@@ -455,7 +455,7 @@ sub postQueueRecord {
     my $target_id;
     my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), undef);
     my $marcxml = $mergedrecord->as_xml_record;
-    my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : Encode::encode_utf8($marcxml);
+    my $marc = $queue->{broadcast_interface} =~ /Melinda|Vaari/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : Encode::encode_utf8($marcxml);
 
     my $postResponse = $rest->apiCall({type => 'POST', data => {body => $marc}, user_id => $queue->{user_id}});
     if ($postResponse->is_success) {
@@ -499,7 +499,7 @@ sub putQueueRecord {
             }
 
             my $marcxml = $mergedrecord->as_xml_record;
-            my $marc = $queue->{broadcast_interface} =~ /Melinda/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : Encode::encode_utf8($marcxml);
+            my $marc = $queue->{broadcast_interface} =~ /Melinda|Vaari/i ? $self->getMarcXMLToJSON->toJSON($marcxml) : Encode::encode_utf8($marcxml);
             my $putResponse = $rest->apiCall({type => 'PUT', data => {biblio_id => $target_id, body => $marc}, user_id => $queue->{user_id}});
             if ($putResponse->is_success) {
                 print "Updated record ".$queue->{broadcast_biblio_id}." in ".$queue->{broadcast_interface}." with response: ". $putResponse->message."\n";

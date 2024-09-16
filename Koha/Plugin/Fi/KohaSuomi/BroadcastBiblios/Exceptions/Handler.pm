@@ -9,7 +9,7 @@ sub handle_exception {
     my ($self, $interface, $status, $exception) = @_;
 
     # Handle the exception based on its type
-    if ($interface eq 'Melinda') {
+    if ($interface eq 'Melinda' || $interface eq 'Vaari') {
         # Handle custom exception
         $self->handle_melinda_exception($status, $exception);
     } else {
