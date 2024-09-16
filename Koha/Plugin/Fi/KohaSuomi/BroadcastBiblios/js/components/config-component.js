@@ -175,6 +175,7 @@ export default {
             <div class="form-group">
                 <label for="type" class="col-form-label">Tyyppi</label>
                 <select class="form-control" id="type" v-model="selectedInterface.type">
+                    <option selected value="">Valitse</option>
                     <option v-for="type in interfaceTypes" :value="type.id">{{ type.name }}</option>
                 </select>
             </div>
@@ -196,6 +197,7 @@ export default {
             <div class="form-group">
                 <label for="defaultUser" class="col-form-label">Tuonnin oletuskäyttäjä</label>
                 <select class="form-control" id="defaultUser" v-model="selectedInterface.defaultUser">
+                    <option selected value="">Valitse</option>
                     <option v-for="user in users.list" :value="user.id">{{ user.username }}</option>
                 </select>
             </div>
