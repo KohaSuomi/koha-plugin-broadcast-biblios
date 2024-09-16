@@ -178,6 +178,13 @@ export default {
                     <option v-for="type in interfaceTypes" :value="type.id">{{ type.name }}</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="parentInterface" class="col-form-label">Ylärajapinta (valinnainen)</label>
+                <select class="form-control" id="parentInterface" v-model="selectedInterface.parentInterface">
+                    <option selected value="">Valitse</option>
+                    <option v-for="interface in config.interfaces" :value="interface.name">{{ interface.name }}</option>
+                </select>
+            </div>
             <div class="form-check py-3">
                 <input class="form-check-input" type="checkbox" value="" id="activationInterface" v-model="selectedInterface.activationInterface">
                 <label for="activationInterface" class="form-check-label">Tietueiden aktivointirajapinta</label>

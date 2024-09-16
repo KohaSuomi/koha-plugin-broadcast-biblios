@@ -76,7 +76,8 @@ sub transfer {
         my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
         my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new();
         my $interface = $config->getInterfaceConfig($body->{interface_name});
-        my $user_id = $interface->{type} eq 'import' ? $interface->{defaultUser} : $users->getInterfaceUserByPatronId($body->{interface_name}, $body->{patron_id});
+        my $patronInterface = $interface->{parentInterface} ? $interface->{parentInterface} : $body->{interface_name};
+        my $user_id = $interface->{type} eq 'import' ? $interface->{defaultUser} : $users->getInterfaceUserByPatronId($patronInterface, $body->{patron_id});
         my $marc = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcJSONToXML->new({marcjson => $body->{marcjson}});
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{interface_name}, type => $body->{type}, user_id => $user_id});
         $queue->transferRecord($biblio_id, $body->{remote_id}, $marc->toXML(), $body->{componentparts});
