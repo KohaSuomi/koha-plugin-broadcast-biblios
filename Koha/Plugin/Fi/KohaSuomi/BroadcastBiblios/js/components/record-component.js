@@ -155,7 +155,7 @@ export default {
       const remoteTimestamp = recordParser.recordTimestamp(this.records.remotemarcjson);
       const systemControlNumbers = recordParser.systemControlNumbers(this.records.marcjson);
       var hasMelinda = systemControlNumbers.find(a =>a.includes("MELINDA"));
-      if (!hasMelinda && this.selectedInterface.includes('Melinda') && localTimestamp < remoteTimestamp) {
+      if (!hasMelinda && (this.selectedInterface.includes('Melinda') || this.selectedInterface.includes('Vaari')) && localTimestamp < remoteTimestamp) {
         this.showExportButton = false;
       }
 
