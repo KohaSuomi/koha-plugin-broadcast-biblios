@@ -67,26 +67,41 @@ sub merge {
     }
 
     if ($record) {
+        my @keepFields = ();
         foreach my $recordField ($record->fields) {
             my $tag_in_keep = grep { defined($_->{tag}) && $_->{tag} eq $recordField->tag } @{$filters->{keep}};
             if ($tag_in_keep) {
                 if (looks_like_number($recordField->tag)) {
-                    if (!$merged->field($recordField->tag) && !$merged->field($recordField->tag, $recordField->as_string)) {
-                        $merged->insert_fields_ordered($recordField);
+                    push @keepFields, $recordField;
+                    if ($merged->field($recordField->tag)) {
+                        foreach my $field ($merged->fields) {
+                            if ($field->tag eq $recordField->tag && $field->as_string() eq $recordField->as_string()) {
+                                $merged->delete_field($field); 
+                            }
+                        }
                     }
                 } else {
                     $merged->append_fields($recordField);
                 }
-            }
-            foreach my $keep (@{$filters->{keep}}) {
-                foreach my $recordSubfields ($recordField->subfields) {
-                    if (defined($keep->{code}) && $keep->{code} eq $recordSubfields->[0]) {
-                        if (!$merged->field($recordField->tag) && !$merged->field($recordField->tag, $recordField->as_string)) {
-                            $merged->insert_fields_ordered($recordField);
+            } else {
+                foreach my $keep (@{$filters->{keep}}) {
+                    foreach my $recordSubfields ($recordField->subfields) {
+                        if (defined($keep->{code}) && $keep->{code} eq $recordSubfields->[0]) {
+                            push @keepFields, $recordField;
+                            if ($merged->field($recordField->tag)) {
+                                foreach my $field ($merged->fields) {
+                                    if ($field->tag eq $recordField->tag && $field->as_string() eq $recordField->as_string()) {
+                                        $merged->delete_field($field); 
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+        foreach my $field (@keepFields) {
+            $merged->insert_fields_ordered($field);
         }
     }
 
