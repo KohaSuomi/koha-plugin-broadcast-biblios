@@ -173,7 +173,7 @@ sub setActiveRecords {
                 print "Processing biblio ".$biblio->{biblionumber}."\n";
             }
             $count++;
-            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import');
+            $self->broadcastLog()->setBroadcastLog($biblio->{biblionumber}, $biblio->{timestamp}, 'import') if !$params->{all};
             if ($biblio->{skip}) {
                 print "Biblio ".$biblio->{biblionumber}." skipped!\n" if $self->verbose;
                 next;
