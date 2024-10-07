@@ -203,7 +203,7 @@ sub setActiveRecord {
         my $record = $self->getRecord($biblio->{metadata});
         return {status => 404, message => "Not found"} unless $record;
         return {status => 403, message => "Not a host record"} if $self->getBiblios->checkComponentPart($record);
-        return {status => 409, message => "Field 005 timestamp does not match with table timestamp"} if $self->getBiblios->diff005toTimestamp($record, $biblio->{timestamp});
+        return {status => 409, message => "Field 005 timestamp does not match with table timestamp"} if $self->getBiblios->diff005toTimestamp($record, $biblio->{timestamp}) && !$params->{all};
         my $activerecord = $self->getActiveRecordByBiblionumber($biblio->{biblionumber});
         if ($activerecord) {
             # Update active record identifiers if changed
