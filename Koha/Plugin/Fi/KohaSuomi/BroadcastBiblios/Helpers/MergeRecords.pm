@@ -67,12 +67,13 @@ sub merge {
     }
 
     if ($record) {
-        my @keepFields = ();
+        my $keepFields = {};
+        my $beforeField;
         foreach my $recordField ($record->fields) {
             my $tag_in_keep = grep { defined($_->{tag}) && $_->{tag} eq $recordField->tag } @{$filters->{keep}};
             if ($tag_in_keep) {
                 if (looks_like_number($recordField->tag)) {
-                    push @keepFields, $recordField;
+                    push @{$keepFields->{$recordField->tag}}, {before_field => $beforeField, field => $recordField};
                     if ($merged->field($recordField->tag)) {
                         foreach my $field ($merged->fields) {
                             if ($field->tag eq $recordField->tag && $field->as_string() eq $recordField->as_string()) {
@@ -87,7 +88,7 @@ sub merge {
                 foreach my $keep (@{$filters->{keep}}) {
                     foreach my $recordSubfields ($recordField->subfields) {
                         if (defined($keep->{code}) && $keep->{code} eq $recordSubfields->[0]) {
-                            push @keepFields, $recordField;
+                            push @{$keepFields->{$recordField->tag}}, {before_field => $beforeField, field => $recordField};
                             if ($merged->field($recordField->tag)) {
                                 foreach my $field ($merged->fields) {
                                     if ($field->tag eq $recordField->tag && $field->as_string() eq $recordField->as_string()) {
@@ -97,11 +98,17 @@ sub merge {
                             }
                         }
                     }
+                    
                 }
             }
+            $beforeField = $recordField;
         }
-        foreach my $field (@keepFields) {
-            $merged->insert_fields_ordered($field);
+        foreach my $tag (sort keys %{$keepFields}) {
+            my $fields = $keepFields->{$tag};
+            foreach my $field (@{$fields}) {
+                my @fields = $merged->field($field->{before_field}->tag);
+                $merged->insert_fields_after(pop @fields, $field->{field});
+            }
         }
     }
 
