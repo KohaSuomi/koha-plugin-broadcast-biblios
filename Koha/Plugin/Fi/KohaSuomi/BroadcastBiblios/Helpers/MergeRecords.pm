@@ -74,13 +74,6 @@ sub merge {
             if ($tag_in_keep) {
                 if (looks_like_number($recordField->tag)) {
                     push @{$keepFields->{$recordField->tag}}, {before_field => $beforeField, field => $recordField};
-                    if ($merged->field($recordField->tag)) {
-                        foreach my $field ($merged->fields) {
-                            if ($field->tag eq $recordField->tag && $field->as_string() eq $recordField->as_string()) {
-                                $merged->delete_field($field); 
-                            }
-                        }
-                    }
                 } else {
                     $merged->append_fields($recordField);
                 }
@@ -89,13 +82,6 @@ sub merge {
                     foreach my $recordSubfields ($recordField->subfields) {
                         if (defined($keep->{code}) && $keep->{code} eq $recordSubfields->[0]) {
                             push @{$keepFields->{$recordField->tag}}, {before_field => $beforeField, field => $recordField};
-                            if ($merged->field($recordField->tag)) {
-                                foreach my $field ($merged->fields) {
-                                    if ($field->tag eq $recordField->tag && $field->as_string() eq $recordField->as_string()) {
-                                        $merged->delete_field($field); 
-                                    }
-                                }
-                            }
                         }
                     }
                     
@@ -107,7 +93,24 @@ sub merge {
             my $fields = $keepFields->{$tag};
             foreach my $field (@{$fields}) {
                 my @fields = $merged->field($field->{before_field}->tag);
-                $merged->insert_fields_after(pop @fields, $field->{field});
+                my $after_field;
+                for (my $i = 0; $i < scalar @fields; $i++) {
+                    if ($fields[$i]->as_string() eq $field->{before_field}->as_string()) {
+                        $after_field = $fields[$i];
+                        last;
+                    }
+                }
+                my @old_fields = $merged->field($field->{field}->tag);
+                my $exists = 0;
+                foreach my $old_field (@old_fields) {
+                    if ($old_field->as_string() eq $field->{field}->as_string()) {
+                        $exists = 1;
+                        last;
+                    }
+                }
+                unless ($exists) {
+                    $merged->insert_fields_after($after_field, $field->{field});
+                }
             }
         }
     }
