@@ -88,6 +88,10 @@ sub compare_records {
         !($_->{local} =~ /^005/ && $_->{broadcast} =~ /^005/)
     } @differences;
 
+    @differences = grep {
+        $_->{local} =~ /^084/ && $_->{broadcast} =~ /^084/
+    } @differences;
+
     return \@differences;
 }
 
