@@ -10,8 +10,10 @@ use MARC::File::XML;
 my $biblionumber;
 my $file;
 my $date;
+my $verbose;
 
 GetOptions(
+    'verbose'        => \$verbose,
     'biblionumber=i' => \$biblionumber,
     'file=s'         => \$file,
     'date=s'         => \$date,
@@ -35,11 +37,14 @@ sub process_biblionumber {
     my $differences = compare_records($biblionumber, $date);
     if (@$differences) {
         print "Differences found for biblionumber $biblionumber:\n";
-        foreach my $diff (@$differences) {
-            print "CURRENT:\n$diff->{local}\n";
-            print "BROADCAST:\n$diff->{broadcast}\n";
-            print "-------------------------\n";
+        if ($verbose) {
+            foreach my $diff (@$differences) {
+                print "CURRENT:\n$diff->{local}\n";
+                print "BROADCAST:\n$diff->{broadcast}\n";
+                print "-------------------------\n";
+            }
         }
+        print scalar(@$differences) . " differences found\n";
     } else {
         print "No differences found for biblionumber $biblionumber\n";
     }
