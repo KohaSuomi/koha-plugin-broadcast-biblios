@@ -90,7 +90,7 @@ sub find_broadcast_transfer {
     my ($biblionumber, $date) = @_;
     # Add your code to find the latest broadcast update for a biblionumber here
     my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT marc FROM koha_plugin_fi_kohasuomi_broadcastbiblios_queue WHERE biblio_id = ? AND DATE(transfered_on) = ? ORDER BY transfered_on DESC LIMIT 1");
+    my $sth = $dbh->prepare("SELECT marc FROM koha_plugin_fi_kohasuomi_broadcastbiblios_queue WHERE biblio_id = ? AND DATE(transfered_on) >= ? ORDER BY transfered_on DESC LIMIT 1");
     $sth->execute($biblionumber, $date);
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
