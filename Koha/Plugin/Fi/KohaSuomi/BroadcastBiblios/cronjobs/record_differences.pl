@@ -5,7 +5,7 @@ use warnings;
 use Getopt::Long;
 use C4::Context;
 use MARC::Record;
-use MARC::File::XML (BinaryEncoding => 'utf8');
+use MARC::File::XML;
 
 my $biblionumber;
 my $file;
