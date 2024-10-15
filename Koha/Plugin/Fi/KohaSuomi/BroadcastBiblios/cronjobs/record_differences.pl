@@ -35,7 +35,11 @@ sub process_biblionumber {
     my $differences = compare_records($biblionumber, $date);
     if (@$differences) {
         print "Differences found for biblionumber $biblionumber:\n";
-        print "$_\n" for @$differences;
+        foreach my $diff (@$differences) {
+            print "CURRENT:\n$diff->{local}\n";
+            print "BROADCAST:\n$diff->{broadcast}\n";
+            print "-------------------------\n";
+        }
     } else {
         print "No differences found for biblionumber $biblionumber\n";
     }
@@ -55,19 +59,19 @@ sub compare_records {
     my ($biblionumber, $date) = @_;
     my $metadata = find_metadata($biblionumber, $date);
     my $broadcast_transfer = find_broadcast_transfer($biblionumber, $date);
-    # Add your code to compare the two records here
-    my @metadata_lines = split("\n", $metadata);
-    my @broadcast_transfer_lines = split("\n", $broadcast_transfer);
-
-    my %metadata_hash = map { $_ => 1 } @metadata_lines;
-    my %broadcast_transfer_hash = map { $_ => 1 } @broadcast_transfer_lines;
-
     my @differences;
-    foreach my $line (@metadata_lines) {
-        push @differences, $line unless exists $broadcast_transfer_hash{$line};
-    }
-    foreach my $line (@broadcast_transfer_lines) {
-        push @differences, $line unless exists $metadata_hash{$line};
+    my $order = 0;
+    my @metadata_fields = $metadata->fields;
+    foreach my $broadcast ( $broadcast_transfer->fields ) {
+        my $local = $metadata_fields[$order];
+        if ($broadcast->tag ne $local->tag) {
+            push @differences, { local => $local->as_formatted, broadcast => $broadcast->as_formatted };
+        } else {
+            if ($broadcast->as_formatted ne $local->as_formatted) {
+                push @differences, { local => $local->as_formatted, broadcast => $broadcast->as_formatted };
+            }
+        }
+        $order++;
     }
 
     return \@differences;
@@ -82,7 +86,7 @@ sub find_metadata {
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
     my $marc_record = MARC::Record->new_from_xml($result->{metadata}, 'UTF-8');
-    return $marc_record->as_formatted();
+    return $marc_record;
 
 }
 
@@ -95,5 +99,5 @@ sub find_broadcast_transfer {
     my $result = $sth->fetchrow_hashref;
     $sth->finish();
     my $marc_record = MARC::Record->new_from_xml($result->{marc}, 'UTF-8');
-    return $marc_record->as_formatted();
+    return $marc_record;
 }
