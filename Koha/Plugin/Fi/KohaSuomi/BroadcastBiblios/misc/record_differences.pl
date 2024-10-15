@@ -33,7 +33,7 @@ if ($biblionumber) {
 
 sub process_biblionumber {
     my ($biblionumber, $date) = @_;
-    print $biblionumber . "\n";
+    print "Processing biblionumber $biblionumber\n" if $verbose;
     my $differences = compare_records($biblionumber, $date);
     if (@$differences) {
         print "Differences found for biblionumber $biblionumber:\n" if $verbose;
@@ -44,6 +44,7 @@ sub process_biblionumber {
                 print "-------------------------\n";
             }
         }
+        print $biblionumber . "\n";
     } else {
         print "No differences found for biblionumber $biblionumber\n" if $verbose;
     }
