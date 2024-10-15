@@ -33,7 +33,7 @@ use File::Basename;
 use Fcntl qw( :DEFAULT :flock :seek );
 use Koha::Plugins;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios;
-use YAML::XS;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config;
 
 
 my $help = 0;
@@ -41,14 +41,12 @@ my $chunks = 200;
 my $all = 0;
 my $verbose = 0;
 my $limit = 0;
-my $interface;
 
 GetOptions(
     'h|help'                     => \$help,
     'v|verbose'                  => \$verbose,
     'c|chunks:i'                 => \$chunks,
     'l|limit:i'                  => \$limit,
-    'i|interface:s'              => \$interface,
 
 );
 
@@ -59,7 +57,6 @@ my $usage = <<USAGE;
     -v, --verbose           Verbose.
     -c, --chunks            Process biblios in chunks, default is 200.
     -l, --limit             Limiting the results of biblios.
-    -i, --interface         Interface to use for broadcasting.
 
 USAGE
 
@@ -68,22 +65,15 @@ if ($help) {
     exit 0;
 }
 
-unless ($interface) {
-    print "Interface is required\n";
-    print $usage;
-    exit 1;
-}
-
-my $configPath = $ENV{"KOHA_CONF"};
-my($file, $path, $ext) = fileparse($configPath);
-my $configfile = eval { YAML::XS::LoadFile($path.'broadcast-config.yaml') };
+my $configs = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new({verbose => $verbose});
+my $interface = $configs->getActivationInterface;
 
 my $plugin = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios->new({
     chunks => $chunks,
     limit => $limit,
     page => 1,
     verbose => $verbose,
-    config => $configfile->{$interface},
+    config => $interface,
 });
 
 $plugin->update_active();
