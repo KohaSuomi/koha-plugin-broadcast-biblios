@@ -64,6 +64,10 @@ sub compare_records {
     my @metadata_fields = $metadata->fields;
     foreach my $broadcast ( $broadcast_transfer->fields ) {
         my $local = $metadata_fields[$order];
+        if (!$local) {
+            push @differences, { local => 'No local field', broadcast => $broadcast->as_formatted };
+            next;
+        }
         if ($broadcast->tag ne $local->tag) {
             push @differences, { local => $local->as_formatted, broadcast => $broadcast->as_formatted };
         } else {
