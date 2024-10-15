@@ -78,6 +78,11 @@ sub compare_records {
         $order++;
     }
 
+    # Filter out differences if only in 005 tag
+    @differences = grep {
+        !($_->{local} =~ /^005/ && $_->{broadcast} =~ /^005/)
+    } @differences;
+
     return \@differences;
 }
 
