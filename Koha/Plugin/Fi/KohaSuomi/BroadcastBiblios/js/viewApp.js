@@ -206,7 +206,8 @@ Vue.component('result-list', {
       active: false,
       notifyfields: '',
       showRecord: false,
-      showComponentPart: 0
+      showComponentPart: 0,
+      clicked: false,
     };
   },
   mounted() {
@@ -244,6 +245,7 @@ Vue.component('result-list', {
         .append($('<div class="container">' + source + '</div>'));
       $('#recordModal').modal('toggle');
       this.active = false;
+      this.clicked = true;
     },
     toggleShowRecord(e) {
       e.preventDefault();
