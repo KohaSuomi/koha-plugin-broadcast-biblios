@@ -191,7 +191,7 @@
 					</div>
 					<div class="row m-0" v-else>
 						<div class="col-sm-4">
-							<button v-on:click="getRecord($event)" class="btn btn-sm btn-primary" :class="'clicked': clicked}" type="button">Avaa</button>
+							<button v-on:click="getRecord($event)" class="btn btn-sm btn-primary" :class="{ 'clicked': clicked }" type="button">Avaa</button>
 						</div>
 						<div v-if="notifyfields" class="col-sm-5 alert alert-warning p-1" role="alert">
 							<span>{{notifyfields}}</span>
