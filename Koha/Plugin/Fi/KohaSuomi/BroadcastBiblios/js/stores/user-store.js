@@ -12,7 +12,9 @@ export const useUserStore = defineStore("user", {
     async fetch() {
       try {
         const response = await axios.get("/api/v1/contrib/kohasuomi/broadcast/users");
-        this.list = response.data;
+        let users = response.data;
+        users = users.sort((a, b) => a.username.localeCompare(b.username));
+        this.list = users;
       } catch (error) {
         const errorStore = useErrorStore();
         errorStore.setError(error);
