@@ -359,6 +359,19 @@ sub getBroadcastLogByTimestamp {
     
 }
 
+sub getBroadcastLogBetweenTimestamps {
+    my ($self, $start, $end) = @_;
+
+    my $dbh = $self->dbh;
+    my $query = "SELECT * FROM ".$self->logs." WHERE updated >= ? and updated < ?;";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($start, $end) or die $sth->errstr;
+    my $data = $sth->fetchall_arrayref({});
+    
+    return $data;
+    
+}
+
 sub getBroadcastLogLatest {
     my ($self, $type) = @_;
 
