@@ -109,6 +109,16 @@ sub getActiveRecordByIdentifier {
     return $result;
 }
 
+sub getActiveRecordsLike {
+    my ($self, $identifier, $identifier_field) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT ar.*, bm.metadata FROM " . $self->activerecords . " AS ar JOIN biblio_metadata AS bm ON ar.biblionumber = bm.biblionumber WHERE identifier LIKE ? AND identifier_field = ?");
+    $sth->execute($identifier, $identifier_field);
+    my $results = $sth->fetchall_arrayref({});
+    $sth->finish();
+    return $results;
+}
+
 sub insertActiveRecord {
     my ($self, $biblionumber, $identifier, $identifier_field, $updated_on, $blocked) = @_;
     my $dbh = $self->dbh;
