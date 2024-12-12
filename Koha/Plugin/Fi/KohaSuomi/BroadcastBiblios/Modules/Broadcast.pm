@@ -232,6 +232,7 @@ sub fetchBroadcastBiblios {
                     foreach my $identifier (@$identifiers) {
                         my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
                         if ($activeBiblio) {
+                            print "Record found with identifier $identifier->{identifier}\n" if $self->verbose;
                             my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{name}, user_id => $config->{defaultUser}, type => 'import'});
                             $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
                             $record_found = 1;

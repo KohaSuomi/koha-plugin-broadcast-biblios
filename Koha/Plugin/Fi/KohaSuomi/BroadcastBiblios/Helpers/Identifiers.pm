@@ -60,6 +60,7 @@ sub getIdentifierField {
             if($f035->subfield('a') =~ /FI-MELINDA/) {
                 $activefield = $f035->subfield('a');
                 $fieldname = '035a';
+                last;
             }
         }
     }
@@ -112,6 +113,9 @@ sub fetchIdentifiers {
         foreach my $f035 (@f035) {
             if($f035->subfield('a') =~ /FI-MELINDA/) {
                 push @identifiers, {identifier_field => '035a', identifier => $f035->subfield('a')};
+            }
+            if ($f035->subfield('z') && $f035->subfield('z') =~ /FI-MELINDA/) {
+                push @identifiers, {identifier_field => '035a', identifier => $f035->subfield('z')};
             }
         }
     }
