@@ -18,11 +18,13 @@ package Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MergeRecords;
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Modern::Perl;
+use utf8;
 use Carp;
 use Scalar::Util qw( blessed looks_like_number );
 use Try::Tiny;
 use JSON;
 use List::MoreUtils qw(uniq);
+use Text::Unidecode qw( unidecode );
 use MARC::Record;
 use MARC::Field;
 =head new
@@ -95,7 +97,7 @@ sub merge {
                 my @fields = $merged->field($field->{before_field}->tag);
                 my $after_field;
                 for (my $i = 0; $i < scalar @fields; $i++) {
-                    if ($fields[$i]->as_string() eq $field->{before_field}->as_string()) {
+                    if (unidecode($fields[$i]->as_string()) eq unidecode($field->{before_field}->as_string())) {
                         $after_field = $fields[$i];
                         last;
                     }
@@ -103,7 +105,7 @@ sub merge {
                 my @old_fields = $merged->field($field->{field}->tag);
                 my $exists = 0;
                 foreach my $old_field (@old_fields) {
-                    if ($old_field->as_string() eq $field->{field}->as_string()) {
+                    if (unidecode($old_field->as_string()) eq unidecode($field->{field}->as_string())) {
                         $exists = 1;
                         last;
                     }
