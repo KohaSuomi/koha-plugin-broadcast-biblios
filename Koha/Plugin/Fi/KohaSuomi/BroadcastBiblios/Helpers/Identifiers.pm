@@ -60,6 +60,7 @@ sub getIdentifierField {
             if($f035->subfield('a') =~ /FI-MELINDA/) {
                 $activefield = $f035->subfield('a');
                 $fieldname = '035a';
+                last;
             }
         }
     }
