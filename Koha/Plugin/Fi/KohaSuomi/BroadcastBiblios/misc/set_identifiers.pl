@@ -36,6 +36,10 @@ my $db = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Database->new()
 
 my $activeRecords;
 
+if ($like eq 'FI-BTJ') {
+    $like = '(FI-BTJ)%';
+}
+
 if (@biblionumbers) {
     foreach my $biblionumber (@biblionumbers) {
         my $activeRecord = $db->getActiveRecordByBiblionumber($biblionumber);
