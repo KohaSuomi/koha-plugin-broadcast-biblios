@@ -320,6 +320,9 @@ sub processImportQueue {
             if ($record) {
                 my $mergedrecord = $self->mergeRecords()->merge($record, undef);
                 if ($biblio_id) {
+                    unless (Koha::Biblios->find($biblio_id)) {
+                        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 404, {message => "Biblio record not found"});
+                    }
                     my $f942 = $self->get942Field($biblio_id);
                     if ($queue->{hostrecord} || $queue->{componentparts}) {
                         $self->processImportComponentParts($biblio_id, from_json($queue->{componentparts}));
