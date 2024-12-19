@@ -23,6 +23,7 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::Identifiers;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ComponentParts;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::MarcXMLToJSON;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler;
 use C4::Biblio qw( AddBiblio ModBiblio GetFrameworkCode BiblioAutoLink);
 use C4::Context;
 use Try::Tiny;
@@ -85,8 +86,7 @@ sub find {
         return $c->render(status => 200, openapi => $response);
     } catch {
         my $error = $_;
-        $logger->error($error);
-        return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->display_api_error($c, $error);
     }
 }
 
@@ -112,12 +112,7 @@ sub search {
         return $c->render(status => 200, openapi => $results);
     } catch {
         my $error = $_;
-        $logger->error($error->{message});
-        if ($error->{status}) {
-            return $c->render(status => $error->{status}, openapi => {error => $error->{message}});
-        } else {
-            return $c->render(status => 500, openapi => {error => "Something went wrong, check the logs"});
-        }
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->display_api_error($c, $error);
     }
 
 }

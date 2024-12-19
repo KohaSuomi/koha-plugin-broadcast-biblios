@@ -14,6 +14,10 @@ use Exception::Class (
         isa         => 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic',
         description => 'Conflict exception',
     },
+    'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized' => {
+        isa         => 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic',
+        description => 'Unauthorized exception',
+    },
 );
 
 =head1 NAME
@@ -31,6 +35,12 @@ Generic Koha exception
 =head2 Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Conflict
 
 Conflict exception
+
+=cut
+
+=head2 Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized
+
+Unauthorized exception
 
 =cut
 
