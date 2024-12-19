@@ -169,6 +169,7 @@ sub searchFromInterface {
     } else {
         my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => $config->{restSearch}});
         my ($path, $headers) = $users->getAuthentication($user_id);
+        die {status => 401, message => "Authentication failed"} unless $path && $headers;
         $headers->{"Accept"} = "application/marc-in-json";
         my $ua = $self->ua;
         my $method = $config->{restSearchMethod};

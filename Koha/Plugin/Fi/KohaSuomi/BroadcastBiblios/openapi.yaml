@@ -651,6 +651,14 @@
             error:
               description: Bad request
               type: string
+      "401":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Unauthorized
+              type: string
       "404":
         description: An error occured
         schema:

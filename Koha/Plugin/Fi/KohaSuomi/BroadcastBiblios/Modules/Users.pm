@@ -146,6 +146,8 @@ sub deleteUser {
 
 sub getAuthentication {
     my ($self, $user_id) = @_;
+    
+    return 0 unless $user_id;
 
     my $user = $self->db->getUserByUserId($user_id);
 
