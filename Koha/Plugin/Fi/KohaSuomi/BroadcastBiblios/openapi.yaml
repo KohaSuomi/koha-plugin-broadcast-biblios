@@ -512,6 +512,14 @@
             error:
               description: Biblio not found
               type: string
+      "409":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Conflict
+              type: string
       "500":
         description: An error occured
         schema:
@@ -547,6 +555,14 @@
           properties:
             error:
               description: Biblio not found
+              type: string
+      "409":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Conflict
               type: string
       "500":
         description: An error occured
@@ -666,6 +682,14 @@
           properties:
             error:
               description: Not found
+              type: string
+      "409":
+        description: An error occured
+        schema:
+          type: object
+          properties:
+            error:
+              description: Conflict
               type: string
       "500":
         description: An error occured

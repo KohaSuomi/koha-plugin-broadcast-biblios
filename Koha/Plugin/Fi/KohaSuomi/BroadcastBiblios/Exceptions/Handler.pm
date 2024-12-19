@@ -36,7 +36,10 @@ sub handle_melinda_exception {
 sub handle_generic_exception {
     my ($self, $status, $exception) = @_;
 
-    if ($status eq '409') {
+    if ($status eq '401') {
+        # Handle the unauthorized exception
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized->throw( $exception->{message} );
+    } elsif ($status eq '409') {
         # Handle the conflict exception
         Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Conflict->throw( $exception->{message} );
     } else {
@@ -52,6 +55,11 @@ sub display_api_error {
     # Log the error
     my $logger = Koha::Logger->get({ interface => 'api' });
     $logger->error($error);
+
+    if ($error->isa('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized')) {
+        # Return the unauthorized error message
+        return $c->render(status => 401, openapi => {error => $error->{message}});
+    }
 
     if ($error->isa('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Conflict')) {
         # Return the conflict error message

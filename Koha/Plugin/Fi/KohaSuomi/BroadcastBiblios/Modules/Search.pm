@@ -27,6 +27,7 @@ use Koha::SearchEngine::Search;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Helpers::QueryParser;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::SRU;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Biblios;
+use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler;
 use Mojo::UserAgent;
 
 =head new
@@ -111,7 +112,7 @@ sub findByIdentifier {
 
     my ( $error, $results, $total_hits ) = $searcher->simple_search_compat( $query, 0, 10 );
     if ($error) {
-        die "findByIdentifier():> Searching ($query):> Returned an error:\n$error";
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Search: $query, returned an error"});
     }
 
     my $marcflavour = C4::Context->preference('marcflavour');
@@ -121,8 +122,9 @@ sub findByIdentifier {
         return ref($record) ne 'MARC::Record' ? MARC::Record::new_from_xml($record, 'UTF-8', $marcflavour) : $record;
     }
     elsif ($total_hits > 1) {
-        die "findByIdentifier():> Searching ($query):> Returned more than one record?";
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 409, {message => "Search: $query, returned more than one record"});
     }
+
     return undef;
 }
 
@@ -169,7 +171,7 @@ sub searchFromInterface {
     } else {
         my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new({config => $config, endpoint => $config->{restSearch}});
         my ($path, $headers) = $users->getAuthentication($user_id);
-        die {status => 401, message => "Authentication failed"} unless $path && $headers;
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 401, {message => "Authentication failed"}) unless $path && $headers;
         $headers->{"Accept"} = "application/marc-in-json";
         my $ua = $self->ua;
         my $method = $config->{restSearchMethod};
@@ -177,7 +179,8 @@ sub searchFromInterface {
         if ($response->is_success) {
             return $response->json;
         } else {
-            die {status => $response->code, message => $response->message};
+            my $message = $response->json->{error} ? $response->json->{error} : $response->message;
+            Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', $response->code, {message => $message});
         }
 
     }
