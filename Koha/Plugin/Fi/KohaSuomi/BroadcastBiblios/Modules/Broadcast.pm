@@ -230,6 +230,7 @@ sub fetchBroadcastBiblios {
                     next unless $config->{type} eq 'import';
                     my $record_found = 0;
                     foreach my $identifier (@$identifiers) {
+                        $identifier->{identifier_field} = '035a' if $identifier->{identifier_field} eq '035z';
                         my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
                         if ($activeBiblio) {
                             print "Record found with identifier $identifier->{identifier}\n" if $self->verbose;

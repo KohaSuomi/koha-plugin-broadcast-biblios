@@ -115,7 +115,7 @@ sub fetchIdentifiers {
                 push @identifiers, {identifier_field => '035a', identifier => $f035->subfield('a')};
             }
             if ($f035->subfield('z') && $f035->subfield('z') =~ /FI-MELINDA/) {
-                push @identifiers, {identifier_field => '035a', identifier => $f035->subfield('z')};
+                push @identifiers, {identifier_field => '035z', identifier => $f035->subfield('z')};
             }
         }
     }
