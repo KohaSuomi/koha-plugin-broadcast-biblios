@@ -402,13 +402,15 @@ sub processExportComponentParts {
     }
 
     my $rest = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::REST->new({interface => $interface});
-
+    my $process_success = 1;
     for (my $i = 0; $i < scalar @$componentparts; $i++) {
         my $queue;
+        last unless $process_success;
         try {
             my $componentpart = $componentparts->[$i];
             my $biblio_id = $componentpart->{biblionumber};
-            my $comprecord = $self->getRecord($componentpart->{marcxml});
+            my $db_record = Koha::Biblios->find($biblio_id);
+            my $comprecord = $self->getRecord($db_record->metadata->metadata);
             my $broadcast_biblio_id;
 
             if ($method eq 'PUT' && scalar @$broadcastcomponentparts > 0) {
@@ -446,7 +448,14 @@ sub processExportComponentParts {
         } catch {
             my $exception = $_;
             $self->db->updateQueueStatus($queue->{id}, 'failed', $exception->error);
+            $process_success = 0;
         }
+    }
+
+    if ($process_success) {
+        print "Component parts processed successfully\n" if $self->verbose;
+    } else {
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Failed to process component parts"});
     }
 }
 
@@ -493,6 +502,7 @@ sub putQueueRecord {
         if ($self->compareExportEncodingLevels($queue->{marc}, $remoterecord->toXML) eq 'lower') {
             Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Local record ".$queue->{biblio_id}." has lower encoding level than broadcast record ".$queue->{broadcast_biblio_id}});
         } elsif ($self->compareTimestamps($queue->{marc}, $remoterecord->toXML) ) {
+            print "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}."\n" if $self->verbose;
             Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 500, {message => "Local record ".$queue->{biblio_id}." has lower timestamp than broadcast record ".$queue->{broadcast_biblio_id}});
         } else {
             my $mergedrecord = $self->mergeRecords($queue->{broadcast_interface})->merge($self->getRecord($queue->{marc}), $self->getRecord($remoterecord->toXML));
@@ -667,6 +677,7 @@ sub compareTimestamps {
     my ($self, $localmarc, $broadcastmarc) = @_;
     my $localTimestamp = $self->getTimestamp($localmarc);
     my $broadcastTimestamp = $self->getTimestamp($broadcastmarc);
+    print "Local timestamp: $localTimestamp, broadcast timestamp: $broadcastTimestamp\n" if $self->verbose;
     if ($localTimestamp < $broadcastTimestamp) {
         # If local timestamp is lower than broadcast timestamp, then we can update the record
         return 1;
