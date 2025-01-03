@@ -39,6 +39,9 @@ sub handle_generic_exception {
     if ($status eq '401') {
         # Handle the unauthorized exception
         Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized->throw( $exception->{message} );
+    } elsif ($status eq '404') {
+        # Handle the not found exception
+        Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::NotFound->throw( $exception->{message} );
     } elsif ($status eq '409') {
         # Handle the conflict exception
         Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Conflict->throw( $exception->{message} );
@@ -59,6 +62,11 @@ sub display_api_error {
     if ($error->isa('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized')) {
         # Return the unauthorized error message
         return $c->render(status => 401, openapi => {error => $error->{message}});
+    }
+
+    if ($error->isa('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::NotFound')) {
+        # Return the not found error message
+        return $c->render(status => 404, openapi => {error => $error->{message}});
     }
 
     if ($error->isa('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Conflict')) {
