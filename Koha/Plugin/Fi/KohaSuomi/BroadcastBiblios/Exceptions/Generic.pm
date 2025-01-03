@@ -18,6 +18,10 @@ use Exception::Class (
         isa         => 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic',
         description => 'Unauthorized exception',
     },
+    'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::NotFound' => {
+        isa         => 'Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic',
+        description => 'Not found exception',
+    },
 );
 
 =head1 NAME
@@ -41,6 +45,12 @@ Conflict exception
 =head2 Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized
 
 Unauthorized exception
+
+=cut
+
+=head2 Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::NotFound
+
+Not found exception
 
 =cut
 
