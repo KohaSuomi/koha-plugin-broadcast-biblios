@@ -111,7 +111,11 @@ sub merge {
                     }
                 }
                 unless ($exists) {
-                    $merged->insert_fields_after($after_field, $field->{field});
+                    if ($after_field) {
+                        $merged->insert_fields_after($after_field, $field->{field});
+                    } else {
+                        $merged->insert_fields_ordered($field->{field});
+                    }
                 }
             }
         }
