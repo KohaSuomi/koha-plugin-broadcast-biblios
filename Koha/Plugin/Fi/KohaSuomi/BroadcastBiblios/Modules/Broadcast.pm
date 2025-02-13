@@ -107,10 +107,8 @@ sub getUpdateTime {
     my ($self, $updated) = @_; 
 
     return $self->getTimestamp() unless $updated;
-    return $updated unless $self->getStartTime();
 
-    my $hour = (localtime(time))[2];
-    if ($self->getStartTime() >= $hour) {
+    if ($updated lt strftime "%Y-%m-%d", localtime) {
         return $self->getTimestamp();
     } else {
         return $updated;
@@ -128,7 +126,7 @@ sub getBiblios {
 }
 
 sub getTimestamp {
-    return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
+    return strftime "%Y-%m-%d 06:00:00", localtime;
 }
 
 sub activeRecords {
