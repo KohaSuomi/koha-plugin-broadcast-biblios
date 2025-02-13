@@ -56,7 +56,7 @@ sub verbose {
 }
 
 sub getTimestamp {
-    return strftime "%Y-%m-%d %H:%M:%S", ( localtime(time - 5*60) );
+    return strftime "%Y-%m-%d 07:00:00", localtime;
 }
 
 sub getStartTime {
@@ -69,8 +69,7 @@ sub getUpdateTime {
 
     return $self->getTimestamp() unless $updated;
 
-    my $hour = (localtime(time))[2];
-    if ($self->getStartTime() >= $hour) {
+    if ($updated lt strftime "%Y-%m-%d", localtime) {
         return $self->getTimestamp();
     } else {
         return $updated;
@@ -161,7 +160,7 @@ sub setActiveRecords {
     my $params = $self->getParams();
     my $pageCount = 1;
     my $latest = $self->broadcastLog()->getBroadcastLogLatestImport();
-    my $timestamp = $latest->{updated};
+    my $timestamp = $self->getUpdateTime($latest->{updated});
     $params->{skipRecords} = $params->{all} ? 0 : 1;
     $params->{timestamp} = $timestamp if !$params->{all};
     while ($pageCount >= $params->{page}) {
