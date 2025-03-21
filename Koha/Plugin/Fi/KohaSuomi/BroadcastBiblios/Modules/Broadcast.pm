@@ -215,7 +215,7 @@ sub fetchBroadcastBiblios {
                 return if $self->blockComponentParts($record);
                 return if $self->blockByEncodingLevel($record);
                 return if $self->getBiblios()->checkBlock($record);
-                return if $self->getBiblios()->diff005toTimestamp($record, $biblio->{timestamp});
+                #return if $self->getBiblios()->diff005toTimestamp($record, $biblio->{timestamp});
                 my $componentsArr = $self->componentParts->fetch($biblio->{biblionumber});
                 my $bibliowrapper = {
                     marcxml => $biblio->{metadata},
