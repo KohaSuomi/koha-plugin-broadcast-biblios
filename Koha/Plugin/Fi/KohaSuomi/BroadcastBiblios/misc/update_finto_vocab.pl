@@ -100,6 +100,7 @@ my $data = decode_json($response->body);
 my $dbh = C4::Context->dbh;
 my $count = 0;
 my $success = 0;
+
 # Process the data
 foreach my $item (@{$data->{changeList}}) {
     my $parsed_date = substr($item->{date}, 0, 10);
@@ -118,7 +119,7 @@ foreach my $item (@{$data->{changeList}}) {
                 print "Updating record with biblionumber: $biblio_id\n" if $verbose;
                 my $biblionumber = eval { ModBiblioMarc( $record, $biblio_id ) };
                 if ($@) {
-                    warn "Error: $@";
+                    print "Error: $@";
                 } else {
                     my $dbh = C4::Context->dbh;
                     my $biblio = C4::Biblio::TransformMarcToKoha({ record => $record });
