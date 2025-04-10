@@ -163,6 +163,7 @@ sub _find_field_and_replace {
     my ($record, $uri, $new_value, $replaced_uri) = @_;
 
     my $vocab_field = $vocab.'/'.$map_lang_to_marc->{$lang};
+    my $updated = 0;
     foreach my $field ($record->fields()) {
         next if $field->tag < '010';
         if ($field->subfield('0') && $field->subfield('0') eq $uri && $field->subfield('2') eq $vocab_field) {
@@ -182,8 +183,10 @@ sub _find_field_and_replace {
                 print Data::Dumper::Dumper($new_field) if $verbose;
                 $record->insert_fields_after($field, $new_field);
                 $record->delete_field($field);
+                $updated = 1;
             }
         }
     }
+    return 0 unless $updated;
     return $record;
 }
