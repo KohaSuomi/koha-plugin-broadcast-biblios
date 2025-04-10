@@ -107,17 +107,20 @@ foreach my $item (@{$data->{changeList}}) {
     next unless $since_date lt $parsed_date;
     my $uri = $item->{uri};
     my $prefLabel = $item->{prefLabel};
+    my $replacedByURI = $item->{replacedBy};
+    my $replacingLabel = $item->{replacingLabel};
+    my $new_value = $replacingLabel || $prefLabel;
     my $results = _search_records($uri);
     if ($results) {
         foreach my $result (@$results) {
             my $biblio_id = $result->subfield('999', 'c');
             print "Found record $biblio_id for URI: $uri\n" if $verbose;
-            my $record = _find_field_and_replace($result, $uri, $prefLabel);
+            my $record = _find_field_and_replace($result, $uri, $new_value, $replacedByURI);
             next unless $record;
             $count++;
             if ($confirm) {
                 print "Updating record with biblionumber: $biblio_id\n" if $verbose;
-                my $biblionumber = eval { ModBiblioMarc( $record, $biblio_id ) };
+                my $biblionumber = eval { C4::Biblio::ModBiblioMarc( $record, $biblio_id ) };
                 if ($@) {
                     print "Error: $@";
                 } else {
@@ -157,16 +160,26 @@ sub _search_records {
 }
 
 sub _find_field_and_replace {
-    my ($record, $uri, $new_value) = @_;
+    my ($record, $uri, $new_value, $replaced_uri) = @_;
 
-    return 0 if $record->subfield('041', 'a') && $record->subfield('041', 'a') ne $map_lang_to_marc->{$lang};
+    my $vocab_field = $vocab.'/'.$map_lang_to_marc->{$lang};
     foreach my $field ($record->fields()) {
         next if $field->tag < '010';
-        if ($field->subfield('0') && $field->subfield('0') eq $uri) {
+        if ($field->subfield('0') && $field->subfield('0') eq $uri && $field->subfield('2') eq $vocab_field) {
             my $subfield = $field->subfield('a');
             if ($subfield && $subfield ne $new_value) {
                 print "Replacing ".$field->tag()."\$a $subfield with $new_value\n" if $verbose;
-                my $new_field = MARC::Field->new($field->tag, $field->indicator(1), $field->indicator(2), 'a' => $new_value);
+                my $new_uri = $replaced_uri || $uri;
+                my @old_subfields = $field->subfields();
+                my @new_subfields = map { @$_ } @old_subfields;
+                @new_subfields = map { $_->[0] eq 'a' ? ('a' => $new_value) : $_->[0] eq '0' ? ('0' => $new_uri) : @$_ } @old_subfields;
+                my $new_field = MARC::Field->new(
+                    $field->tag,
+                    $field->indicator(1),
+                    $field->indicator(2),
+                    @new_subfields,
+                );
+                print Data::Dumper::Dumper($new_field) if $verbose;
                 $record->insert_fields_after($field, $new_field);
                 $record->delete_field($field);
             }
