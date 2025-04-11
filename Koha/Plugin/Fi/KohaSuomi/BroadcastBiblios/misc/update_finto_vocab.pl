@@ -17,7 +17,6 @@ my $help;
 my $verbose;
 my $vocab;
 my $lang;
-my $type = 'modified';
 my $confirm;
 my $since_date = strftime("%Y-%m-%d", localtime());
 
@@ -27,7 +26,6 @@ GetOptions(
     'verbose|v'    => \$verbose,
     'vocab=s'      => \$vocab,
     'lang=s'       => \$lang,
-    'type=s'       => \$type,
     'since_date=s' => \$since_date,
     'confirm'      => \$confirm,
 ) or die "Error in command line arguments. Use --help for usage.\n";
@@ -42,7 +40,6 @@ Options:
     --verbose, -v    Enable verbose output
     --vocab          Specify the vocabulary to update
     --lang           Specify the language (fi, sv, en)
-    --type           Specify the type of update (default: modified)
     --since_date     Specify the date since when to fetch updates (default: current date)
     --confirm        Confirm the changes before applying them
 
@@ -88,15 +85,32 @@ if (!exists $valid_vocabularies{$vocab}) {
 # Initialize user agent
 my $ua = Mojo::UserAgent->new;
 my $baseUrl = 'https://api.finto.fi/rest/v1/';
-my $getUrl = $baseUrl .'/'. $vocab.'/'.$type. '?lang=' . $lang;
+my $modUrl = $baseUrl .'/'. $vocab.'/modified?lang=' . $lang;
+my $newUrl = $baseUrl .'/'. $vocab.'/new?lang=' . $lang; 
 
-# Make the API request
-my $response = $ua->get($getUrl)->result;
-if ($response->is_error) {
-    die "Error: Failed to fetch data from Finto API. Status: " . $response->code . "\n";
+# Make the API requests
+my $response_modified = $ua->get($modUrl)->result;
+if ($response_modified->is_error) {
+    die "Error: Failed to fetch modified data from Finto API. Status: " . $response_modified->code . "\n";
 }
-# Decode the JSON response
-my $data = decode_json($response->body);
+
+my $response_new = $ua->get($newUrl)->result;
+if ($response_new->is_error) {
+    die "Error: Failed to fetch new data from Finto API. Status: " . $response_new->code . "\n";
+}
+
+# Combine the responses
+my $data_modified = decode_json($response_modified->body);
+my $data_new = decode_json($response_new->body);
+
+# Merge changeList arrays
+$data_modified->{changeList} = [
+    @{$data_modified->{changeList} || []},
+    @{$data_new->{changeList} || []}
+];
+
+# Use the combined data
+my $data = $data_modified;
 my $dbh = C4::Context->dbh;
 my $count = 0;
 my $success = 0;
