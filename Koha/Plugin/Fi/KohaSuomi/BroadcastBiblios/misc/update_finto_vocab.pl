@@ -87,7 +87,6 @@ my %valid_vocabularies = (
     'stw' => 1,
     'yso' => 1,
     'yso-aika' => 1,
-    'finaf' => 1,
 );
 
 foreach my $vocab (@vocabs) {
