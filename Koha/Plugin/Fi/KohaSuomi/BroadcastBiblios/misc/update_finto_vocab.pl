@@ -178,6 +178,22 @@ sub _find_field_and_replace {
             if ($subfield && $subfield ne $new_value) {
                 print "Replacing ".$field->tag()."\$a $subfield with $new_value\n" if $verbose;
                 my $new_uri = $replaced_uri || $uri;
+
+                # Check if new_uri already exists in any $0 of the record
+                my $uri_exists = 0;
+                foreach my $f ($record->fields()) {
+                    next if $f->tag < '010';
+                    if ($f->subfield('0') && $f->subfield('0') eq $new_uri && $f->subfield('2') eq $vocab_field) {
+                        $uri_exists = 1;
+                        last;
+                    }
+                }
+                if ($uri_exists) {
+                    print "New URI $new_uri already exists in record, skipping replacement.\n" if $verbose;
+                    $record->delete_field($field);
+                    next;
+                }
+
                 my @old_subfields = $field->subfields();
                 my @new_subfields = map { @$_ } @old_subfields;
                 @new_subfields = map { $_->[0] eq 'a' ? ('a' => $new_value) : $_->[0] eq '0' ? ('0' => $new_uri) : @$_ } @old_subfields;
