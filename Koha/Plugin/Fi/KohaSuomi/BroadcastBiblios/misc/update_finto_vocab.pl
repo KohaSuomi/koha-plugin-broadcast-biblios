@@ -107,12 +107,12 @@ foreach my $vocab (@vocabs) {
     # Make the API requests
     my $response_modified = $ua->get($modUrl)->result;
     if ($response_modified->is_error) {
-        die "Error: Failed to fetch modified data from Finto API. Status: " . $response_modified->code . "\n";
+        die "Error: Failed to fetch modified data from Finto API. Status: " . $response_modified->code . ", Message: " . $response_modified->message . "\n";
     }
 
     my $response_new = $ua->get($newUrl)->result;
     if ($response_new->is_error) {
-        die "Error: Failed to fetch new data from Finto API. Status: " . $response_new->code . "\n";
+        die "Error: Failed to fetch new data from Finto API. Status: " . $response_new->code . ", Message: " . $response_new->message . "\n";
     }
 
     # Combine the responses
