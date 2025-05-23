@@ -15,7 +15,7 @@ use POSIX qw(strftime);
 # Define options
 my $help;
 my $verbose;
-my $vocab;
+my @vocabs;
 my $lang;
 my $confirm;
 my $since_date = strftime("%Y-%m-%d", localtime());
@@ -24,7 +24,7 @@ my $since_date = strftime("%Y-%m-%d", localtime());
 GetOptions(
     'help|h'       => \$help,
     'verbose|v'    => \$verbose,
-    'vocab=s'      => \$vocab,
+    'vocab=s@'     => \@vocabs,
     'lang=s'       => \$lang,
     'since_date=s' => \$since_date,
     'confirm'      => \$confirm,
@@ -38,7 +38,7 @@ Usage: update_finto_vocab.pl [options]
 Options:
     --help, -h       Show this help message
     --verbose, -v    Enable verbose output
-    --vocab          Specify the vocabulary to update
+    --vocab          Specify the vocabulary to update. Is repeated for multiple vocabularies (stw, yso, yso-aika)
     --lang           Specify the language (fi, sv, en)
     --since_date     Specify the date since when to fetch updates (default: current date)
     --confirm        Confirm the changes before applying them
@@ -55,7 +55,7 @@ END_HELP
 }
 
 # Check if required arguments are provided
-if (!$vocab || !$lang) {
+if (!@vocabs || !$lang) {
     die "Error: --vocab and --lang are required arguments. Use --help for usage.\n";
 }
 # Validate language
@@ -88,85 +88,91 @@ my %valid_vocabularies = (
     'yso-aika' => 1,
 );
 
-if (!exists $valid_vocabularies{$vocab}) {
-    die "Error: Invalid vocabulary specified. Valid options are: stw, yso, yso-aika. Mapping to MARC is not implemented for this vocabulary.\n";
-}
+foreach my $vocab (@vocabs) {
+    
+    print "Processing vocabulary: $vocab\n";
+    # Check if the vocabulary is valid
+    if (!exists $valid_vocabularies{$vocab}) {
+        die "Error: Invalid vocabulary specified. Valid options are: stw, yso, yso-aika. Mapping to MARC is not implemented for this vocabulary.\n";
+    }
 
-# Initialize user agent
-my $ua = Mojo::UserAgent->new;
-my $baseUrl = 'https://api.finto.fi/rest/v1/';
-my $modUrl = $baseUrl .'/'. $vocab.'/modified?lang=' . $lang;
-my $newUrl = $baseUrl .'/'. $vocab.'/new?lang=' . $lang; 
+    # Initialize user agent
+    my $ua = Mojo::UserAgent->new;
+    my $baseUrl = 'https://api.finto.fi/rest/v1/';
+    my $modUrl = $baseUrl .'/'. $vocab.'/modified?lang=' . $lang;
+    my $newUrl = $baseUrl .'/'. $vocab.'/new?lang=' . $lang; 
 
-# Make the API requests
-my $response_modified = $ua->get($modUrl)->result;
-if ($response_modified->is_error) {
-    die "Error: Failed to fetch modified data from Finto API. Status: " . $response_modified->code . "\n";
-}
+    # Make the API requests
+    my $response_modified = $ua->get($modUrl)->result;
+    if ($response_modified->is_error) {
+        die "Error: Failed to fetch modified data from Finto API. Status: " . $response_modified->code . "\n";
+    }
 
-my $response_new = $ua->get($newUrl)->result;
-if ($response_new->is_error) {
-    die "Error: Failed to fetch new data from Finto API. Status: " . $response_new->code . "\n";
-}
+    my $response_new = $ua->get($newUrl)->result;
+    if ($response_new->is_error) {
+        die "Error: Failed to fetch new data from Finto API. Status: " . $response_new->code . "\n";
+    }
 
-# Combine the responses
-my $data_modified = decode_json($response_modified->body);
-my $data_new = decode_json($response_new->body);
+    # Combine the responses
+    my $data_modified = decode_json($response_modified->body);
+    my $data_new = decode_json($response_new->body);
 
-# Merge changeList arrays
-$data_modified->{changeList} = [
-    @{$data_modified->{changeList} || []},
-    @{$data_new->{changeList} || []}
-];
+    # Merge changeList arrays
+    $data_modified->{changeList} = [
+        @{$data_modified->{changeList} || []},
+        @{$data_new->{changeList} || []}
+    ];
 
-# Use the combined data
-my $data = $data_modified;
-my $dbh = C4::Context->dbh;
-my $count = 0;
-my $success = 0;
+    # Use the combined data
+    my $data = $data_modified;
+    my $dbh = C4::Context->dbh;
+    my $count = 0;
+    my $success = 0;
 
-# Process the data
-foreach my $item (@{$data->{changeList}}) {
-    my $parsed_date = substr($item->{date}, 0, 10);
-    next unless $since_date lt $parsed_date;
-    my $uri = $item->{uri};
-    my $prefLabel = $item->{prefLabel};
-    my $replacedByURI = $item->{replacedBy};
-    my $replacingLabel = $item->{replacingLabel};
-    my $new_value = $replacingLabel || $prefLabel;
-    my $results = _search_records($uri);
-    if ($results) {
-        foreach my $result (@$results) {
-            my $biblio_id = $result->subfield('999', 'c');
-            print "Found record $biblio_id for URI: $uri\n" if $verbose;
-            my $record = _find_field_and_replace($result, $uri, $new_value, $replacedByURI);
-            next unless $record;
-            $count++;
-            if ($confirm) {
-                print "Updating record with biblionumber: $biblio_id\n";
-                my $biblionumber = eval { C4::Biblio::ModBiblioMarc( $record, $biblio_id ) };
-                if ($@) {
-                    print "Error: $@";
-                } else {
-                    my $dbh = C4::Context->dbh;
-                    my $biblio = C4::Biblio::TransformMarcToKoha({ record => $record });
-                    my $frameworkcode = C4::Biblio::GetFrameworkCode($biblionumber);
-                    C4::Biblio::_koha_modify_biblio($dbh, $biblio, $frameworkcode);
-                    C4::Biblio::_koha_modify_biblioitem_nonmarc($dbh, $biblio);
-                    $success++;
+    # Process the data
+    foreach my $item (@{$data->{changeList}}) {
+        my $parsed_date = substr($item->{date}, 0, 10);
+        next unless $since_date lt $parsed_date;
+        my $uri = $item->{uri};
+        my $prefLabel = $item->{prefLabel};
+        my $replacedByURI = $item->{replacedBy};
+        my $replacingLabel = $item->{replacingLabel};
+        my $new_value = $replacingLabel || $prefLabel;
+        my $results = _search_records($uri);
+        if ($results) {
+            foreach my $result (@$results) {
+                my $biblio_id = $result->subfield('999', 'c');
+                print "Found record $biblio_id for URI: $uri\n" if $verbose;
+                my $record = _find_field_and_replace($result, $uri, $new_value, $replacedByURI, $vocab);
+                next unless $record;
+                $count++;
+                if ($confirm) {
+                    print "Updating record with biblionumber: $biblio_id\n";
+                    my $biblionumber = eval { C4::Biblio::ModBiblioMarc( $record, $biblio_id ) };
+                    if ($@) {
+                        print "Error: $@";
+                    } else {
+                        my $dbh = C4::Context->dbh;
+                        my $biblio = C4::Biblio::TransformMarcToKoha({ record => $record });
+                        my $frameworkcode = C4::Biblio::GetFrameworkCode($biblionumber);
+                        C4::Biblio::_koha_modify_biblio($dbh, $biblio, $frameworkcode);
+                        C4::Biblio::_koha_modify_biblioitem_nonmarc($dbh, $biblio);
+                        $success++;
+                    }
                 }
             }
         }
     }
+    print "Processed $count records.\n" if $verbose;
+    if ($success) {
+        print "Successfully updated $success records.\n";
+    } else {
+        print "No records were updated.\n";
+    }
+    # Close the database connection
+    $dbh->disconnect;
 }
-print "Processed $count records.\n" if $verbose;
-if ($success) {
-    print "Successfully updated $success records.\n";
-} else {
-    print "No records were updated.\n";
-}
-# Close the database connection
-$dbh->disconnect;
+
 # Exit the script
 exit 0;
 # End of script
@@ -184,7 +190,7 @@ sub _search_records {
 }
 
 sub _find_field_and_replace {
-    my ($record, $uri, $new_value, $replaced_uri) = @_;
+    my ($record, $uri, $new_value, $replaced_uri, $vocab) = @_;
 
     my $vocab_field = $map_vocab_to_marc->{$vocab}.'/'.$map_lang_to_marc->{$lang};
     my $updated = 0;
