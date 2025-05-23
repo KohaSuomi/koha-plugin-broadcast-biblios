@@ -71,8 +71,25 @@ my $map_lang_to_marc = {
     'en' => 'eng',
 };
 
+my $map_vocab_to_marc = {
+    'stw' => 'stw',
+    'yso' => 'yso',
+    'yso-aika' => 'yso',
+};
+
 if (!exists $valid_languages{$lang}) {
     die "Error: Invalid language specified. Valid options are: fi, sv, en.\n";
+}
+
+# Validate vocabulary
+my %valid_vocabularies = (
+    'stw' => 1,
+    'yso' => 1,
+    'yso-aika' => 1,
+);
+
+if (!exists $valid_vocabularies{$vocab}) {
+    die "Error: Invalid vocabulary specified. Valid options are: stw, yso, yso-aika. Mapping to MARC is not implemented for this vocabulary.\n";
 }
 
 # Initialize user agent
@@ -169,7 +186,7 @@ sub _search_records {
 sub _find_field_and_replace {
     my ($record, $uri, $new_value, $replaced_uri) = @_;
 
-    my $vocab_field = $vocab.'/'.$map_lang_to_marc->{$lang};
+    my $vocab_field = $map_vocab_to_marc->{$vocab}.'/'.$map_lang_to_marc->{$lang};
     my $updated = 0;
     foreach my $field ($record->fields()) {
         next if $field->tag < '010';
