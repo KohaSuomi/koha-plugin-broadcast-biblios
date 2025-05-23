@@ -181,14 +181,16 @@ sub _find_field_and_replace {
 
                 # Check if new_uri already exists in any $0 of the record
                 my $uri_exists = 0;
+                my $uri_value;
                 foreach my $f ($record->fields()) {
                     next if $f->tag < '010';
                     if ($f->subfield('0') && $f->subfield('0') eq $new_uri && $f->subfield('2') eq $vocab_field) {
                         $uri_exists = 1;
+                        $uri_value = $f->subfield('a');
                         last;
                     }
                 }
-                if ($uri_exists) {
+                if ($uri_exists && $uri_value eq $new_value) {
                     print "New URI $new_uri already exists in record, skipping replacement and deletion.\n" if $verbose;
                     $record->delete_field($field);
                     $updated = 1;
