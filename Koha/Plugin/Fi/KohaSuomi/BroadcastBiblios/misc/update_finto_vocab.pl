@@ -126,7 +126,7 @@ foreach my $item (@{$data->{changeList}}) {
             next unless $record;
             $count++;
             if ($confirm) {
-                print "Updating record with biblionumber: $biblio_id\n" if $verbose;
+                print "Updating record with biblionumber: $biblio_id\n";
                 my $biblionumber = eval { C4::Biblio::ModBiblioMarc( $record, $biblio_id ) };
                 if ($@) {
                     print "Error: $@";
