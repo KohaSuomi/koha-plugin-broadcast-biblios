@@ -74,14 +74,7 @@ my $map_lang_to_marc = {
 if (!exists $valid_languages{$lang}) {
     die "Error: Invalid language specified. Valid options are: fi, sv, en.\n";
 }
-# Validate vocabulary
-my %valid_vocabularies = (
-    'stw'   => 1,
-    'yso'   => 1,
-);
-if (!exists $valid_vocabularies{$vocab}) {
-    die "Error: Invalid vocabulary specified. Valid options are: stw, yso.\n";
-}
+
 # Initialize user agent
 my $ua = Mojo::UserAgent->new;
 my $baseUrl = 'https://api.finto.fi/rest/v1/';
