@@ -189,8 +189,9 @@ sub _find_field_and_replace {
                     }
                 }
                 if ($uri_exists) {
-                    print "New URI $new_uri already exists in record, skipping replacement.\n" if $verbose;
+                    print "New URI $new_uri already exists in record, skipping replacement and deletion.\n" if $verbose;
                     $record->delete_field($field);
+                    $updated = 1;
                     next;
                 }
 
