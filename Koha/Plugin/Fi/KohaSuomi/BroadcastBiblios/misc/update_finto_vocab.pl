@@ -75,6 +75,7 @@ my $map_vocab_to_marc = {
     'stw' => 'stw',
     'yso' => 'yso',
     'yso-aika' => 'yso',
+    'finaf' => 'yso',
 };
 
 if (!exists $valid_languages{$lang}) {
