@@ -263,6 +263,9 @@ sub sendToInterface {
 
     my $record = Koha::Biblios->find($biblionumber);
     return unless $record;
+    return if $self->blockComponentParts($record->metadata->record);
+    return if $self->blockByEncodingLevel($record->metadata->record);
+    return if $self->getBiblios()->checkBlock($record->metadata->record);
     my $identifiers = $self->getIdentifiers->fetchIdentifiers($record->metadata->record->as_xml);
     my $componentsArr = $self->componentParts->fetch($biblionumber);
     my $bibliowrapper = {
