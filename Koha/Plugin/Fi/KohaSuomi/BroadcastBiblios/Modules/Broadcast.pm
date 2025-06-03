@@ -274,15 +274,20 @@ sub sendToInterface {
         componentparts => $componentsArr || undef
     };
     foreach my $identifier (@$identifiers) {
-        my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
-        if ($activeBiblio) {
-            print "Record found with identifier $identifier->{identifier}\n" if $self->verbose;
-            if ($confirm) {
-                my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{name}, user_id => $config->{defaultUser}, type => 'import'});
-                $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
+        try {
+            my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
+            if ($activeBiblio) {
+                print "Record found with identifier $identifier->{identifier}\n" if $self->verbose;
+                if ($confirm) {
+                    my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{name}, user_id => $config->{defaultUser}, type => 'import'});
+                    $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
+                }
+                last;
             }
-            last;
-        }
+        } catch {
+            my $error = $_;
+            print "Broadcast for biblionumber $biblionumber failed with: $error\n";
+        };
     }
 }
 
@@ -465,7 +470,8 @@ sub _getActiveRecord {
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->inactivity_timeout($self->getInactivityTimeout)->get($path);
     unless ($tx->res->code eq '200' || $tx->res->code eq '201' || $tx->res->code eq '204') {
-        print "_getActiveRecord failed with: ".$tx->res->json->{error}."\n" if $self->verbose;
+        my $error = $tx->res->json->{error} || $tx->res->message;
+        print "_getActiveRecord failed with: ".$error."\n" if $self->verbose;
         return;
     }
     my $response = $tx->res->json;
