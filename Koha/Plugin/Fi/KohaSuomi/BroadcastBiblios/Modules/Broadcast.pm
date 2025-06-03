@@ -260,6 +260,31 @@ sub fetchBroadcastBiblios {
     }
 }
 
+sub sendToInterface {
+    my ($self, $config, $biblionumber, $confirm) = @_;
+
+    my $record = Koha::Biblios->find($biblionumber);
+    return unless $record;
+    my $identifiers = $self->getIdentifiers->fetchIdentifiers($record->metadata->record->as_xml);
+    my $componentsArr = $self->componentParts->fetch($biblionumber);
+    my $bibliowrapper = {
+        marcxml => $record->metadata->record->as_xml,
+        biblionumber => $biblionumber,
+        componentparts => $componentsArr || undef
+    };
+    foreach my $identifier (@$identifiers) {
+        my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
+        if ($activeBiblio) {
+            print "Record found with identifier $identifier->{identifier}\n" if $self->verbose;
+            if ($confirm) {
+                my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{name}, user_id => $config->{defaultUser}, type => 'import'});
+                $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
+            }
+            last;
+        }
+    }
+}
+
 #Deprecating on 23.11
 sub broadcastBiblios {
     my ($self, $params) = @_;
