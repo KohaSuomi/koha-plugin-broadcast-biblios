@@ -273,6 +273,7 @@ sub sendToInterface {
         biblionumber => $biblionumber,
         componentparts => $componentsArr || undef
     };
+    my $found = 0;
     foreach my $identifier (@$identifiers) {
         try {
             my $activeBiblio = $self->_getActiveRecord($config, $identifier->{identifier}, $identifier->{identifier_field});
@@ -282,12 +283,13 @@ sub sendToInterface {
                     my $broadcastQueue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $config->{name}, user_id => $config->{defaultUser}, type => 'import'});
                     $broadcastQueue->pushToRest($config, $activeBiblio, $bibliowrapper);
                 }
-                last;
+                $found = 1;
             }
         } catch {
             my $error = $_;
             print "Broadcast for biblionumber $biblionumber failed with: $error\n";
         };
+        last if $found;
     }
 }
 
