@@ -85,7 +85,7 @@ if (!exists $valid_languages{$lang}) {
 
 foreach my $vocab (@vocabs) {
     
-    print "Processing vocabulary: $vocab since $since_date\n" if $verbose;
+    print "Processing vocabulary: $vocab since $since_date\n";
 
     # Initialize user agent
     my $ua = Mojo::UserAgent->new;
