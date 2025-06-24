@@ -18,7 +18,15 @@ my $verbose;
 my @vocabs;
 my $lang;
 my $confirm;
-my $since_date = strftime("%Y-%m-%d", localtime());
+# Set $since_date to the first day of the previous month
+my ($sec, $min, $hour, $mday, $mon, $year) = localtime();
+$mon--; # Go to previous month
+if ($mon < 0) {
+    $mon = 11;
+    $year--;
+}
+$year += 1900;
+my $since_date = sprintf("%04d-%02d-01", $year, $mon + 1);
 
 # Parse command-line options
 GetOptions(
@@ -77,7 +85,7 @@ if (!exists $valid_languages{$lang}) {
 
 foreach my $vocab (@vocabs) {
     
-    print "Processing vocabulary: $vocab\n";
+    print "Processing vocabulary: $vocab since $since_date\n" if $verbose;
 
     # Initialize user agent
     my $ua = Mojo::UserAgent->new;
