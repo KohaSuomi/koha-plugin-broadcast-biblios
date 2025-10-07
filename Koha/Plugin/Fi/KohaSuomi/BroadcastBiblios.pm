@@ -192,6 +192,7 @@ sub install() {
     $self->create_queue_table();
     $self->create_users_table();
     $self->create_secret();
+    return 1;
 }
 
 ## This is the 'upgrade' method. It will be triggered when a newer version of a
