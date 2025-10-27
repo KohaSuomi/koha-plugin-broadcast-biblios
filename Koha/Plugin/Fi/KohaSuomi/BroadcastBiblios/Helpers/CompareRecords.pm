@@ -47,10 +47,22 @@ sub compareEncodingLevels {
     my $broadcast_status = $broadcast->{encodingStatus};
     my $encoding_level;
 
-    if ((int($local_level) > int($broadcast_level)) || $local_level eq 'u' || $local_level eq 'z') {
+    if (
+        defined $local_level && defined $broadcast_level &&
+        (
+            (looks_like_number($local_level) && looks_like_number($broadcast_level) && int($local_level) > int($broadcast_level))
+            || ($local_level eq 'u' && looks_like_number($broadcast_level))
+            || ($local_level eq 'z' && looks_like_number($broadcast_level))
+        )
+    ) {
         # If the local record's number is greater than broadcast record's or local record's status is u or z, the encoding level is lower
-        $encoding_level = 'lower';   
-    } elsif (int($local_level) == int($broadcast_level)) {
+        $encoding_level = 'lower';
+
+    } elsif (
+        defined $local_level && defined $broadcast_level &&
+        looks_like_number($local_level) && looks_like_number($broadcast_level) &&
+        int($local_level) == int($broadcast_level)
+    ) {
         if ($local_status eq 'c' && $broadcast_status eq 'n') {
             # If the local record's number is equal to broadcast record's and the local record's status is c and the broadcast record's status is n, the encoding level is greater
             $encoding_level = 'greater';
