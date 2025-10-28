@@ -4,6 +4,7 @@ import { useRecordStore } from "../stores/record-store.js";
 import { useQueueStore } from "../stores/queue-store.js";
 import { useActiveStore } from "../stores/active-store.js";
 import * as recordParser from '../helpers/recordParser.js';
+import { t } from "../helpers/translations.js";
 
 export default {
   props: ['biblio_id', 'patron_id'],
@@ -189,7 +190,7 @@ export default {
   },
   template: `
     <div v-if="config.onDropdown.length > 0" class="btn-group" style="margin-left: 5px;">
-      <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> Vie/Tuo <span class="caret"></span></button>
+      <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> {{ t('Vie') }}/{{ t('Tuo') }} <span class="caret"></span></button>
       <ul id="pushInterfaces" class="dropdown-menu">
         <li v-for="interface in config.onDropdown" :key="interface.name">
           <a href="#" @click="openModal($event)">{{ interface.name }}</a>
@@ -203,7 +204,7 @@ export default {
           <i class="fa fa-link text-success" style="font-size:18px; margin-left: 5px; margin-top:7px;" :title="timestamp(active.record.created_on)"></i>
         </div>
         <div v-else class="btn-group">
-          <button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> Aktivoi tietue</button>
+          <button class="btn btn-default" @click="activateRecord()"><i class="fa fa-refresh"></i> {{ t('Aktivoi tietue') }}</button>
         </div>
       </div>
     </div>
@@ -213,10 +214,10 @@ export default {
           <div class="modal-header">
             <ul class="nav nav-tabs">
               <li :class="{active : activeTab == 1}">
-                <a href="#" @click="search()">Siirto <i v-if="activeTab == 1" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
+                <a href="#" @click="search()">{{ t('Siirto') }} <i v-if="activeTab == 1" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
               </li>
               <li :class="{active : activeTab == 2}">
-                <a href="#" @click="report()">Tapahtumat <i v-if="activeTab == 2" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
+                <a href="#" @click="report()">{{ t('Tapahtumat') }} <i v-if="activeTab == 2" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
               </li>
             </ul>
           </div>
@@ -225,14 +226,14 @@ export default {
               <i class="fa fa-spinner fa-spin" style="font-size:36px"></i>
             </div>
             <div class="alert alert-danger" role="alert" v-if="errors.errors.length > 0">
-              <b>Tapahtui virhe:</b>
+              <b>{{ t('Tapahtui virhe:') }}</b>
               <ul class="text-danger">
                 <li v-for="error in errors.errors">{{ error }}</li>
               </ul>
             </div>
             <div v-if="showRecord">
               <div v-if="records.saved" class="alert alert-success" role="alert">
-                Lisätty jonoon!
+                {{ t('Lisätty jonoon!') }}
               </div>
               <div v-else class="row">
                 <div v-html="localRecord" class="col-sm-6" :class="{ 'col-sm-8': !remoteRecord }"></div>
@@ -244,17 +245,17 @@ export default {
                 <table class="table table-striped table-sm">
                   <thead>
                     <tr>
-                      <th>Rajapinta</th>
-                      <th>Tapahtuma</th>
-                      <th>Aika</th>
-                      <th>Tila</th>
+                      <th>{{ t('Rajapinta') }}</th>
+                      <th>{{ t('Tapahtuma') }}</th>
+                      <th>{{ t('Aika') }}</th>
+                      <th>{{ t('Tila') }}</th>
                     </tr>
                   </thead>
                   <tbody><tr v-for="(report, index) in this.queue.list" :class="alertColor(report.status)">
                     <td>{{ report.broadcast_interface }}</td>
-                    <td>{{ $t(report.type) }}</td>
+                    <td>{{ t(report.type) }}</td>
                     <td>{{ timestamp(report.transfered_on) }}</td>
-                    <td>{{ $t(report.status) }} ({{report.statusmessage}})</td>
+                    <td>{{ t(report.status) }} ({{report.statusmessage}})</td>
                   </tr>
                   </tbody>
                 </table>
@@ -262,13 +263,16 @@ export default {
             </div>
           </div>
           <div class="modal-footer">
-            <button v-if="!records.saved && showExportButton && interfaceType == 'export'" class="btn btn-secondary" style="float:none;" @click="exportRecord()">Vie</button>\
-            <button v-if="!records.saved && componentPartsEqual && showImportButton" class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">Tuo</button>\
-            <button v-if="!records.saved && !componentPartsEqual && interfaceType == 'export'" class="btn btn-danger" style="float:none;" @click="exportComponentParts()">Vie osakohteet</button>\
-            <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">Sulje</button>\
+            <button v-if="!records.saved && showExportButton && interfaceType == 'export'" class="btn btn-secondary" style="float:none;" @click="exportRecord()">{{ t('Vie') }}</button>\
+            <button v-if="!records.saved && componentPartsEqual && showImportButton" class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">{{ t('Tuo') }}</button>\
+            <button v-if="!records.saved && !componentPartsEqual && interfaceType == 'export'" class="btn btn-danger" style="float:none;" @click="exportComponentParts()">{{ t('Vie osakohteet') }}</button>\
+            <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">{{ t('Sulje') }}</button>\
           </div>
         </div>
       </div>
     </div>
     `,
+  methods: {
+    t // expose t to template
+  }
 };

@@ -1,4 +1,9 @@
 import * as recordParser from './helpers/recordParser.js';
+import { t, setLang } from './helpers/translations.js';
+
+// Set language based on browser or user preference
+const browserLang = (pageLang || navigator.language || navigator.userLanguage || 'en').substring(0,2);
+setLang(['en', 'fi', 'sv'].includes(browserLang) ? browserLang : 'en');
 
 new Vue({
   el: '#viewApp',
@@ -98,7 +103,7 @@ new Vue({
         !this.identifier.includes('|')
       ) {
         this.errors.push(
-          'Standardinumero ei ole oikeassa muodossa, erota kentät putkella -> 003|001'
+          t('Standardinumero ei ole oikeassa muodossa, erota kentät putkella -> 003|001')
         );
       }
       if (!this.errors.length) {
@@ -111,7 +116,7 @@ new Vue({
           })
           .then(() => {
             this.success =
-              'Tietue ' + this.activation.biblionumber + ' päivitetty!';
+              t('Tietue ') + this.activation.biblionumber + ' ' + t('päivitetty!');
             this.getActiveRecord(e);
             this.showModifyActivation = false;
           })
@@ -191,9 +196,9 @@ new Vue({
     },
     blocked: function (blocked) {
       if (blocked) {
-        return 'Kyllä';
+        return t('Kyllä');
       } else {
-        return 'Ei';
+        return t('Ei');
       }
     }
   },
@@ -224,7 +229,7 @@ Vue.component('result-list', {
                       <div class="modal-dialog modal-lg">\
                           <div class="modal-content">\
                               <div class="modal-header">\
-                                  <h5 class="modal-title">Muutokset</h5>\
+                                  <h5 class="modal-title">' + t('Muutokset') + '</h5>\
                                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">\
                                       <span aria-hidden="true">&times;</span>\
                                   </button>\
@@ -232,7 +237,7 @@ Vue.component('result-list', {
                               <div id="recordWrapper" class="modal-body">\
                               </div>\
                               <div class="modal-footer">\
-                                  <button type="button" class="btn btn-default" data-dismiss="modal">Sulje</button>\
+                                  <button type="button" class="btn btn-default" data-dismiss="modal">' + t('Sulje') + '</button>\
                               </div>\
                           </div>\
                       </div>\
@@ -329,9 +334,9 @@ Vue.component('result-list', {
     },
     transfer: function (type) {
       if (type == 'import') {
-        return 'Tuonti';
+        return t('Tuonti');
       } else {
-        return 'Vienti';
+        return t('Vienti');
       }
     },
   },
