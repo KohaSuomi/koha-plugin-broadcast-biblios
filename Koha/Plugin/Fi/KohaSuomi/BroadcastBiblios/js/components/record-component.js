@@ -180,20 +180,21 @@ export default {
     },
     alertColor (status) {
       if (status == 'completed') {
-        return 'alert-success';
+        return 'table-success';
       } else if (status == 'failed') {
-        return 'alert-danger';
+        return 'table-danger';
       } else {
-        return 'alert-info';
+        return 'table-info';
       }
     },
+    t // expose t to template
   },
   template: `
     <div v-if="config.onDropdown.length > 0" class="btn-group" style="margin-left: 5px;">
-      <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-upload"></i> {{ t('Vie') }}/{{ t('Tuo') }} <span class="caret"></span></button>
+      <button type="button" class="btn btn-default dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-upload"></i> {{ t('Vie') }}/{{ t('Tuo') }} <span class="caret"></span></button>
       <ul id="pushInterfaces" class="dropdown-menu">
         <li v-for="interface in config.onDropdown" :key="interface.name">
-          <a href="#" @click="openModal($event)">{{ interface.name }}</a>
+          <a class="dropdown-item" href="#" @click="openModal($event)">{{ interface.name }}</a>
         </li>
       </ul>
     </div>
@@ -213,11 +214,11 @@ export default {
         <div class="modal-content">
           <div class="modal-header">
             <ul class="nav nav-tabs">
-              <li :class="{active : activeTab == 1}">
-                <a href="#" @click="search()">{{ t('Siirto') }} <i v-if="activeTab == 1" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
+              <li class="nav-item" :class="{active : activeTab == 1}">
+                <a class="nav-link" :class="{active : activeTab == 1}" href="#" @click="search()">{{ t('Siirto') }} <i v-if="activeTab == 1" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
               </li>
-              <li :class="{active : activeTab == 2}">
-                <a href="#" @click="report()">{{ t('Tapahtumat') }} <i v-if="activeTab == 2" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
+              <li class="nav-item" :class="{active : activeTab == 2}">
+                <a class="nav-link" :class="{active : activeTab == 2}" href="#" @click="report()">{{ t('Tapahtumat') }} <i v-if="activeTab == 2" class="fa fa-refresh" style="font-size:14px; cursor:pointer;"></i></a>
               </li>
             </ul>
           </div>
@@ -242,13 +243,13 @@ export default {
             </div>
             <div v-if="!showRecord">
               <div class="table-responsive">
-                <table class="table table-striped table-sm">
+                <table class="table table-striped">
                   <thead>
                     <tr>
-                      <th>{{ t('Rajapinta') }}</th>
-                      <th>{{ t('Tapahtuma') }}</th>
-                      <th>{{ t('Aika') }}</th>
-                      <th>{{ t('Tila') }}</th>
+                      <th scope="col">{{ t('Rajapinta') }}</th>
+                      <th scope="col">{{ t('Tapahtuma') }}</th>
+                      <th scope="col">{{ t('Aika') }}</th>
+                      <th scope="col">{{ t('Tila') }}</th>
                     </tr>
                   </thead>
                   <tbody><tr v-for="(report, index) in this.queue.list" :class="alertColor(report.status)">
@@ -266,13 +267,10 @@ export default {
             <button v-if="!records.saved && showExportButton && interfaceType == 'export'" class="btn btn-secondary" style="float:none;" @click="exportRecord()">{{ t('Vie') }}</button>\
             <button v-if="!records.saved && componentPartsEqual && showImportButton" class="btn btn-primary" style="float:none;" @click="importRecord()" :disabled="isDisabled">{{ t('Tuo') }}</button>\
             <button v-if="!records.saved && !componentPartsEqual && interfaceType == 'export'" class="btn btn-danger" style="float:none;" @click="exportComponentParts()">{{ t('Vie osakohteet') }}</button>\
-            <button type="button" class="btn btn-default" data-dismiss="modal" style="float:none;">{{ t('Sulje') }}</button>\
+            <button type="button" class="btn btn-default" data-bs-dismiss="modal" style="float:none;">{{ t('Sulje') }}</button>\
           </div>
         </div>
       </div>
     </div>
-    `,
-  methods: {
-    t // expose t to template
-  }
+    `
 };

@@ -189,6 +189,7 @@ new Vue({
         }
       }
     },
+    t // Translation helper
   },
   filters: {
     moment: function (date) {
@@ -244,7 +245,7 @@ Vue.component('result-list', {
                   </div>'
       );
       $('#modalWrapper').append(html);
-      var source = recordParser.parseDiff(this.result.diff);
+      var source = recordParser.parseDiff(this.result.diff, t);
       $('#recordModal')
         .find('#recordWrapper')
         .append($('<div class="container">' + source + '</div>'));
@@ -315,6 +316,7 @@ Vue.component('result-list', {
         });
       });
     },
+    t // Translation helper
   },
   filters: {
     moment: function (date) {

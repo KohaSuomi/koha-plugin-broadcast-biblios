@@ -93,7 +93,8 @@ export default {
             return false;
         }
         return true;
-    }
+    },
+    t // Translation helper
   },
   template: `
     <div v-if="errors.errors.length > 0" class="alert alert-danger" role="alert">
@@ -162,8 +163,5 @@ export default {
             <button type="button" class="btn btn-primary" @click="save()">{{ t('Tallenna') }}</button>
         </div>
     </form>
-    `,
-  methods: {
-    t // expose t to template
-  }
+    `
 };

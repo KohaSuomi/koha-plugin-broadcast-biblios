@@ -138,6 +138,7 @@ export default {
       );
       return pattern.test(url);
     },
+    t // expose t to template
   },
   template: `
     <div v-if="errors.errors.length > 0" class="alert alert-danger" role="alert">
@@ -276,7 +277,4 @@ export default {
         </div>
     </form>
     `,
-  methods: {
-    t // expose t to template
-  }
 };

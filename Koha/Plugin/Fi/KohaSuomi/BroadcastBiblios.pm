@@ -21,18 +21,32 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::ActiveRecords;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 
 ## Here we set our plugin version
-our $VERSION = "2.5.2";
+our $VERSION = "2.6.0";
+
+my $lang = C4::Languages::getlanguage() || 'en';
+my $name = "";
+my $description = "";
+if ( $lang eq 'sv-SE' ) {
+    $name = "Postning av poster";
+    $description = "Skicka och ta emot poster i Koha. (Lokala databaser, Täti)";
+} elsif ( $lang eq 'fi-FI' ) {
+    $name = "Tietuesiirtäjä";
+    $description = "Tietueiden lähetys ja vastaanotto Kohassa. (Paikalliskannat, Täti)";
+} else {
+    $name = "Broadcast Biblios";
+    $description = "Sending and receiving records in Koha.";
+}
 
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
-    name            => 'Tietuesiirtäjä',
+    name            => $name,
     author          => 'Johanna Räisä',
     date_authored   => '2021-09-09',
-    date_updated    => '2024-02-12',
-    minimum_version => '21.11.00.0000',
+    date_updated    => '2025-11-06',
+    minimum_version => '25.05.00.0000',
     maximum_version => '',
     version         => $VERSION,
-    description     => 'Tietueiden lähetys ja vastaanotto Kohassa. (Paikalliskannat, Täti)',
+    description     => $description,
 };
 
 ## This is the minimum code required for a plugin's 'new' method
@@ -163,6 +177,7 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
         $dropdown .= '<script src="https://cdnjs.cloudflare.com/ajax/libs/vue-i18n/9.10.2/vue-i18n.global.prod.min.js" integrity="sha512-UUOWezsNQ8nhUaGbOuPDdwRouiCjpa9ALauSMzT84F46gilrYGxb++H8a3Ez0iTgTfBDoZ6csW5aw+msdwnifA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/axios.min.js"></script>';
         $dropdown .= '<script src="'.$pluginpath.'/includes/moment-with-locales.min.js"></script>';
+        $dropdown .= '<script> var pageLang = "'.C4::Languages::getlanguage( $self->{'cgi'} ).'"; </script>';
         $dropdown .= '<script type="module" src="'.$pluginpath.'/js/app.js"></script>';
     }
     return $dropdown;

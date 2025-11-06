@@ -39,7 +39,17 @@ const translations = {
     fi: 'Tuonti',
     sv: 'Import'
   },
+  'Tuo': {
+    en: 'Import',
+    fi: 'Tuo',
+    sv: 'Import'
+  },
   'Vienti': {
+    en: 'Export',
+    fi: 'Vie',
+    sv: 'Exportera'
+  },
+  'Vie': {
     en: 'Export',
     fi: 'Vie',
     sv: 'Exportera'
@@ -318,6 +328,16 @@ const translations = {
     en: 'Component part count does not match: ',
     fi: 'Osakohteiden määrä ei täsmää: ',
     sv: 'Antalet delposter stämmer inte: '
+  },
+  'Vanhat': {
+    en: 'Old',
+    fi: 'Vanhat',
+    sv: 'Gamla'
+  },
+  'Uudet': {
+    en: 'New',
+    fi: 'Uudet',
+    sv: 'Nya'
   }
 };
 

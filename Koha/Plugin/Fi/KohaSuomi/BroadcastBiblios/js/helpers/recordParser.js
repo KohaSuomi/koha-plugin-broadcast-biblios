@@ -1,15 +1,15 @@
 export const recordAsHTML = (record) => {
     let html = '<div>';
     html +=
-        '<li class="row" style="list-style:none; overflow:hidden;"> <div class="col-xs-3 mr-2">';
+        '<li class="row" style="list-style:none; overflow:hidden;"> <div class="col-3">';
     html +=
-        '<b>000</b></div><div class="col-xs-9">' + record.leader + '</li>';
+        '<b>000</b></div><div class="col-9">' + record.leader + '</li>';
     record.fields.forEach(function (v, i, a) {
         if ($.isNumeric(v.tag)) {
         html +=
-            '<li class="row" style="list-style:none; overflow:hidden;"><div class="col-xs-3 mr-2">';
+            '<li class="row" style="list-style:none; overflow:hidden;"><div class="col-3">';
         } else {
-        html += '<li class="row hidden"><div class="col-xs-3  mr-2">';
+        html += '<li class="row d-none"><div class="col-3">';
         }
         html += '<b>' + v.tag;
         if (v.ind1) {
@@ -18,7 +18,7 @@ export const recordAsHTML = (record) => {
         if (v.ind2) {
         html += ' ' + v.ind2;
         }
-        html += '</b></div><div class="col-xs-9">';
+        html += '</b></div><div class="col-9">';
         if (v.subfields) {
         v.subfields.forEach(function (v, i, a) {
             html += '<b>_' + v.code + '</b>' + v.value + '<br/>';
@@ -197,11 +197,11 @@ export const recordItemType = (record) => {
     return itemType;
 }
 
-export const parseDiff = (record) => {
+export const parseDiff = (record, t) => {
     let tags = Object.keys(record);
     let html = '<div class="row pb-2">';
-    html += '<div class="col-md-6"><b>Vanhat</b></div>';
-    html += '<div class="col-md-6"><b>Uudet</b></div>';
+    html += '<div class="col-md-6"><b>' + t('Vanhat') + '</b></div>';
+    html += '<div class="col-md-6"><b>' + t('Uudet') + '</b></div>';
     html += '</div>';
     tags.sort();
     tags.forEach((element) => {
@@ -211,7 +211,7 @@ export const parseDiff = (record) => {
         if (obj.remove) {
         if (element != '999' && element != '942' && element != '952') {
             obj.remove.forEach((removetag) => {
-            html += '<div class="col-xs-6">';
+            html += '<div class="col-6">';
             if (removetag.subfields) {
                 removetag.subfields.forEach((removesub) => {
                 html += '<div class="text-danger"><b>' + element;
@@ -235,7 +235,7 @@ export const parseDiff = (record) => {
         if (element != '999' && element != '942' && element != '952') {
             obj.old.forEach((oldtag) => {
             if (oldtag) {
-                html += '<div class="col-xs-6">';
+                html += '<div class="col-6">';
                 if (oldtag.subfields) {
                 oldtag.subfields.forEach((oldsub) => {
                     html += '<div><b>' + element;
@@ -260,7 +260,7 @@ export const parseDiff = (record) => {
         if (obj.add) {
         if (element != '999' && element != '942' && element != '952') {
             obj.add.forEach((addtag) => {
-            html += '<div class="col-xs-6">';
+            html += '<div class="col-6">';
             if (addtag.subfields) {
                 addtag.subfields.forEach((addsub) => {
                 html += '<div class="text-success"><b>' + element;
@@ -282,7 +282,7 @@ export const parseDiff = (record) => {
         if (obj.new) {
         if (element != '999' && element != '942' && element != '952') {
             obj.new.forEach((newtag) => {
-            html += '<div class="col-xs-6">';
+            html += '<div class="col-6">';
             if (newtag.subfields) {
                 newtag.subfields.forEach((newsub) => {
                 html += '<div><b>' + element;
