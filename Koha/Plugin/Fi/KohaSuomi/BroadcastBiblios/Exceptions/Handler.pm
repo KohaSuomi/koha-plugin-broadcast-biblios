@@ -4,6 +4,7 @@ use Modern::Perl;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Melinda;
 use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic;
 use Koha::Logger;
+use Data::Dumper;
 
 sub handle_exception {
     my ($self, $interface, $status, $exception) = @_;
@@ -57,7 +58,7 @@ sub display_api_error {
 
     # Log the error
     my $logger = Koha::Logger->get({ interface => 'api' });
-    $logger->error($error);
+    $logger->error(Data::Dumper->Dump([$error], ['error']));
 
     if ($error->isa('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized')) {
         # Return the unauthorized error message
