@@ -23,31 +23,36 @@ use Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::OAI;
 ## Here we set our plugin version
 our $VERSION = "2.6.0";
 
-my $lang = C4::Languages::getlanguage() || 'en';
-my $name = "";
-my $description = "";
-if ( $lang eq 'sv-SE' ) {
-    $name = "Postning av poster";
-    $description = "Skicka och ta emot poster i Koha. (Lokala databaser, Täti)";
-} elsif ( $lang eq 'fi-FI' ) {
-    $name = "Tietuesiirtäjä";
-    $description = "Tietueiden lähetys ja vastaanotto Kohassa. (Paikalliskannat, Täti)";
-} else {
-    $name = "Broadcast Biblios";
-    $description = "Sending and receiving records in Koha.";
-}
-
 ## Here is our metadata, some keys are required, some are optional
 our $metadata = {
-    name            => $name,
+    name            => "Broadcast Biblios",
     author          => 'Johanna Räisä',
     date_authored   => '2021-09-09',
     date_updated    => '2025-11-06',
     minimum_version => '25.05.00.0000',
     maximum_version => '',
     version         => $VERSION,
-    description     => $description,
+    description     => "Sending and receiving records in Koha.",
 };
+
+sub get_localized_metadata {
+    my ($self) = @_;
+    my $lang = C4::Languages::getlanguage($self->{cgi}) || 'en';
+    my ($name, $description);
+
+    if ( $lang eq 'sv-SE' ) {
+        $name = "Tietuesiirtäjä";
+        $description = "Skicka och ta emot poster i Koha. (Lokala databaser, Täti)";
+    } elsif ( $lang eq 'fi-FI' ) {
+        $name = "Tietuesiirtäjä";
+        $description = "Tietueiden lähetys ja vastaanotto Kohassa. (Paikalliskannat, Täti)";
+    } else {
+        $name = "Broadcast Biblios";
+        $description = "Sending and receiving records in Koha.";
+    }
+
+    return ($name, $description);
+}
 
 ## This is the minimum code required for a plugin's 'new' method
 ## More can be added, but none should be removed
@@ -62,6 +67,10 @@ sub new {
     ## This runs some additional magic and checking
     ## and returns our actual 
     my $self = $class->SUPER::new($args);
+
+    my ($name, $description) = $self->get_localized_metadata();
+    $self->{metadata}->{name} = $name;
+    $self->{metadata}->{description} = $description;
 
     $self->{logTable} = $self->get_qualified_table_name('log');
 
