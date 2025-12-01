@@ -1,7 +1,6 @@
 // Description: Vue.js application for configuring the plugin
 const { createApp } = Vue
 const { createPinia } = Pinia;
-const { createI18n } = VueI18n;
 import configComponent from "./components/config-component.js";
 import userComponent from "./components/user-component.js";
 import recordComponent from "./components/record-component.js";
