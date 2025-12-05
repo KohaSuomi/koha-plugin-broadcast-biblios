@@ -129,15 +129,20 @@ foreach my $vocab (@vocabs) {
         my $replacedByURI = $item->{replacedBy};
         my $replacingLabel = $item->{replacingLabel};
         my $new_value = $replacingLabel || $prefLabel;
-        my $results = _search_records($uri);
-        if ($results) {
-            foreach my $result (@$results) {
-                my $biblio_id = $result->subfield('999', 'c');
-                print "Found record $biblio_id for URI: $uri\n" if $verbose;
-                my $record = _find_field_and_replace($result, $uri, $new_value, $replacedByURI, $vocab);
-                next unless $record;
-                $count++;
-                if ($confirm) {
+        my $results;
+        my $offset = 0;
+        my $limit = 100;
+
+        while (1) {
+            $results = _search_records($uri, $offset, $limit);
+            if ($results && @$results) {
+                foreach my $result (@$results) {
+                    my $biblio_id = $result->subfield('999', 'c');
+                    print "Found record $biblio_id for URI: $uri\n" if $verbose;
+                    my $record = _find_field_and_replace($result, $uri, $new_value, $replacedByURI, $vocab);
+                    next unless $record;
+                    $count++;
+                    if ($confirm) {
                     print "Updating record with biblionumber: $biblio_id\n";
                     my $biblionumber = eval { C4::Biblio::ModBiblioMarc( $record, $biblio_id ) };
                     if ($@) {
@@ -150,7 +155,11 @@ foreach my $vocab (@vocabs) {
                         C4::Biblio::_koha_modify_biblioitem_nonmarc($dbh, $biblio);
                         $success++;
                     }
+                    }
                 }
+                $offset += $limit;
+            } else {
+                last;
             }
         }
     }
@@ -169,14 +178,15 @@ exit 0;
 # End of script
 # Subroutines
 sub _search_records {
-    my ($uri) = @_;
+    my ($uri, $offset, $limit) = @_;
     
     my $searcher = Koha::SearchEngine::Search->new({index => $Koha::SearchEngine::BIBLIOS_INDEX});
     my $query = "koha-auth-number,ext:\"$uri\"";
-    my ( $error, $results, $total_hits ) = $searcher->simple_search_compat( $query, 0, 10 );
+    my ( $error, $results, $total_hits ) = $searcher->simple_search_compat( $query, $offset, $limit );
     if ($error) {
         print "Error: Searching ($query):> Returned an error:\n$error";
     }
+    return 0 unless $results && @$results;
     return $results;
 }
 
@@ -205,7 +215,7 @@ sub _find_field_and_replace {
                     }
                 }
                 if ($uri_exists && $uri_value eq $new_value) {
-                    print "New URI $new_uri already exists in record, skipping replacement and deletion.\n" if $verbose;
+                    print "New URI $new_uri already exists in record, skipping replacement and delete field.\n" if $verbose;
                     $record->delete_field($field);
                     $updated = 1;
                     next;
