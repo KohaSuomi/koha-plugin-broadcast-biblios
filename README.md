@@ -142,3 +142,32 @@ perl process_broadcast_queue.pl --update
 ```
 
 :yellow_circle: This script will process the broadcast queue. Should be run regulary on crontab.
+
+# Update Finto vocabularies
+
+## Description
+`misc/update_finto_vocab.pl` is a Perl script designed to update and synchronize vocabularies from the FINTO (Finnish Ontology Service) repository. The script fetches the latest vocabulary data, processes it, and updates local or remote stores as needed. It is typically used to ensure that applications or databases relying on FINTO vocabularies remain current with the latest terms, definitions, and relationships.
+
+## Example Usage
+
+```
+perl misc/update_finto_vocab.pl --vocab yso --vocab kauno --vocab slm --vocab yso-paikat --vocab yso-aika --lang fi -v
+```
+## Options
+- `--vocab <VOCAB>`  
+    Specify one or more vocabularies to update (e.g., `yso`, `kauno`, `slm`, `yso-paikat`, `yso-aika`, `stw`). This option can be repeated for multiple vocabularies.
+
+- `--lang <LANG>`  
+    Set the language for the vocabulary data (e.g., `fi` for Finnish, `sv` for Swedish).
+
+- `--since_date <DATE>`  
+    Fetch updates since the specified date (default: last months first date)).
+
+- `--confirm`  
+    Prompt for confirmation before applying changes.
+
+- `-v`, `--verbose`  
+    Enable verbose output for detailed logging.
+
+- `-h`, `--help`  
+    Show help message and exit.

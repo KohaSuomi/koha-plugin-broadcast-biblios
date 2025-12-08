@@ -48,7 +48,7 @@ Options:
     --verbose, -v    Enable verbose output
     --vocab          Specify the vocabulary to update. Is repeated for multiple vocabularies (stw, yso, yso-aika)
     --lang           Specify the language (fi, sv, en)
-    --since_date     Specify the date since when to fetch updates (default: current date)
+    --since_date     Specify the date since when to fetch updates (default: last months first date)
     --confirm        Confirm the changes before applying them
 
 Description:
