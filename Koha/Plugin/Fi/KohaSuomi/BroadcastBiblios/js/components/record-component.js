@@ -167,6 +167,34 @@ export default {
     checkComponentParts() {
       let localParts = this.records.componentparts.length;
       let remoteParts = 0;
+      if (this.records.componentparts) {
+        const controlNumbers = new Set();
+        for (let part of this.records.componentparts) {
+          let valueC = '';
+          // First pass: extract the 999c value
+          for (let field of part.marcjson.fields) {
+            if (field.tag === '999') {
+              const cSubfield = field.subfields?.find(sf => sf.code === 'c');
+              if (cSubfield) {
+                valueC = cSubfield.value;
+              }
+            }
+          }
+          // Second pass: check for duplicate control numbers
+          for (let field of part.marcjson.fields) {
+            if (field.tag === '001') {
+              const controlNumber = field.value;
+              if (controlNumbers.has(controlNumber)) {
+                this.errors.setError("Duplikaatti 001 kontrollinumero löydetty: " + controlNumber + ". Tietueesta: " + valueC);
+                this.showExportButton = false;
+
+                return;
+              }
+              controlNumbers.add(controlNumber);
+            }
+          }
+        }
+      }
       if (this.records.remotecomponentparts) {
         remoteParts = this.records.remotecomponentparts.length;
       }
