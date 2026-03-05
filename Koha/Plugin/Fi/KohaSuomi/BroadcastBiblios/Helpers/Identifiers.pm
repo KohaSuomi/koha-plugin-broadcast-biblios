@@ -94,7 +94,7 @@ sub getIdentifierField {
             }
         }
     }
-    if ($record->field('003') && $record->field('003')->data =~ /FI-BTJ/ && !$activefield) {
+    if ($record->field('003') && $record->field('003')->data =~ /FI-BTJ|FI-TATI/ && !$activefield) {
         $activefield = $record->field( '003')->data.'|'.$record->field( '001')->data;
         $fieldname = '003|001';
     }
@@ -145,7 +145,7 @@ sub fetchIdentifiers {
         }
     }
     
-    if ($record->field('003') && $record->field('003')->data =~ /FI-BTJ/) {
+    if ($record->field('003') && $record->field('003')->data =~ /FI-BTJ|FI-TATI/) {
         my $allfons = $record->field( '003')->data.'|'.$record->field( '001')->data;
         push @identifiers, {identifier_field => '003|001', identifier => $allfons};
     }
