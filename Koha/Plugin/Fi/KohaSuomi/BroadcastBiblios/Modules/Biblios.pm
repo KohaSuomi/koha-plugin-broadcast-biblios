@@ -118,7 +118,8 @@ sub importedRecords {
         my @no_components;
         foreach my $biblio_id (@biblios){
             my $components = $componentparts->fetch($biblio_id);
-            unless($components){
+            my $record = Koha::Biblios->find($biblio_id)->metadata->record;
+            unless($components || $self->checkComponentPart($record)){
                 push @no_components, $biblio_id;
             }
         }
