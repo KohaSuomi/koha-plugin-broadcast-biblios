@@ -211,7 +211,7 @@ export const parseDiff = (record, t) => {
         if (obj.remove) {
         if (element != '999' && element != '942' && element != '952') {
             obj.remove.forEach((removetag) => {
-            html += '<div class="col-6">';
+            html += '<div class="col">';
             if (removetag.subfields) {
                 removetag.subfields.forEach((removesub) => {
                 html += '<div class="text-danger"><b>' + element;
@@ -235,7 +235,7 @@ export const parseDiff = (record, t) => {
         if (element != '999' && element != '942' && element != '952') {
             obj.old.forEach((oldtag) => {
             if (oldtag) {
-                html += '<div class="col-6">';
+                html += '<div class="col">';
                 if (oldtag.subfields) {
                 oldtag.subfields.forEach((oldsub) => {
                     html += '<div><b>' + element;
@@ -260,7 +260,7 @@ export const parseDiff = (record, t) => {
         if (obj.add) {
         if (element != '999' && element != '942' && element != '952') {
             obj.add.forEach((addtag) => {
-            html += '<div class="col-6">';
+            html += '<div class="col">';
             if (addtag.subfields) {
                 addtag.subfields.forEach((addsub) => {
                 html += '<div class="text-success"><b>' + element;
@@ -282,7 +282,7 @@ export const parseDiff = (record, t) => {
         if (obj.new) {
         if (element != '999' && element != '942' && element != '952') {
             obj.new.forEach((newtag) => {
-            html += '<div class="col-6">';
+            html += '<div class="col">';
             if (newtag.subfields) {
                 newtag.subfields.forEach((newsub) => {
                 html += '<div><b>' + element;
