@@ -22,6 +22,7 @@ my $verbose   = 0;
 my $dry_run   = 0;
 my $help      = 0;
 my $confirm   = 0;
+my $restore   = 0;
 my $backup_dir = '.';
 
 GetOptions(
@@ -31,6 +32,7 @@ GetOptions(
     'dry-run'    => \$dry_run,
     'h|help'     => \$help,
     'confirm'    => \$confirm,
+    'restore'    => \$restore,
 );
 
 my $usage = <<USAGE;
@@ -44,6 +46,8 @@ Parametrit:
     -v, --verbose   Yksityiskohtainen tulostus
     --dry-run       Näytä mitä tehtäisiin ilman muutoksia
     -h, --help      Näytä tämä ohje
+    --restore       Palauta varmuuskopiotiedostosta (tarvitsee --backup-dir ja --set-name)
+    --confirm       Vahvista ennen tietueiden poistoa (tarvitsee --dry-run pois päältä)
 
 Esimerkki:
     perl clean_oai_set.pl --set-name "Kaunokirjallisuus,Historiikki" --verbose --dry-run
@@ -61,6 +65,64 @@ unless ($set_names) {
 my @sets = split(/\s*,\s*/, $set_names);  # Jaa pilkuilla
 
 my $dbh = C4::Context->dbh;
+
+if ($restore) {
+    print "Palautetaan setit varmuuskopiotiedostoista...\n";
+    foreach my $set_name (@sets) {
+        my $backup_file = File::Spec->catfile($backup_dir, "backup_${set_name}_*.txt");
+        my @files = glob($backup_file);
+
+        unless (@files) {
+            warn "VIRHE: Varmuuskopiotiedostoa ei löytynyt setille '$set_name' hakemistosta '$backup_dir'\n";
+            next;
+        }
+
+        my $latest_file = (sort { -M $a <=> -M $b } @files)[0];
+        print "Löydetty varmuuskopiotiedosto: $latest_file\n";
+
+        open my $fh, '<:encoding(UTF-8)', $latest_file
+            or die "VIRHE: ei voitu avata varmuuskopiotiedostoa $latest_file: $!\n";
+
+        my @biblionumbers_to_restore;
+        while (my $line = <$fh>) {
+            chomp $line;
+            push @biblionumbers_to_restore, $line if $line =~ /^\d+$/;
+        }
+        close $fh;
+
+        print "Palautetaan " . scalar(@biblionumbers_to_restore) . " tietuetta settiin '$set_name'...\n";
+
+        # Hae OAI-setin ID
+        my $set_query = "SELECT id FROM oai_sets WHERE name = ?";
+        my $set_sth = $dbh->prepare($set_query);
+        $set_sth->execute($set_name);
+        my ($set_id) = $set_sth->fetchrow_array;
+
+        unless ($set_id) {
+            warn "VIRHE: OAI-settiä '$set_name' ei löytynyt!\n";
+            next;
+        }
+
+        my $insert_query = "INSERT INTO oai_sets_biblios (set_id, biblionumber) VALUES (?, ?)";
+        my $insert_sth = $dbh->prepare($insert_query);
+
+        foreach my $biblionumber (@biblionumbers_to_restore) {
+            try {
+                if ($confirm) {
+                    $insert_sth->execute($set_id, $biblionumber);
+                    print "  Palautettu: $biblionumber\n" if $verbose;
+                } else {
+                    print "  Skipattu (tarvitsee --confirm): $biblionumber\n";
+                }
+            } catch {
+                warn "VIRHE palautettaessa bibliota $biblionumber: $_\n";
+            };
+        }
+        print "Palautus settiin '$set_name' valmis.\n";
+    }
+    print "\nKaikki setit palautettu.\n";
+    exit 0;
+}
 
 # Käydään jokainen setti läpi
 foreach my $set_name (@sets) {
@@ -162,7 +224,6 @@ foreach my $set_name (@sets) {
 
     if ($dry_run) {
         print "DRY-RUN: Poistettaisiin $components_found osakohdetta setistä\n";
-        print "Biblionumberit: " . join(", ", @component_parts) . "\n";
         print "\nAja ilman --dry-run flagia tehdäksesi muutokset.\n";
     } else {
         my $delete_query = "DELETE FROM oai_sets_biblios WHERE biblionumber = ? AND set_id = ?";
