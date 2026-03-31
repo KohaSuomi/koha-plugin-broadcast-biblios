@@ -178,11 +178,12 @@ foreach my $set_name (@sets) {
             print "Tarkistettu $checked / $total_biblios tietuetta...\n";
         }
 
+        my $biblio = Koha::Biblios->find($biblionumber);
+        next unless $biblio;
+        my $metadata = $biblio->metadata;
+        next unless $metadata;
+        
         try {
-            my $biblio = Koha::Biblios->find($biblionumber);
-            next unless $biblio;
-            my $metadata = $biblio->metadata;
-            next unless $metadata;
 
             my $record = MARC::Record::new_from_xml($metadata->metadata, 'UTF-8');
             if ($record->subfield('773','w')) {
