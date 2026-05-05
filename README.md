@@ -1,6 +1,6 @@
 # Broadcast Biblios — *Tietuesiirtäjä*
 
-> **Version:** 2.6.0 · **Author:** Johanna Räisä (Koha-Suomi Oy) · **Minimum Koha:** 25.05.00 · **License:** GPL v2+
+> **Version:** 2.6.0 · **Author:** Johanna Räisä (Koha-Suomi Oy) · **Minimum Koha:** 25.05.00 · **License:** [GPL v3](LICENSE)
 
 A Koha plugin for bidirectional bibliographic record synchronization between multiple Koha instances and national-level library catalogs (Melinda, Täti, Vaari). Records can be pulled into the local Koha from a remote interface (**import**) or pushed from the local Koha to a remote interface (**export**). A Vue 3 UI injected into the staff intranet catalog detail page lets cataloguers search, compare, import, and export records interactively.
 
