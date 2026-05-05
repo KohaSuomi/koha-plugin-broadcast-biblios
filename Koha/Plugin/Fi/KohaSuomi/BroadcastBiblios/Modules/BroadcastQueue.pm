@@ -324,13 +324,17 @@ sub processImportQueue {
                         Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Handler->handle_exception('Generic', 404, {message => "Biblio record not found"});
                     }
                     my $f942 = $self->get942Field($biblio_id);
+                    my $user = $self->user->getUser($queue->{user_id});
+                    my $patron = Koha::Patrons->find($user->{linked_borrowernumber});
                     if ($queue->{hostrecord} || $queue->{componentparts}) {
-                        $self->processImportComponentParts($biblio_id, from_json($queue->{componentparts}));
+                        $self->processImportComponentParts($biblio_id, from_json($queue->{componentparts}), $patron);
                     }
                     $mergedrecord = $self->add942ToBiblio($mergedrecord, $f942);
                     my $success = &ModBiblio($mergedrecord, $biblio_id, $frameworkcode, {
                                 overlay_context => {
-                                    source       => 'z3950'
+                                    source       => 'z3950',
+                                    categorycode => $patron->categorycode if $patron,
+                                    userid       => $patron->userid if $patron,
                                 }
                             });
                     if ($success) {
@@ -379,7 +383,9 @@ sub processExportQueue {
                 my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $target_id);
                 $self->mergeRecords($queue->{broadcast_interface})->appendSystemControlNumber($newrecord);
                 $self->mergeRecords($queue->{broadcast_interface})->updateControlNumberAndIdentifier($newrecord, $target_id);
-                $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
+                my $user = $self->user->getUser($queue->{user_id});
+                my $patron = Koha::Patrons->find($user->{linked_borrowernumber});
+                $self->updateLocalRecord($queue->{biblio_id}, $newrecord, $patron);
             }
 
             my $endtime = strftime("%Y-%m-%d %H:%M:%S", localtime(time()));
@@ -445,7 +451,9 @@ sub processExportComponentParts {
                 my $newrecord = $self->mergeRecords($queue->{broadcast_interface})->addSystemControlNumber($self->getRecord($queue->{marc}), $broadcast_biblio_id);
                 $self->mergeRecords($queue->{broadcast_interface})->appendSystemControlNumber($newrecord);
                 $self->mergeRecords($queue->{broadcast_interface})->updateControlNumberAndIdentifier($newrecord, $broadcast_biblio_id);
-                $self->updateLocalRecord($queue->{biblio_id}, $newrecord);
+                my $user = $self->user->getUser($queue->{user_id});
+                my $patron = Koha::Patrons->find($user->{linked_borrowernumber});
+                $self->updateLocalRecord($queue->{biblio_id}, $newrecord, $patron);
             }
         } catch {
             my $exception = $_;
@@ -533,7 +541,7 @@ sub putQueueRecord {
 }
 
 sub processImportComponentParts {
-    my ($self, $biblio_id, $broadcastcomponentparts) = @_;
+    my ($self, $biblio_id, $broadcastcomponentparts, $patron) = @_;
     $broadcastcomponentparts = $self->getComponentParts->sortComponentParts($broadcastcomponentparts);
     my $localcomponentparts = $self->getComponentParts->fetch($biblio_id);
     my $f942 = $self->get942Field($biblio_id);
@@ -556,7 +564,9 @@ sub processImportComponentParts {
                 $mergedrecord = $self->add942ToBiblio($mergedrecord, $f942);
                 my $success = &ModBiblio($mergedrecord, $biblionumber, $frameworkcode, {
                             overlay_context => {
-                                source       => 'z3950'
+                                source       => 'z3950',
+                                categorycode => $patron->categorycode if $patron,
+                                userid       => $patron->userid if $patron,
                             }
                         });
                 if ($success) {
@@ -622,13 +632,15 @@ sub processNewComponentPartsToQueue {
 }
 
 sub updateLocalRecord {
-    my ($self, $biblio_id, $record) = @_;
+    my ($self, $biblio_id, $record, $patron) = @_;
     my $frameworkcode = GetFrameworkCode( $biblio_id );
     my $f942 = $self->get942Field($biblio_id);
     $record = $self->add942ToBiblio($record, $f942);
     my $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
                 overlay_context => {
-                    source       => 'z3950'
+                    source       => 'z3950',
+                    categorycode => $patron->categorycode if $patron,
+                    userid       => $patron->userid if $patron,
                 }
             });
     if ($success) {
