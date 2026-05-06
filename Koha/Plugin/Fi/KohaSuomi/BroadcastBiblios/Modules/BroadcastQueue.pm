@@ -565,7 +565,7 @@ sub processImportComponentParts {
                 $mergedrecord = $self->add942ToBiblio($mergedrecord, $f942);
                 my $context = {
                     source => 'z3950'
-                }
+                };
                 $context->{categorycode} = $patron->categorycode if $patron;
                 $context->{userid} = $patron->userid if $patron;
                 my $success = &ModBiblio($mergedrecord, $biblionumber, $frameworkcode, {
