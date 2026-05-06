@@ -570,7 +570,6 @@ sub processImportComponentParts {
                 $context->{userid} = $patron->userid if $patron;
                 my $success = &ModBiblio($mergedrecord, $biblionumber, $frameworkcode, {
                             overlay_context => $context,
-                            }
                         });
                 if ($success) {
                     print "Updated component part $biblionumber\n" if $self->verbose;
@@ -646,7 +645,6 @@ sub updateLocalRecord {
     $context->{userid} = $patron->userid if $patron;
     my $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
                 overlay_context => $context,
-                }
             });
     if ($success) {
         print "Updated local record $biblio_id\n" if $self->verbose;
