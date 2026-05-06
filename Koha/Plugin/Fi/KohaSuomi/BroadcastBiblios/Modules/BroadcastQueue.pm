@@ -330,12 +330,13 @@ sub processImportQueue {
                         $self->processImportComponentParts($biblio_id, from_json($queue->{componentparts}), $patron);
                     }
                     $mergedrecord = $self->add942ToBiblio($mergedrecord, $f942);
+                    my $context = {
+                        source => 'z3950'
+                    };
+                    $context->{categorycode} = $patron->categorycode if $patron;
+                    $context->{userid} = $patron->userid if $patron;
                     my $success = &ModBiblio($mergedrecord, $biblio_id, $frameworkcode, {
-                                overlay_context => {
-                                    source       => 'z3950',
-                                    categorycode => $patron->categorycode if $patron,
-                                    userid       => $patron->userid if $patron,
-                                }
+                                overlay_context => $context
                             });
                     if ($success) {
                         print "Updated record $biblio_id\n" if $self->verbose;
@@ -562,11 +563,13 @@ sub processImportComponentParts {
                 my $local942 = $self->get942Field($biblionumber);
                 $f942 = $local942 if $local942;
                 $mergedrecord = $self->add942ToBiblio($mergedrecord, $f942);
+                my $context = {
+                    source => 'z3950'
+                }
+                $context->{categorycode} = $patron->categorycode if $patron;
+                $context->{userid} = $patron->userid if $patron;
                 my $success = &ModBiblio($mergedrecord, $biblionumber, $frameworkcode, {
-                            overlay_context => {
-                                source       => 'z3950',
-                                categorycode => $patron->categorycode if $patron,
-                                userid       => $patron->userid if $patron,
+                            overlay_context => $context,
                             }
                         });
                 if ($success) {
@@ -636,11 +639,13 @@ sub updateLocalRecord {
     my $frameworkcode = GetFrameworkCode( $biblio_id );
     my $f942 = $self->get942Field($biblio_id);
     $record = $self->add942ToBiblio($record, $f942);
+    my $context = {
+        source => 'z3950'
+    };
+    $context->{categorycode} = $patron->categorycode if $patron;
+    $context->{userid} = $patron->userid if $patron;
     my $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
-                overlay_context => {
-                    source       => 'z3950',
-                    categorycode => $patron->categorycode if $patron,
-                    userid       => $patron->userid if $patron,
+                overlay_context => $context,
                 }
             });
     if ($success) {
