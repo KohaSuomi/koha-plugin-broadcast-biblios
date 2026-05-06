@@ -33,8 +33,16 @@ sub setToQueue {
     my $c = shift->openapi->valid_input or return;
 
     try {
+        my $current_user = $c->stash('koha.user');
         my $body = $c->req->json;
-        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{broadcast_interface}, type => $body->{type}, user_id => $body->{user_id}});
+        my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
+        my $user = $users->getUser($body->{user_id});
+        my $user_id = $body->{user_id};
+        if ($current_user->borrowernumber eq $user->{linked_borrowernumber}) {
+            $user_id = $user->{id};
+        } 
+        my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new();
+        my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{broadcast_interface}, type => $body->{type}, user_id => $user_id});
         my $response = $queue->setToQueue($body->{active_biblio}, $body->{broadcast_biblio});
 
         return $c->render(status => $response->{status}, openapi => {message => $response->{message}});
