@@ -234,7 +234,7 @@ sub setToQueue {
                 $return = {status => 200, message => "Equal encoding level and timestamp, checking component parts"};
             } else {
                 print "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblionumber}."\n" if $self->verbose;
-                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblionumber}};
+                $return = {status => 200, message => "Local record ".$activerecord->{biblionumber}." has equal encoding level and greater timestamp than broadcast record ".$broadcastrecord->{biblionumber}};
             }
         } else {
             if ($broadcastrecord->{componentparts}) {
@@ -243,7 +243,7 @@ sub setToQueue {
                 $return = {status => 200, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level, checking component parts"};
             } else {
                 print "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblionumber}."\n" if $self->verbose;
-                $return = {status => 204, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblionumber}};
+                $return = {status => 200, message => "Local record ".$activerecord->{biblionumber}." has greater encoding level than broadcast record ".$broadcastrecord->{biblionumber}};
             }
         }
         return $return;
