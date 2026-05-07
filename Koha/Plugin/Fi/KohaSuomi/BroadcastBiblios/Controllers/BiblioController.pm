@@ -163,6 +163,7 @@ sub update {
     my $logger = Koha::Logger->get({ interface => 'api' });
 
     try {
+        my $current_user = $c->stash('koha.user');
         my $biblio = Koha::Biblios->find($biblio_id);
         unless ($biblio) {
             return $c->render(status => 404, openapi => {error => "Biblio not found"});
@@ -187,7 +188,9 @@ sub update {
             }
             $success = &ModBiblio($record, $biblio_id, $frameworkcode, {
                         overlay_context => {
-                            source       => 'z3950'
+                            source       => 'z3950',
+                            categorycode => $current_user->categorycode,
+                            userid       => $current_user->userid,
                         }
                     });
         }
