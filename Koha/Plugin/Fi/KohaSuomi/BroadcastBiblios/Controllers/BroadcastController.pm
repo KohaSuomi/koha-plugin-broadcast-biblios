@@ -36,7 +36,7 @@ sub setToQueue {
         my $current_user = $c->stash('koha.user');
         my $body = $c->req->json;
         my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
-        my $user = $users->getInterfaceUserByPatronId($body->{broadcast_interface}, $current_user->borrowernumber);
+        my $user = $users->getUserIdByPatronId($current_user->borrowernumber);
         my $user_id = $user ? $user : $body->{user_id};
         my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new();
         my $queue = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::BroadcastQueue->new({broadcast_interface => $body->{broadcast_interface}, type => $body->{type}, user_id => $user_id});

@@ -493,4 +493,14 @@ sub getBroadcastInterfaceUser {
     return $result;
 }
 
+sub getUserByLinkedBorrowernumber {
+    my ($self, $borrowernumber) = @_;
+    my $dbh = $self->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM " . $self->users . " WHERE linked_borrowernumber = ?");
+    $sth->execute($borrowernumber);
+    my $result = $sth->fetchrow_hashref;
+    $sth->finish();
+    return $result;
+}
+
 1;
