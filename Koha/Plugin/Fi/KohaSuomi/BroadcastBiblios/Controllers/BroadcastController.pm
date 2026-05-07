@@ -38,7 +38,7 @@ sub setToQueue {
         my $users = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Users->new();
         my $user = $users->getUser($body->{user_id});
         my $user_id = $body->{user_id};
-        if ($current_user->borrowernumber eq $user->{linked_borrowernumber}) {
+        if ($current_user->borrowernumber eq $user->{linked_borrowernumber} && $user->{linked_borrowernumber}) {
             $user_id = $user->{id};
         } 
         my $config = Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Modules::Config->new();
