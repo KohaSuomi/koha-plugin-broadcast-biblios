@@ -58,7 +58,8 @@ sub display_api_error {
 
     # Log the error
     my $logger = Koha::Logger->get({ interface => 'api' });
-    $logger->error(Data::Dumper->Dump([$error], ['error']));
+    my $error_message = ref($error) eq 'HASH' ? $error->{message} : $error->message;
+    $logger->error($error_message);
 
     if ($error->isa('Koha::Plugin::Fi::KohaSuomi::BroadcastBiblios::Exceptions::Generic::Unauthorized')) {
         # Return the unauthorized error message
