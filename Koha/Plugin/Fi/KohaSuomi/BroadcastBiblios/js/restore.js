@@ -8,10 +8,12 @@ $(document).ready(function () {
                 restoreButton.className = "btn btn-primary restore-button";
                 if (row.cells[2].textContent.includes("Catalog") && row.cells[3].textContent.includes("Modify")){
                     restoreButton.textContent = "Restore";
-                } else if (row.cells[2].textContent.includes("Luettelo") && row.cells[3].textContent.includes("Muokkaa")){
+                } else if (row.cells[2].textContent.includes("Kuvailu") && row.cells[3].textContent.includes("Muokkaa")){
                     restoreButton.textContent = "Palauta";
                 } else if (row.cells[2].textContent.includes("Katalog") && row.cells[3].textContent.includes("Redigera")){
                     restoreButton.textContent = "Återställ";
+                } else {
+                    restoreButton.textContent = "Restore";
                 }
                 let loginfoRow = row.querySelector(".loginfo");
                 if (loginfoRow && /BEFORE=>/.test(loginfoRow.textContent)) {
