@@ -157,7 +157,7 @@ sub restoreRecordFromActionLog {
     my ($self, $action_id) = @_;
 
     my $action_log = Koha::ActionLogs->find($action_id);
-    my (undef, $marc) = split('=>\s*', $action_log->info);
+    my (undef, $marc) = split(/\s*=>\s*/, $action_log->info, 2);
     my $biblionumber = $action_log->object;
     my @marc_lines = split('\n', $marc);
     my $marc_record = MARC::Record->new();
@@ -192,11 +192,8 @@ sub restoreRecordFromActionLog {
             my $code = substr($line, 1, 1);
             my $data = substr($line, 2);
             my @fields = $marc_record->field( $last_tag );
-            foreach my $field (@fields) {
-                if (!$field->subfield($code)) {
-                    $field->add_subfields( $code => $data );
-                }
-            }
+            my $field = $fields[-1];
+            $field->add_subfields( $code => $data ) if $field;
         }
     }
     
