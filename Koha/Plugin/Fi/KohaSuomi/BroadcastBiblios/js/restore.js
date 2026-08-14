@@ -5,6 +5,7 @@ $(document).ready(function () {
             var rows = logstElement.querySelectorAll("tr");
             rows.forEach(function(row) {
                 let restoreButton = document.createElement("button");
+                restoreButton.className = "btn btn-primary restore-button";
                 if (row.cells[2].textContent.includes("Catalog") && row.cells[3].textContent.includes("Modify")){
                     restoreButton.textContent = "Restore";
                 } else if (row.cells[2].textContent.includes("Luettelo") && row.cells[3].textContent.includes("Muokkaa")){
