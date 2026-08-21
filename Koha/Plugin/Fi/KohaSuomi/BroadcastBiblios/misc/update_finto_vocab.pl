@@ -123,7 +123,7 @@ foreach my $vocab (@vocabs) {
     # Process the data
     foreach my $item (@{$data->{changeList}}) {
         my $parsed_date = substr($item->{date}, 0, 10);
-        next unless $since_date lt $parsed_date;
+        next if $parsed_date lt $since_date;
         my $uri = $item->{uri};
         my $prefLabel = $item->{prefLabel};
         my $replacedByURI = $item->{replacedBy};
@@ -133,33 +133,34 @@ foreach my $vocab (@vocabs) {
         my $offset = 0;
         my $limit = 100;
 
+        my @all_results;
         while (1) {
             $results = _search_records($uri, $offset, $limit);
-            if ($results && @$results) {
-                foreach my $result (@$results) {
-                    my $biblio_id = $result->subfield('999', 'c');
-                    print "Found record $biblio_id for URI: $uri\n" if $verbose;
-                    my $record = _find_field_and_replace($result, $uri, $new_value, $replacedByURI, $vocab);
-                    next unless $record;
-                    $count++;
-                    if ($confirm) {
-                    print "Updating record with biblionumber: $biblio_id\n";
-                    my $biblionumber = eval { C4::Biblio::ModBiblioMarc( $record, $biblio_id ) };
-                    if ($@) {
-                        print "Error: $@";
-                    } else {
-                        my $dbh = C4::Context->dbh;
-                        my $biblio = C4::Biblio::TransformMarcToKoha({ record => $record });
-                        my $frameworkcode = C4::Biblio::GetFrameworkCode($biblionumber);
-                        C4::Biblio::_koha_modify_biblio($dbh, $biblio, $frameworkcode);
-                        C4::Biblio::_koha_modify_biblioitem_nonmarc($dbh, $biblio);
-                        $success++;
-                    }
-                    }
+            last unless $results && @$results;
+            push @all_results, @$results;
+            last if @$results < $limit;
+            $offset += $limit;
+        }
+
+        foreach my $result (@all_results) {
+            my $biblio_id = $result->subfield('999', 'c');
+            print "Found record $biblio_id for URI: $uri\n" if $verbose;
+            my $record = _find_field_and_replace($result, $uri, $new_value, $replacedByURI, $vocab);
+            next unless $record;
+            $count++;
+            if ($confirm) {
+                print "Updating record with biblionumber: $biblio_id\n";
+                my $biblionumber = eval { C4::Biblio::ModBiblioMarc( $record, $biblio_id ) };
+                if ($@) {
+                    print "Error: $@";
+                } else {
+                    my $dbh = C4::Context->dbh;
+                    my $biblio = C4::Biblio::TransformMarcToKoha({ record => $record });
+                    my $frameworkcode = C4::Biblio::GetFrameworkCode($biblionumber);
+                    C4::Biblio::_koha_modify_biblio($dbh, $biblio, $frameworkcode);
+                    C4::Biblio::_koha_modify_biblioitem_nonmarc($dbh, $biblio);
+                    $success++;
                 }
-                $offset += $limit;
-            } else {
-                last;
             }
         }
     }
