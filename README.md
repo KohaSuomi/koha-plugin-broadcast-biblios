@@ -15,10 +15,11 @@ A Koha plugin for bidirectional bibliographic record synchronization between mul
 5. [Configuration](#configuration)
 6. [Cronjob Reference](#cronjob-reference)
 7. [REST API Reference](#rest-api-reference)
-8. [Staff UI](#staff-ui)
-9. [Module Reference](#module-reference)
-10. [FINTO Vocabulary Updater](#finto-vocabulary-updater)
-11. [i18n](#i18n)
+8. [SRU Search](#sru-search)
+9. [Staff UI](#staff-ui)
+10. [Module Reference](#module-reference)
+11. [FINTO Vocabulary Updater](#finto-vocabulary-updater)
+12. [i18n](#i18n)
 
 ---
 
@@ -280,6 +281,120 @@ All endpoints are under `/api/v1/contrib/kohasuomi/`. Write endpoints require `e
 | `POST` | `/broadcast/users` | Add a new user |
 | `PUT` | `/broadcast/users/{user_id}` | Update a user |
 | `DELETE` | `/broadcast/users/{user_id}` | Delete a user |
+
+---
+
+## SRU Search
+
+The Täti broadcast biblios are queryable over SRU at:
+
+```
+https://tati.koha-suomi.fi/biblios
+```
+
+The server supports SRU versions **1.1** and **2.0** and returns records as MARCXML (`recordSchema=marcxml`). `marc21` and `unimarc` retrieval schemas are also advertised by the explain response.
+
+### Request parameters
+
+| Parameter | Required | Description |
+|---|---|---|
+| `operation` | yes | `searchRetrieve` (query) or `explain` (server capabilities) |
+| `version` | yes | `1.1` (default) or `2.0` |
+| `query` | for `searchRetrieve` | CQL query string — **must be URL-encoded** |
+| `maximumRecords` | no | Page size (default 1) |
+| `recordSchema` | no | `marcxml` (default), `marc21`, `unimarc` |
+| `startRecord` | no | 1-based result offset for pagination |
+
+### Supported CQL indexes
+
+Verified against the live server (the explain response does not list indexes):
+
+| Index | Matches | Example |
+|---|---|---|
+| `koha.systemcontrolnumber` | System control number (035$a) | `koha.systemcontrolnumber="(FI-MELINDA)007662175"` |
+| `koha.controlnumber` | Control number (001) | combine with `koha.controlnumberidentifier` |
+| `koha.controlnumberidentifier` | Control number identifier (003) | `koha.controlnumberidentifier=FI-MELINDA and koha.controlnumber=007662175` |
+| `dc.isbn` / `bath.isbn` | ISBN (020$a) | `dc.isbn=9789510494394` |
+| `dc.identifier` | Generic identifier | `dc.identifier=(FI-BTJ)7319194` |
+| `dc.title` | Title | `dc.title=suomi` |
+
+Use `and`, `or`, `not` to combine clauses. Quote values that contain parentheses or special characters.
+
+### Examples
+
+Server capabilities:
+
+```
+https://tati.koha-suomi.fi/biblios?version=1.1&operation=explain
+```
+
+Fetch one record by ISBN:
+
+```
+https://tati.koha-suomi.fi/biblios?operation=searchRetrieve&version=1.1&query=dc.isbn%3D9789510494394&maximumRecords=1&recordSchema=marcxml
+```
+
+Fetch one record by its Melinda system control number:
+
+```
+https://tati.koha-suomi.fi/biblios?operation=searchRetrieve&version=1.1&query=koha.systemcontrolnumber%3D%22(FI-MELINDA)007662175%22&maximumRecords=1&recordSchema=marcxml
+```
+
+Fetch one record by 001+003:
+
+```
+https://tati.koha-suomi.fi/biblios?operation=searchRetrieve&version=1.1&query=koha.controlnumberidentifier%3DFI-MELINDA%20and%20koha.controlnumber%3D007662175&maximumRecords=1&recordSchema=marcxml
+```
+
+Title search, page 2 with 10 records per page:
+
+```
+https://tati.koha-suomi.fi/biblios?operation=searchRetrieve&version=1.1&query=dc.title%3Dsuomi&maximumRecords=10&startRecord=11&recordSchema=marcxml
+```
+
+With `curl` (note the quoted query so the shell does not eat `&`):
+
+```sh
+curl -sS "https://tati.koha-suomi.fi/biblios?operation=searchRetrieve&version=1.1&query=dc.isbn%3D9789510494394&maximumRecords=1&recordSchema=marcxml"
+```
+
+### Response format
+
+Records are returned as MARCXML inside an SRU `searchRetrieveResponse`:
+
+```xml
+<zs:searchRetrieveResponse xmlns:zs="http://www.loc.gov/zing/srw/">
+  <zs:numberOfRecords>1</zs:numberOfRecords>
+  <zs:records>
+    <zs:record>
+      <zs:recordData>
+        <record xmlns="http://www.loc.gov/MARC21/slim">...</record>
+      </zs:recordData>
+      <zs:recordPosition>1</zs:recordPosition>
+    </zs:record>
+  </zs:records>
+</zs:searchRetrieveResponse>
+```
+
+- `zs:numberOfRecords` — total hits for the query (compare against `startRecord + returned records` to detect the last page).
+- `zs:recordPosition` — 1-based position of each record in the full result set.
+
+### Errors
+
+- **Unknown index**: the response contains a diagnostics block instead of records:
+
+  ```xml
+  <diag:diagnostic>
+    <diag:uri>info:srw/diagnostic/1/15</diag:uri>
+    <diag:message>Unsupported context set</diag:message>
+  </diag:diagnostic>
+  ```
+
+- **No matches**: valid response with `<zs:numberOfRecords>0</zs:numberOfRecords>` and no `zs:records`.
+
+### Use as a plugin interface
+
+To configure this endpoint as an import interface in the plugin, set the SRU address (`sruUrl`) to `https://tati.koha-suomi.fi/biblios` in the Config panel. The plugin builds the CQL queries itself from biblio identifiers — see `Helpers/QueryParser.pm` (`kohaSRUSearch`) and `Modules/SRU.pm`.
 
 ---
 
