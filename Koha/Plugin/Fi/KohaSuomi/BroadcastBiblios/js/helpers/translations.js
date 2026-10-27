@@ -1,8 +1,8 @@
 const translations = {
   'Standardinumero ei ole oikeassa muodossa, erota kentät putkella -> 003|001': {
     en: 'Standard number is not in the correct format, separate fields with a pipe -> 003|001',
-    fi: 'Standardinumero ei ole oikeassa muodossa, erota kentät putkella -> 003|001',
-    sv: 'Standardnumret är inte i rätt format, separera fälten med ett rör -> 003|001'
+    fi: 'Standardinumero ei ole oikeassa muodossa, erota kentät putkimerkillä -> 003|001',
+    sv: 'Standardnumret är inte i rätt format, separera fälten med ett vertikalstreck -> 003|001'
   },
   'Tietue ': {
     en: 'Record ',
@@ -10,9 +10,9 @@ const translations = {
     sv: 'Post '
   },
   'päivitetty!': {
-    en: 'updated!',
-    fi: 'päivitetty!',
-    sv: 'uppdaterad!'
+    en: 'updated',
+    fi: 'päivitetty',
+    sv: 'uppdaterad'
   },
   'Kyllä': {
     en: 'Yes',
@@ -37,17 +37,17 @@ const translations = {
   'Tuonti': {
     en: 'Import',
     fi: 'Tuonti',
-    sv: 'Import'
+    sv: 'Importering'
   },
   'Tuo': {
     en: 'Import',
     fi: 'Tuo',
-    sv: 'Import'
+    sv: 'Importera'
   },
   'Vienti': {
     en: 'Export',
-    fi: 'Vie',
-    sv: 'Exportera'
+    fi: 'Vienti',
+    sv: 'Exportering'
   },
   'Vie': {
     en: 'Export',
@@ -62,7 +62,7 @@ const translations = {
   'Ilmoita kentistä (erota pilkulla):': {
     en: 'Notify fields (comma separated):',
     fi: 'Ilmoita kentistä (erota pilkulla):',
-    sv: 'Ange fält (avgränsa med komma):'
+    sv: 'Ange fält (avgränsa med kommatecken):'
   },
   'Valitse siirtorajapinta': {
     en: 'Select interface',
@@ -72,7 +72,7 @@ const translations = {
   'Uusi': {
     en: 'New',
     fi: 'Uusi',
-    sv: 'Nytt'
+    sv: 'Ny'
   },
   'Poista': {
     en: 'Delete',
@@ -82,7 +82,7 @@ const translations = {
   'rajapinnan tiedot': {
     en: 'interface details',
     fi: 'rajapinnan tiedot',
-    sv: 'gränssnittsdetaljer'
+    sv: 'detaljer om gränssnittet'
   },
   'Nimi': {
     en: 'Name',
@@ -111,7 +111,7 @@ const translations = {
   },
   'Ylärajapinta (valinnainen)': {
     en: 'Parent interface (optional)',
-    fi: 'Ylärajapinta (valinnainen)',
+    fi: 'Isäntärajapinta (valinnainen)',
     sv: 'Överordnat gränssnitt (valfritt)'
   },
   'Tietueiden aktivointirajapinta': {
@@ -120,28 +120,28 @@ const translations = {
     sv: 'Aktiveringsgränssnitt för poster'
   },
   'Näytä rajapinta valikossa': {
-    en: 'Show interface in menu',
-    fi: 'Näytä rajapinta valikossa',
-    sv: 'Visa gränssnitt i menyn'
+    en: 'Show interface in Normal page\'s menu',
+    fi: 'Näytä rajapinta Perustiedot-sivun valikossa',
+    sv: 'Visa gränssnitt i Normal-vyns meny'
   },
   'Tuonnin oletuskäyttäjä': {
     en: 'Default user for import',
     fi: 'Tuonnin oletuskäyttäjä',
-    sv: 'Standardanvändare för import'
+    sv: 'Standardanvändare för importering'
   },
   'REST URL tai SRU URL on pakollinen': {
     en: 'REST URL or SRU URL is required',
-    fi: 'REST URL tai SRU URL on pakollinen',
+    fi: 'REST-URL tai SRU-URL on pakollinen',
     sv: 'REST-URL eller SRU-URL är obligatorisk'
   },
   'REST URL ei ole validi': {
     en: 'REST URL is not valid',
-    fi: 'REST URL ei ole validi',
+    fi: 'REST-URL ei ole validi',
     sv: 'REST-URL är inte giltig'
   },
   'SRU URL ei ole validi': {
     en: 'SRU URL is not valid',
-    fi: 'SRU URL ei ole validi',
+    fi: 'SRU-URL ei ole validi',
     sv: 'SRU-URL är inte giltig'
   },
   'Vain yksi aktivointirajapinta voi olla aktiivinen': {
@@ -162,7 +162,7 @@ const translations = {
   'Search-endpoint': {
     en: 'Search endpoint',
     fi: 'Search-endpoint',
-    sv: 'Sök-endpoint'
+    sv: 'Search-endpoint'
   },
   'Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/': {
     en: 'E.g. /api/v1/contrib/kohasuomi/broadcast/biblios/',
@@ -171,18 +171,18 @@ const translations = {
   },
   'Method': {
     en: 'Method',
-    fi: 'Method',
+    fi: 'Metodi',
     sv: 'Metod'
   },
   'Add-endpoint': {
     en: 'Add endpoint',
     fi: 'Add-endpoint',
-    sv: 'Lägg till-endpoint'
+    sv: 'Add-endpoint'
   },
   'Update-endpoint': {
     en: 'Update endpoint',
     fi: 'Update-endpoint',
-    sv: 'Uppdatera-endpoint'
+    sv: 'Update-endpoint'
   },
   'Esim. /api/v1/contrib/kohasuomi/broadcast/biblios/{biblio_id}': {
     en: 'E.g. /api/v1/contrib/kohasuomi/broadcast/biblios/{biblio_id}',
@@ -237,22 +237,22 @@ const translations = {
   'Autentikaatiotapa': {
     en: 'Authentication type',
     fi: 'Autentikaatiotapa',
-    sv: 'Autentiseringstyp'
+    sv: 'Autentiseringssätt'
   },
   'Autentikaatiotapa puuttuu': {
     en: 'Authentication type is missing',
     fi: 'Autentikaatiotapa puuttuu',
-    sv: 'Autentiseringstyp saknas'
+    sv: 'Autentiseringssätt saknas'
   },
   'Client id': {
     en: 'Client id',
     fi: 'Client id',
-    sv: 'Client-id'
+    sv: 'Client id'
   },
   'Client id puuttuu': {
     en: 'Client id is missing',
     fi: 'Client id puuttuu',
-    sv: 'Client-id saknas'
+    sv: 'Client id saknas'
   },
   'Client secret': {
     en: 'Client secret',
@@ -267,12 +267,12 @@ const translations = {
   'Token URL': {
     en: 'Token URL',
     fi: 'Token URL',
-    sv: 'Token-URL'
+    sv: 'Token URL'
   },
   'Token URL puuttuu': {
     en: 'Token URL is missing',
     fi: 'Token URL puuttuu',
-    sv: 'Token-URL saknas'
+    sv: 'Token URL saknas'
   },
   'Linkitetty käyttäjä (borrowernumber)': {
     en: 'Linked user (borrowernumber)',
@@ -300,9 +300,9 @@ const translations = {
     sv: 'Ett fel inträffade:'
   },
   'Lisätty jonoon!': {
-    en: 'Added to queue!',
-    fi: 'Lisätty jonoon!',
-    sv: 'Tillagd i kön!'
+    en: 'Added to queue',
+    fi: 'Lisätty jonoon',
+    sv: 'Tillagd i kön'
   },
   'Tapahtuma': {
     en: 'Event',

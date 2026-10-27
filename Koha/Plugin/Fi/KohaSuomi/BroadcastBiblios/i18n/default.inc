@@ -29,7 +29,7 @@
         close = "Close",
         open = "Open",
         standard_number = "Standard number",
-        general = "General",
+        general = "General settings",
         users = "Users",
         settings = "Settings",
     }

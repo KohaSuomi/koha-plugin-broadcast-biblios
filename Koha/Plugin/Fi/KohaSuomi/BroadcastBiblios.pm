@@ -41,7 +41,7 @@ sub get_localized_metadata {
     my ($name, $description);
 
     if ( $lang eq 'sv-SE' ) {
-        $name = "Tietuesiirtäjä";
+        $name = "Överföring av poster";
         $description = "Skicka och ta emot poster i Koha. (Lokala databaser, Täti)";
     } elsif ( $lang eq 'fi-FI' ) {
         $name = "Tietuesiirtäjä";
